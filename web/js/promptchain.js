@@ -1,12 +1,52 @@
 import { app } from "../../../scripts/app.js";
 import { ComfyWidgets } from "../../../scripts/widgets.js";
 
+// Dynamic input management for PromptChainDynamic
+app.registerExtension({
+	name: "mobcat40.PromptChain.DynamicInputs",
+	async nodeCreated(node) {
+		if (node.constructor.comfyClass !== "PromptChain") {
+			return;
+		}
+
+		const updateInputs = () => {
+			// Find all input_N slots
+			const inputSlots = node.inputs.filter(i => i.name.startsWith("input_"));
+
+			// Add new input when last one is connected
+			const lastInput = inputSlots[inputSlots.length - 1];
+			if (lastInput && lastInput.link !== null) {
+				const nextIndex = parseInt(lastInput.name.split("_")[1]) + 1;
+				node.addInput(`input_${nextIndex}`, "STRING");
+			}
+
+			// Remove empty trailing slots (keep at least one)
+			if (inputSlots.length > 1) {
+				const lastSlot = inputSlots[inputSlots.length - 1];
+				const secondLastSlot = inputSlots[inputSlots.length - 2];
+				if (lastSlot.link === null && secondLastSlot.link === null) {
+					node.removeInput(node.inputs.indexOf(lastSlot));
+				}
+			}
+		};
+
+		const originalOnConnectionsChange = node.onConnectionsChange;
+		node.onConnectionsChange = function(type, index, connected, link_info) {
+			originalOnConnectionsChange?.apply(this, arguments);
+			updateInputs();
+		};
+
+		// Initial setup
+		updateInputs();
+	}
+});
+
 // Display preview text on PromptChain nodes after execution
 
 app.registerExtension({
 	name: "mobcat40.PromptChain.Preview",
 	async beforeRegisterNodeDef(nodeType, nodeData, app) {
-		if (nodeData.name === "PromptChainSimple" || nodeData.name === "PromptChain5" || nodeData.name === "PromptChain10") {
+		if (nodeData.name === "PromptChainSimple" || nodeData.name === "PromptChain5" || nodeData.name === "PromptChain10" || nodeData.name === "PromptChain") {
 			// Create empty preview widget on node creation
 			const onNodeCreated = nodeType.prototype.onNodeCreated;
 			nodeType.prototype.onNodeCreated = function () {
