@@ -70,15 +70,10 @@ app.registerExtension({
 			const onConfigure = nodeType.prototype.onConfigure;
 			nodeType.prototype.onConfigure = function () {
 				onConfigure?.apply(this, arguments);
-				const widgets_values = this[VALUES];
-				if (widgets_values?.length) {
-					// Restore preview widgets after a delay
-					requestAnimationFrame(() => {
-						const previewValues = widgets_values.slice(+(widgets_values.length > 1 && this.inputs?.[0]?.widget));
-						if (previewValues.length > 0) {
-							populate.call(this, previewValues);
-						}
-					});
+				// Don't restore preview widgets from saved workflow - they'll be regenerated on next execution
+				// Remove any preview widgets that might have been saved
+				if (this.widgets) {
+					this.widgets = this.widgets.filter(w => !w.name || !w.name.startsWith("preview_"));
 				}
 			};
 		}
