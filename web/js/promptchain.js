@@ -22,16 +22,18 @@ app.registerExtension({
 						const buttonHeight = 20;
 						const x = width - buttonWidth - 10;
 
-						// Draw button background
+						// Draw button background with rounded corners
 						ctx.fillStyle = this.value ? "#4CAF50" : "#757575";
-						ctx.fillRect(x, y, buttonWidth, buttonHeight);
+						ctx.beginPath();
+						ctx.roundRect(x, y, buttonWidth, buttonHeight, 4);
+						ctx.fill();
 
 						// Draw button text
 						ctx.fillStyle = "#FFFFFF";
 						ctx.font = "12px Arial";
 						ctx.textAlign = "center";
 						ctx.textBaseline = "middle";
-						ctx.fillText(this.value ? "👁 Showing" : "👁 Preview", x + buttonWidth / 2, y + buttonHeight / 2);
+						ctx.fillText(this.value ? "Showing" : "Preview", x + buttonWidth / 2, y + buttonHeight / 2);
 
 						return buttonHeight + 4;
 					},
@@ -162,16 +164,18 @@ app.registerExtension({
 							const buttonHeight = 20;
 							const x = width - buttonWidth - 10;
 
-							// Draw button background
+							// Draw button background with rounded corners
 							ctx.fillStyle = this.value ? "#4CAF50" : "#757575";
-							ctx.fillRect(x, y, buttonWidth, buttonHeight);
+							ctx.beginPath();
+							ctx.roundRect(x, y, buttonWidth, buttonHeight, 4);
+							ctx.fill();
 
 							// Draw button text
 							ctx.fillStyle = "#FFFFFF";
 							ctx.font = "12px Arial";
 							ctx.textAlign = "center";
 							ctx.textBaseline = "middle";
-							ctx.fillText(this.value ? "👁 Showing" : "👁 Preview", x + buttonWidth / 2, y + buttonHeight / 2);
+							ctx.fillText(this.value ? "Showing" : "Preview", x + buttonWidth / 2, y + buttonHeight / 2);
 
 							return buttonHeight + 4;
 						},
@@ -199,8 +203,10 @@ app.registerExtension({
 										node.widgets = node.widgets.filter(w => !w.name || !w.name.startsWith("preview_"));
 									}
 									// If turning on, widgets will be created on next execution
-									// Force node to recompute size
+									// Force node to recompute size (preserve width)
+									const currentWidth = node.size[0];
 									const sz = node.computeSize();
+									sz[0] = currentWidth;
 									node.setSize(sz);
 									node.setDirtyCanvas(true, true);
 								}
