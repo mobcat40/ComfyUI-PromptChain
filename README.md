@@ -102,4 +102,4 @@ Click the **Preview** button on any node to toggle output display. When enabled,
 
 ## License
 
-MIT
+MIT License: free to use forever!
