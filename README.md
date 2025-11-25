@@ -7,7 +7,7 @@
 Complex prompts with randomization become unreadable fast:
 
 ```
-{woman|man}, {red|blue|green} {dress|skirt}, {{combat boots|sandals}|bare feet}, {silver|gold} jewelry
+{warrior|mage|rogue}, {iron|steel|mythril} {sword|axe|staff}, {{fire|ice|lightning} enchantment|no enchantment}, {dragon|demon|undead} slayer
 ```
 
 Now nest a few levels deeper. Add 20 options per group. Good luck debugging which path fired.
@@ -17,10 +17,10 @@ Now nest a few levels deeper. Add 20 options per group. Good luck debugging whic
 PromptChain makes the hierarchy *spatial*. Instead of parsing nested braces in your head, you see the decision tree as connected nodes:
 
 ```
-[Subject Node] ──→ [Clothing Node] ──→ [Footwear Node] ──→ [Accessories Node]
-     │                   │                   │                    │
-  woman|man         red|blue         combat boots|           silver|gold
-                    dress|skirt      sandals|bare feet        jewelry
+[Class Node] ──→ [Weapon Node] ──→ [Enchant Node] ──→ [Title Node]
+     │                │                 │                  │
+warrior|mage     iron|steel        fire|ice|         dragon|demon
+   |rogue        sword|axe|staff   lightning         |undead slayer
 ```
 
 Each node shows exactly what it output. Chain them together, see the whole prompt path at a glance.
@@ -74,16 +74,17 @@ Multiline works too — lines ending with `|` continue the OR group, lines endin
 - Prepends the text field to all inputs
 - Joins everything with `", "` delimiter
 
-## Example: Character Generator
+## Example: RPG Character Generator
 
 ```
 Node 1:                    Node 2 (Randomize):        Node 3 (Combine):
 ┌─────────────────┐       ┌─────────────────┐        ┌─────────────────┐
-│ woman|man       │──────→│ red|blue dress  │───────→│ jewelry, heels  │
+│ warrior|mage|   │──────→│ steel|mythril   │───────→│ fire enchant,   │
+│ rogue           │       │ sword|staff     │        │ dragon slayer   │
 └─────────────────┘       │ input_1: ●      │        │ input_1: ●      │
                           └─────────────────┘        └─────────────────┘
 
-Output: "woman, blue dress, jewelry, heels"
+Output: "warrior, mythril sword, fire enchant, dragon slayer"
 ```
 
 ## Live Preview
