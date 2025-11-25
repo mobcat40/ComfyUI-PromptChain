@@ -309,13 +309,10 @@ class PromptChainPreview:
             "required": {
                 "text": ("STRING", {"forceInput": True}),
             },
-            "hidden": {
-                "unique_id": "UNIQUE_ID",
-            },
         }
 
     RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("text",)
+    RETURN_NAMES = ("output",)
     OUTPUT_NODE = True
     FUNCTION = "preview"
     CATEGORY = "text/prompt_chain"
@@ -324,7 +321,7 @@ class PromptChainPreview:
     def IS_CHANGED(cls, **kwargs):
         return float("nan")
 
-    def preview(self, text, unique_id=None):
+    def preview(self, text):
         # Print to console for visibility
         print(f"\n{'='*80}")
         print(f"PREVIEW OUTPUT:")
@@ -332,8 +329,8 @@ class PromptChainPreview:
         print(text)
         print(f"{'='*80}\n")
 
-        # Pass through the text unchanged, but mark as output node for display
-        return {"ui": {"text": [text]}, "result": (text,)}
+        # Return in the standard format that ComfyUI UI widgets expect
+        return {"ui": {"string": [text]}, "result": (text,)}
 
 
 NODE_CLASS_MAPPINGS = {
