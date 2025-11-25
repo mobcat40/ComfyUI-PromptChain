@@ -297,52 +297,14 @@ class PromptChain10:
         return (result,)
 
 
-class PromptChainPreview:
-    """
-    Preview node that displays the current randomized output.
-    Connect to any PromptChain output to see what's being generated.
-    """
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "text": ("STRING", {"forceInput": True}),
-            },
-        }
-
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("output",)
-    OUTPUT_NODE = True
-    FUNCTION = "preview"
-    CATEGORY = "text/prompt_chain"
-
-    @classmethod
-    def IS_CHANGED(cls, **kwargs):
-        return float("nan")
-
-    def preview(self, text):
-        # Print to console for visibility
-        print(f"\n{'='*80}")
-        print(f"PREVIEW OUTPUT:")
-        print(f"{'-'*80}")
-        print(text)
-        print(f"{'='*80}\n")
-
-        # Return in the standard format that ComfyUI UI widgets expect
-        return {"ui": {"string": [text]}, "result": (text,)}
-
-
 NODE_CLASS_MAPPINGS = {
     "PromptChainSimple": PromptChainSimple,
     "PromptChain5": PromptChain5,
     "PromptChain10": PromptChain10,
-    "PromptChainPreview": PromptChainPreview
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "PromptChainSimple": "PromptChain Simple",
     "PromptChain5": "PromptChain 5",
     "PromptChain10": "PromptChain 10",
-    "PromptChainPreview": "PromptChain Preview"
 }
