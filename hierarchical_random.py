@@ -16,7 +16,7 @@ class PromptChainSimple:
 
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("output",)
-    OUTPUT_NODE = False
+    OUTPUT_NODE = True
     FUNCTION = "process_text"
     CATEGORY = "text/prompt_chain"
 
@@ -73,7 +73,7 @@ class PromptChainSimple:
         else:
             text_combined = ""
 
-        return (text_combined,)
+        return {"ui": {"text": [text_combined]}, "result": (text_combined,)}
 
 
 class PromptChain5:
@@ -99,7 +99,7 @@ class PromptChain5:
 
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("output",)
-    OUTPUT_NODE = False
+    OUTPUT_NODE = True
     FUNCTION = "process"
     CATEGORY = "text/prompt_chain"
 
@@ -180,7 +180,7 @@ class PromptChain5:
 
             print(f"\nCombined: {result}\n")
 
-        return (result,)
+        return {"ui": {"text": [result]}, "result": (result,)}
 
 
 class PromptChain10:
@@ -211,7 +211,7 @@ class PromptChain10:
 
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("output",)
-    OUTPUT_NODE = False
+    OUTPUT_NODE = True
     FUNCTION = "process"
     CATEGORY = "text/prompt_chain"
 
@@ -294,7 +294,7 @@ class PromptChain10:
 
             print(f"\nCombined: {result}\n")
 
-        return (result,)
+        return {"ui": {"text": [result]}, "result": (result,)}
 
 
 NODE_CLASS_MAPPINGS = {

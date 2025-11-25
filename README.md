@@ -9,6 +9,7 @@ Most wildcard solutions require external files or lack visual workflow integrati
 ## Features
 
 - **Inline wildcards** - No external files needed, write `red|blue|green` directly in nodes
+- **Live preview widgets** - Every node shows exactly what it output on each execution
 - **Visual chaining** - Connect nodes together to build hierarchical prompt structures
 - **Flexible syntax** - Mix inline and multiline formats however you want
 - **Two modes** - Randomize (pick one path) or Combine (merge all paths)
@@ -111,6 +112,15 @@ Input 1: connected to Node 1 output
 ```
 
 When Node 1 selects "woman", Node 2 output: `"woman, red dress"` or `"woman, blue dress"`
+
+## Live Preview
+
+Every PromptChain node displays its output in a readonly preview widget after execution. This lets you:
+- **Debug randomization** - See exactly which options were selected
+- **Trace prompt chains** - Follow the flow from simple nodes through complex hierarchies
+- **Verify outputs** - No need to check image metadata to see what prompt was used
+
+The preview widgets update on every execution, making it easy to understand how your prompt variations are being generated.
 
 ## How It Works
 
