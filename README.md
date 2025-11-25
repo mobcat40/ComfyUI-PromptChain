@@ -1,57 +1,71 @@
 # ComfyUI-PromptChain
 
-When building complex prompts for image generation, you need two things:
-1. **Randomization** - Generate variations by randomly selecting from options (wildcards)
-2. **Hierarchical control** - Chain prompt segments together visually in your workflow
+**Visual hierarchy for prompt randomization. No more nested wildcard hell.**
 
-Most wildcard solutions require external files or lack visual workflow integration. ComfyUI-PromptChain solves this by letting you build randomized, hierarchical prompts directly in your ComfyUI node graph.
+## The Problem
+
+Complex prompts with randomization become unreadable fast:
+
+```
+{woman|man}, {red|blue|green} {dress|skirt}, {{combat boots|sandals}|bare feet}, {silver|gold} jewelry
+```
+
+Now nest a few levels deeper. Add 20 options per group. Good luck debugging which path fired.
+
+## The Solution
+
+PromptChain makes the hierarchy *spatial*. Instead of parsing nested braces in your head, you see the decision tree as connected nodes:
+
+```
+[Subject Node] ──→ [Clothing Node] ──→ [Footwear Node] ──→ [Accessories Node]
+     │                   │                   │                    │
+  woman|man         red|blue         combat boots|           silver|gold
+                    dress|skirt      sandals|bare feet        jewelry
+```
+
+Each node shows exactly what it output. Chain them together, see the whole prompt path at a glance.
 
 ## Features
 
-- **Inline wildcards** - No external files needed, write `red|blue|green` directly in nodes
-- **Live preview widgets** - Every node shows exactly what it output on each execution
-- **Visual chaining** - Connect nodes together to build hierarchical prompt structures
-- **Flexible syntax** - Mix inline and multiline formats however you want
-- **Two modes** - Randomize (pick one path) or Combine (merge all paths)
-- **3 node types** - Simple (standalone), PromptChain 5, PromptChain 10
+- **Inline wildcards** — Write `red|blue|green` directly in nodes. No external files.
+- **Visual chaining** — Connect nodes to build hierarchical prompt structures
+- **Dynamic inputs** — Inputs auto-expand as you connect more nodes
+- **Live preview** — Every node shows what it selected on each run
+- **Two modes:**
+  - `Randomize` — Pick one path from connected inputs
+  - `Combine` — Merge all paths together
 
 ## Installation
 
-### Via ComfyUI Manager
-1. Search for "PromptChain" in ComfyUI Manager
-2. Install and restart ComfyUI
+**ComfyUI Manager:**
+Search "PromptChain" → Install → Restart
 
-### Manual Installation
+**Manual:**
 ```bash
 cd ComfyUI/custom_nodes
 git clone https://github.com/mobcat40/ComfyUI-PromptChain.git
-# Restart ComfyUI
 ```
 
-## Syntax Rules
+## Syntax
 
-- **`|` (pipe)** - Separates OR options: `red|blue|green` randomly picks one
-- **`,` (comma)** - Separates AND groups: `red|blue, shoes|sandals` picks one color AND one footwear
-- **Output format** - All results flattened to `", "` (comma-space) delimiter
-- **Multiline support** - Lines ending with `,` create AND boundaries, otherwise continue as OR group
-- **Mix formats freely** - Combine inline and multiline syntax in the same text field
+| Symbol | Meaning | Example | Result |
+|--------|---------|---------|--------|
+| `\|` | OR (pick one) | `red\|blue\|green` | `blue` |
+| `,` | AND (include both) | `red\|blue, dress\|skirt` | `blue, dress` |
 
-## Nodes
+Multiline works too — lines ending with `|` continue the OR group, lines ending with `,` create AND boundaries.
 
-### PromptChainSimple
-- Single text field with wildcard processing
-- No inputs, just processes the text field
-- Use for standalone wildcard groups
+## The Node
 
-### PromptChain 5 & PromptChain 10
-- Text field + 5 or 10 string inputs
-- Mode selector: "Randomize" or "Combine"
-- Build hierarchical prompt chains by connecting node outputs to inputs
+**PromptChain** is the single node type. It has:
+- **Mode selector** — `Randomize` or `Combine`
+- **Text field** — Wildcard processing with `|` and `,` syntax
+- **Dynamic inputs** — Connect as many inputs as you need, slots auto-expand
 
-## Modes
+### Modes
 
 **Randomize**
-- Randomly picks ONE input from connected inputs
+- Picks ONE random input from connected inputs
 - Prepends the text field to the selected input
 - Use for branching logic (pick one path)
 
@@ -59,78 +73,31 @@ git clone https://github.com/mobcat40/ComfyUI-PromptChain.git
 - Concatenates ALL inputs together
 - Prepends the text field to all inputs
 - Joins everything with `", "` delimiter
-- Logs output to console
 
-## Examples
+## Example: Character Generator
 
-### Inline Wildcards
 ```
-red|blue|green, dress|skirt, heels|sandals
-```
-Output: `"blue, skirt, heels"` (randomly selected)
+Node 1:                    Node 2 (Randomize):        Node 3 (Combine):
+┌─────────────────┐       ┌─────────────────┐        ┌─────────────────┐
+│ woman|man       │──────→│ red|blue dress  │───────→│ jewelry, heels  │
+└─────────────────┘       │ input_1: ●      │        │ input_1: ●      │
+                          └─────────────────┘        └─────────────────┘
 
-### Multiline Wildcards
+Output: "woman, blue dress, jewelry, heels"
 ```
-combat boots |
-sandals |
-bare feet
-```
-Output: `"sandals"` (randomly selected from 3 options)
-
-### Mixed Format
-```
-red|blue, shoes|sandals
-combat boots |
-bare feet |
-sandals,
-jewelry
-```
-Parsing:
-- Line 1: `red|blue` AND `shoes|sandals` (two AND groups with wildcards)
-- Lines 2-4: `combat boots|bare feet|sandals` (one wildcard group ending at comma)
-- Line 5: `jewelry` (standalone AND group)
-
-Output example: `"red, sandals, bare feet, jewelry"`
-
-### Hierarchical Chaining
-
-**Node 1** (PromptChain 5, Randomize mode):
-```
-Text field:
-woman |
-man
-
-Inputs: [empty]
-```
-
-**Node 2** (PromptChain 5, Randomize mode):
-```
-Text field:
-red|blue dress
-
-Input 1: connected to Node 1 output
-```
-
-When Node 1 selects "woman", Node 2 output: `"woman, red dress"` or `"woman, blue dress"`
 
 ## Live Preview
 
-Every PromptChain node displays its output in a readonly preview widget after execution. This lets you:
-- **Debug randomization** - See exactly which options were selected
-- **Trace prompt chains** - Follow the flow from simple nodes through complex hierarchies
-- **Verify outputs** - No need to check image metadata to see what prompt was used
+Click the **Preview** button on any node to toggle output display. When enabled, you'll see:
+- Exactly which options were randomly selected
+- The full output string after processing
+- Updates on every execution
 
-The preview widgets update on every execution, making it easy to understand how your prompt variations are being generated.
+## Why Not Dynamic Prompts / Other Wildcards?
 
-## How It Works
-
-All text is processed with these rules:
-1. Lines ending with `,` mark AND boundaries
-2. Lines ending with `|` or nothing continue the wildcard group (add `|` automatically)
-3. Split by `,` to get AND groups
-4. Within each AND group, split by `|` to get OR options
-5. Randomly select one option from each OR group
-6. Join all selections with `", "` delimiter
+- **No external files** — Everything lives in your workflow
+- **Visual debugging** — See the tree, not a wall of braces
+- **Workflow-native** — Hierarchies are node connections, not syntax
 
 ## License
 
