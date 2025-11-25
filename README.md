@@ -1,7 +1,5 @@
 # ComfyUI-PromptChain
 
-## The Problem
-
 When building complex prompts for image generation, you need two things:
 1. **Randomization** - Generate variations by randomly selecting from options (wildcards)
 2. **Hierarchical control** - Chain prompt segments together visually in your workflow
