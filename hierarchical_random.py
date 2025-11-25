@@ -297,14 +297,48 @@ class PromptChain10:
         return (result,)
 
 
+class PromptChainPreview:
+    """
+    Preview node that displays the current randomized output.
+    Connect to any PromptChain output to see what's being generated.
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "text": ("STRING", {"forceInput": True}),
+            },
+            "hidden": {
+                "unique_id": "UNIQUE_ID",
+            },
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("text",)
+    OUTPUT_NODE = True
+    FUNCTION = "preview"
+    CATEGORY = "text/prompt_chain"
+
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        return float("nan")
+
+    def preview(self, text, unique_id=None):
+        # Pass through the text unchanged, but mark as output node for display
+        return {"ui": {"text": [text]}, "result": (text,)}
+
+
 NODE_CLASS_MAPPINGS = {
     "PromptChainSimple": PromptChainSimple,
     "PromptChain5": PromptChain5,
-    "PromptChain10": PromptChain10
+    "PromptChain10": PromptChain10,
+    "PromptChainPreview": PromptChainPreview
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "PromptChainSimple": "PromptChain Simple",
     "PromptChain5": "PromptChain 5",
-    "PromptChain10": "PromptChain 10"
+    "PromptChain10": "PromptChain 10",
+    "PromptChainPreview": "PromptChain Preview"
 }
