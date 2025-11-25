@@ -7,6 +7,17 @@ app.registerExtension({
 	name: "mobcat40.PromptChain.Preview",
 	async beforeRegisterNodeDef(nodeType, nodeData, app) {
 		if (nodeData.name === "PromptChainSimple" || nodeData.name === "PromptChain5" || nodeData.name === "PromptChain10") {
+			// Create empty preview widget on node creation
+			const onNodeCreated = nodeType.prototype.onNodeCreated;
+			nodeType.prototype.onNodeCreated = function () {
+				onNodeCreated?.apply(this, arguments);
+				// Add one empty preview widget
+				const w = ComfyWidgets["STRING"](this, "preview_0", ["STRING", { multiline: true }], app).widget;
+				w.inputEl.readOnly = true;
+				w.inputEl.style.opacity = 0.6;
+				w.value = "";
+			};
+
 			function populate(text) {
 				if (this.widgets) {
 					// Remove existing preview widgets (keep any input widgets)
@@ -75,6 +86,11 @@ app.registerExtension({
 				if (this.widgets) {
 					this.widgets = this.widgets.filter(w => !w.name || !w.name.startsWith("preview_"));
 				}
+				// Add empty preview widget
+				const w = ComfyWidgets["STRING"](this, "preview_0", ["STRING", { multiline: true }], app).widget;
+				w.inputEl.readOnly = true;
+				w.inputEl.style.opacity = 0.6;
+				w.value = "";
 			};
 		}
 	}
