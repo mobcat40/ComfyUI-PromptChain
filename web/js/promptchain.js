@@ -11,11 +11,65 @@ app.registerExtension({
 			const onNodeCreated = nodeType.prototype.onNodeCreated;
 			nodeType.prototype.onNodeCreated = function () {
 				onNodeCreated?.apply(this, arguments);
-				// Add one empty preview widget
-				const w = ComfyWidgets["STRING"](this, "preview_0", ["STRING", { multiline: true }], app).widget;
-				w.inputEl.readOnly = true;
-				w.inputEl.style.opacity = 0.6;
-				w.value = "";
+
+				// Add custom toggle for show/hide preview
+				this.addCustomWidget({
+					name: "show_preview",
+					type: "custom_toggle",
+					value: false,
+					draw: function(ctx, node, width, y) {
+						const buttonWidth = 80;
+						const buttonHeight = 20;
+						const x = width - buttonWidth - 10;
+
+						// Draw button background
+						ctx.fillStyle = this.value ? "#4CAF50" : "#757575";
+						ctx.fillRect(x, y, buttonWidth, buttonHeight);
+
+						// Draw button text
+						ctx.fillStyle = "#FFFFFF";
+						ctx.font = "12px Arial";
+						ctx.textAlign = "center";
+						ctx.textBaseline = "middle";
+						ctx.fillText(this.value ? "👁 Showing" : "👁 Preview", x + buttonWidth / 2, y + buttonHeight / 2);
+
+						return buttonHeight + 4;
+					},
+					mouse: function(event, pos, node) {
+						const buttonWidth = 80;
+						const buttonHeight = 20;
+						const width = node.size[0];
+						const x = width - buttonWidth - 10;
+						const y = this.last_y;
+
+						if (event.type === "pointerdown" &&
+							pos[0] >= x && pos[0] <= x + buttonWidth &&
+							pos[1] >= y && pos[1] <= y + buttonHeight) {
+							this.value = !this.value;
+
+							// Toggle creates or removes preview widgets entirely
+							if (node.widgets) {
+								if (!this.value) {
+									// Remove all preview widgets when turning off
+									for (let w of node.widgets) {
+										if (w.name && w.name.startsWith("preview_")) {
+											w.onRemove?.();
+										}
+									}
+									node.widgets = node.widgets.filter(w => !w.name || !w.name.startsWith("preview_"));
+								}
+								// If turning on, widgets will be created on next execution
+								// Force node to recompute size
+								const sz = node.computeSize();
+								node.setSize(sz);
+								node.setDirtyCanvas(true, true);
+							}
+							return true;
+						}
+					}
+				});
+
+				// Don't create any preview widgets initially - they'll be created on execution if toggle is on
 			};
 
 			function populate(text) {
@@ -31,18 +85,25 @@ app.registerExtension({
 					this.widgets = this.widgets.filter(w => !w.name || !w.name.startsWith("preview_"));
 				}
 
-				const v = [...text];
-				if (!v[0]) {
-					v.shift();
-				}
-				for (let list of v) {
-					// Force list to be an array
-					if (!(list instanceof Array)) list = [list];
-					for (const l of list) {
-						const w = ComfyWidgets["STRING"](this, "preview_" + (this.widgets?.length ?? 0), ["STRING", { multiline: true }], app).widget;
-						w.inputEl.readOnly = true;
-						w.inputEl.style.opacity = 0.6;
-						w.value = l;
+				// Check toggle state
+				const toggleWidget = this.widgets?.find(w => w.name === "show_preview");
+				const isPreviewVisible = toggleWidget ? toggleWidget.value : false;
+
+				// Only create preview widgets if toggle is ON
+				if (isPreviewVisible) {
+					const v = [...text];
+					if (!v[0]) {
+						v.shift();
+					}
+					for (let list of v) {
+						// Force list to be an array
+						if (!(list instanceof Array)) list = [list];
+						for (const l of list) {
+							const w = ComfyWidgets["STRING"](this, "preview_" + (this.widgets?.length ?? 0), ["STRING", { multiline: true }], app).widget;
+							w.inputEl.readOnly = true;
+							w.inputEl.style.opacity = 0.6;
+							w.value = l;
+						}
 					}
 				}
 
@@ -86,11 +147,68 @@ app.registerExtension({
 				if (this.widgets) {
 					this.widgets = this.widgets.filter(w => !w.name || !w.name.startsWith("preview_"));
 				}
-				// Add empty preview widget
-				const w = ComfyWidgets["STRING"](this, "preview_0", ["STRING", { multiline: true }], app).widget;
-				w.inputEl.readOnly = true;
-				w.inputEl.style.opacity = 0.6;
-				w.value = "";
+
+				// Add custom toggle for show/hide preview if not already present
+				const hasToggle = this.widgets?.some(w => w.name === "show_preview");
+				if (!hasToggle) {
+					this.addCustomWidget({
+						name: "show_preview",
+						type: "custom_toggle",
+						value: false,
+						draw: function(ctx, node, width, y) {
+							const buttonWidth = 80;
+							const buttonHeight = 20;
+							const x = width - buttonWidth - 10;
+
+							// Draw button background
+							ctx.fillStyle = this.value ? "#4CAF50" : "#757575";
+							ctx.fillRect(x, y, buttonWidth, buttonHeight);
+
+							// Draw button text
+							ctx.fillStyle = "#FFFFFF";
+							ctx.font = "12px Arial";
+							ctx.textAlign = "center";
+							ctx.textBaseline = "middle";
+							ctx.fillText(this.value ? "👁 Showing" : "👁 Preview", x + buttonWidth / 2, y + buttonHeight / 2);
+
+							return buttonHeight + 4;
+						},
+						mouse: function(event, pos, node) {
+							const buttonWidth = 80;
+							const buttonHeight = 20;
+							const width = node.size[0];
+							const x = width - buttonWidth - 10;
+							const y = this.last_y;
+
+							if (event.type === "pointerdown" &&
+								pos[0] >= x && pos[0] <= x + buttonWidth &&
+								pos[1] >= y && pos[1] <= y + buttonHeight) {
+								this.value = !this.value;
+
+								// Toggle creates or removes preview widgets entirely
+								if (node.widgets) {
+									if (!this.value) {
+										// Remove all preview widgets when turning off
+										for (let w of node.widgets) {
+											if (w.name && w.name.startsWith("preview_")) {
+												w.onRemove?.();
+											}
+										}
+										node.widgets = node.widgets.filter(w => !w.name || !w.name.startsWith("preview_"));
+									}
+									// If turning on, widgets will be created on next execution
+									// Force node to recompute size
+									const sz = node.computeSize();
+									node.setSize(sz);
+									node.setDirtyCanvas(true, true);
+								}
+								return true;
+							}
+						}
+					});
+				}
+
+				// Don't create any preview widgets initially - they'll be created on execution if toggle is on
 			};
 		}
 	}
