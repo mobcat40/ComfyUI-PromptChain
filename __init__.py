@@ -1,4 +1,4 @@
-from .hierarchical_random import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
+from .prompt_chain import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
 import os
 
 WEB_DIRECTORY = "./web"
