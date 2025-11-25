@@ -325,6 +325,13 @@ class PromptChainPreview:
         return float("nan")
 
     def preview(self, text, unique_id=None):
+        # Print to console for visibility
+        print(f"\n{'='*80}")
+        print(f"PREVIEW OUTPUT:")
+        print(f"{'-'*80}")
+        print(text)
+        print(f"{'='*80}\n")
+
         # Pass through the text unchanged, but mark as output node for display
         return {"ui": {"text": [text]}, "result": (text,)}
 
