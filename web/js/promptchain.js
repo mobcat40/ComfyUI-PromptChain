@@ -59,8 +59,10 @@ app.registerExtension({
 									node.widgets = node.widgets.filter(w => !w.name || !w.name.startsWith("preview_"));
 								}
 								// If turning on, widgets will be created on next execution
-								// Force node to recompute size
+								// Force node to recompute size (preserve width)
+								const currentWidth = node.size[0];
 								const sz = node.computeSize();
+								sz[0] = currentWidth;
 								node.setSize(sz);
 								node.setDirtyCanvas(true, true);
 							}
