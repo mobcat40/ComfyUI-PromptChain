@@ -27,7 +27,7 @@ Each node shows exactly what it output. Chain them together, see the whole promp
 
 ## Features
 
-- **Inline wildcards** — Write `red|blue|green` directly in nodes. No external files.
+- **Inline wildcards** — Write `red | blue | green` directly in nodes. No external files.
 - **Visual chaining** — Connect nodes to build hierarchical prompt structures
 - **Dynamic inputs** — Inputs auto-expand as you connect more nodes
 - **Live preview** — Every node shows what it selected on each run
