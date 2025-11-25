@@ -85,7 +85,7 @@ class PromptChain5:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "mode": (["Random Selection", "Combine"],),
+                "mode": (["Randomize", "Combine"],),
                 "text": ("STRING", {"default": "", "multiline": True}),
             },
             "optional": {
@@ -150,7 +150,7 @@ class PromptChain5:
         else:
             text_combined = ""
 
-        if mode == "Random Selection":
+        if mode == "Randomize":
             # Random Selection mode: build chain by selecting one input and prepending text
             if inputs:
                 # Pick one random input
@@ -192,7 +192,7 @@ class PromptChain10:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "mode": (["Random Selection", "Combine"],),
+                "mode": (["Randomize", "Combine"],),
                 "text": ("STRING", {"default": "", "multiline": True}),
             },
             "optional": {
@@ -264,7 +264,7 @@ class PromptChain10:
         else:
             text_combined = ""
 
-        if mode == "Random Selection":
+        if mode == "Randomize":
             # Random Selection mode: build chain by selecting one input and prepending text
             if inputs:
                 # Pick one random input

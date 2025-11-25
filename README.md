@@ -11,7 +11,7 @@ Most wildcard solutions require external files or lack visual workflow integrati
 - **Inline wildcards** - No external files needed, write `red|blue|green` directly in nodes
 - **Visual chaining** - Connect nodes together to build hierarchical prompt structures
 - **Flexible syntax** - Mix inline and multiline formats however you want
-- **Two modes** - Random Selection (pick one path) or Combine (merge all paths)
+- **Two modes** - Randomize (pick one path) or Combine (merge all paths)
 - **3 node types** - Simple (standalone), PromptChain 5, PromptChain 10
 
 ## Installation
@@ -44,12 +44,12 @@ git clone https://github.com/mobcat40/ComfyUI-PromptChain.git
 
 ### PromptChain 5 & PromptChain 10
 - Text field + 5 or 10 string inputs
-- Mode selector: "Random Selection" or "Combine"
+- Mode selector: "Randomize" or "Combine"
 - Build hierarchical prompt chains by connecting node outputs to inputs
 
 ## Modes
 
-**Random Selection**
+**Randomize**
 - Randomly picks ONE input from connected inputs
 - Prepends the text field to the selected input
 - Use for branching logic (pick one path)
@@ -93,7 +93,7 @@ Output example: `"red, sandals, bare feet, jewelry"`
 
 ### Hierarchical Chaining
 
-**Node 1** (PromptChain 5, Random Selection mode):
+**Node 1** (PromptChain 5, Randomize mode):
 ```
 Text field:
 woman |
@@ -102,7 +102,7 @@ man
 Inputs: [empty]
 ```
 
-**Node 2** (PromptChain 5, Random Selection mode):
+**Node 2** (PromptChain 5, Randomize mode):
 ```
 Text field:
 red|blue dress
