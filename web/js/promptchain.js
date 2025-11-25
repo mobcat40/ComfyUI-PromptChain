@@ -46,7 +46,7 @@ app.registerExtension({
 app.registerExtension({
 	name: "mobcat40.PromptChain.Preview",
 	async beforeRegisterNodeDef(nodeType, nodeData, app) {
-		if (nodeData.name === "PromptChainSimple" || nodeData.name === "PromptChain5" || nodeData.name === "PromptChain10" || nodeData.name === "PromptChain") {
+		if (nodeData.name === "PromptChain") {
 			// Create empty preview widget on node creation
 			const onNodeCreated = nodeType.prototype.onNodeCreated;
 			nodeType.prototype.onNodeCreated = function () {
