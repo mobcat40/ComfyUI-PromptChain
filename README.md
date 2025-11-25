@@ -25,7 +25,7 @@ Most wildcard solutions require external files or lack visual workflow integrati
 ### Manual Installation
 ```bash
 cd ComfyUI/custom_nodes
-git clone https://github.com/chrmc40/ComfyUI-PromptChain.git
+git clone https://github.com/mobcat40/ComfyUI-PromptChain.git
 # Restart ComfyUI
 ```
 
