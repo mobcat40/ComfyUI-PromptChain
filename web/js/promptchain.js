@@ -128,9 +128,11 @@ app.registerExtension({
 					}
 					// Store for preview display
 					this._outputText = textValue;
+					this._outputTimestamp = Date.now();
 					// Persist to properties for workflow save/load
 					if (!this.properties) this.properties = {};
 					this.properties.outputText = textValue;
+					this.properties.outputTimestamp = this._outputTimestamp;
 					// Update preview widget if visible
 					const previewWidget = this.widgets?.find(w => w.name === "output_preview");
 					if (previewWidget) {
@@ -199,6 +201,30 @@ app.registerExtension({
 					}
 				}
 			} else {
+				// Helper to format time ago
+				const formatTimeAgo = (timestamp) => {
+					if (!timestamp) return "";
+					const seconds = Math.floor((Date.now() - timestamp) / 1000);
+					if (seconds < 60) return "Just Now";
+					const minutes = Math.floor(seconds / 60);
+					if (minutes < 60) return `${minutes} min${minutes > 1 ? 's' : ''} ago`;
+					const hours = Math.floor(minutes / 60);
+					if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+					const days = Math.floor(hours / 24);
+					if (days < 30) return `${days} day${days > 1 ? 's' : ''} ago`;
+					const months = Math.floor(days / 30);
+					if (months < 12) return `${months} month${months > 1 ? 's' : ''} ago`;
+					const years = Math.floor(months / 12);
+					return `${years} year${years > 1 ? 's' : ''} ago`;
+				};
+
+				// Update cached time ago string (called on load and every 10s)
+				const updateTimeAgoCache = () => {
+					node._cachedTimeAgo = formatTimeAgo(node._outputTimestamp);
+				};
+				updateTimeAgoCache(); // Initial calculation
+				const timeAgoInterval = setInterval(updateTimeAgoCache, 10000);
+
 				// Add "Output" label widget
 				const outputLabel = {
 					name: "output_label",
@@ -209,15 +235,22 @@ app.registerExtension({
 					computeSize: function() {
 						return [node.size[0], 0]; // Zero height - we draw into space above
 					},
-					draw: function(ctx, node, width, y, height) {
+					draw: function(ctx, _, width, y) {
 						const H = 16;
 						const topOffset = -10; // Draw into the gap above
-						ctx.fillStyle = "#aaa";
+						ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
 						ctx.font = "11px Arial";
 						ctx.textAlign = "left";
 						ctx.textBaseline = "middle";
-						ctx.fillText("Output", 12, y + topOffset + H / 2);
+
+						// Build label with cached time ago (empty if never run)
+						if (node._cachedTimeAgo) {
+							ctx.fillText(`Last run: ${node._cachedTimeAgo}`, 12, y + topOffset + H / 2);
+						}
 						return H;
+					},
+					onRemoved: function() {
+						clearInterval(timeAgoInterval);
 					}
 				};
 
@@ -246,6 +279,11 @@ app.registerExtension({
 					style.textContent = `
 						.promptchain-preview::placeholder { color: rgba(255, 255, 255, 0.5); opacity: 1; }
 						.promptchain-preview:focus { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8) !important; outline: none !important; }
+						.promptchain-preview::-webkit-scrollbar { width: 8px; height: 8px; }
+						.promptchain-preview::-webkit-scrollbar-track { background: transparent; }
+						.promptchain-preview::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.35); border-radius: 4px; }
+						.promptchain-preview::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
+						.promptchain-preview::-webkit-scrollbar-corner { background: transparent; }
 					`;
 					document.head.appendChild(style);
 				}
@@ -359,9 +397,12 @@ app.registerExtension({
 				}
 			}
 
-			// Restore output text from saved properties
+			// Restore output text and timestamp from saved properties
 			if (info.properties?.outputText !== undefined) {
 				node._outputText = info.properties.outputText;
+			}
+			if (info.properties?.outputTimestamp !== undefined) {
+				node._outputTimestamp = info.properties.outputTimestamp;
 			}
 
 			// Restore preview state from saved properties
