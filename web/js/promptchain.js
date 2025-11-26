@@ -9,8 +9,17 @@ app.registerExtension({
 			return;
 		}
 
-		// Set default size [width, height]
-		node.size = [210, 146];
+		// Set default size [width, height] only for new nodes
+		// Use requestAnimationFrame to let ComfyUI restore saved size first
+		const defaultSize = [210, 146];
+		requestAnimationFrame(() => {
+			// If size is still the LiteGraph default (very small), set our default
+			// Saved workflows will have already restored the user's size by now
+			if (node.size[0] < 200 && node.size[1] < 140) {
+				node.size = defaultSize;
+				node.setDirtyCanvas(true);
+			}
+		});
 
 		// Make text widget transparent until focused (only if empty)
 		// Use setTimeout to wait for widget DOM element to be created
@@ -19,7 +28,7 @@ app.registerExtension({
 			if (textWidget?.inputEl) {
 				const updateStyle = () => {
 					const hasText = textWidget.inputEl.value.trim().length > 0;
-					textWidget.inputEl.style.opacity = hasText ? 1.0 : 0.6;
+					textWidget.inputEl.style.opacity = hasText ? 1.0 : 0.5;
 					textWidget.inputEl.style.fontStyle = hasText ? "normal" : "italic";
 				};
 				updateStyle();
@@ -127,7 +136,8 @@ app.registerExtension({
 		requestAnimationFrame(setupTextPersistence);
 
 		// Toggle preview function
-		const togglePreview = () => {
+		// skipResize: when restoring from saved workflow, don't reset node size
+		const togglePreview = (skipResize = false) => {
 			node._showPreview = !node._showPreview;
 			// Save state to properties for persistence
 			if (!node.properties) node.properties = {};
@@ -182,7 +192,7 @@ app.registerExtension({
 				w.options.serialize = false;
 				w.serializeValue = () => undefined; // Skip serialization
 				w.inputEl.readOnly = true;
-				w.inputEl.style.opacity = 0.6;
+				w.inputEl.style.opacity = 1;
 				w.inputEl.style.fontStyle = "italic";
 				w.inputEl.style.marginTop = "-6px"; // Pull text closer to output label
 				w.inputEl.style.fontFamily = "Arial, sans-serif";
@@ -190,7 +200,18 @@ app.registerExtension({
 				w.inputEl.style.padding = "4px";
 				w.inputEl.style.lineHeight = "1.3";
 				w.inputEl.style.borderRadius = "4px";
-				w.inputEl.placeholder = "waiting for generation...";
+				w.inputEl.style.backgroundColor = "#ffffff17";
+				w.inputEl.style.color = "#fff";
+				w.inputEl.placeholder = "awaiting generation...";
+				// Style placeholder text
+				const styleId = "promptchain-placeholder-style";
+				if (!document.getElementById(styleId)) {
+					const style = document.createElement("style");
+					style.id = styleId;
+					style.textContent = `.promptchain-preview::placeholder { color: rgba(255, 255, 255, 0.5); opacity: 1; }`;
+					document.head.appendChild(style);
+				}
+				w.inputEl.classList.add("promptchain-preview");
 				w.value = node._outputText || "";
 
 				// Move output label and preview widget to be right after the text widget
@@ -211,7 +232,6 @@ app.registerExtension({
 					node.widgets.splice(newTextIndex + 2, 0, previewWidget);
 				}
 			}
-			node.setSize(node.computeSize());
 			app.graph.setDirtyCanvas(true);
 		};
 
@@ -299,7 +319,7 @@ app.registerExtension({
 			// Restore preview state from saved properties
 			if (info.properties?.showPreview && !node._showPreview) {
 				node._showPreview = false;
-				togglePreview();
+				togglePreview(true); // skipResize to preserve saved node size
 			}
 		};
 
