@@ -26,8 +26,12 @@ app.registerExtension({
 			const textWidget = node.widgets?.find(w => w.name === "text");
 			if (textWidget?.inputEl) {
 				const updateStyle = () => {
+					// Check if text widget has a link connected (receiving input from another node)
+					const textInput = node.inputs?.find(i => i.name === "text");
+					const hasLink = textInput?.link != null;
 					// Check both inputEl.value and widget.value (for when input is linked)
-					const hasText = (textWidget.inputEl.value?.trim().length > 0) ||
+					const hasText = hasLink ||
+					                (textWidget.inputEl.value?.trim().length > 0) ||
 					                (textWidget.value?.trim?.().length > 0) ||
 					                (node.properties?.textValue?.trim?.().length > 0);
 					const isFocused = document.activeElement === textWidget.inputEl;
