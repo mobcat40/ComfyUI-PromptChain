@@ -180,17 +180,6 @@ Equivalent to `warrior | mage | rogue` — pick one randomly.
 | External files | Required | None |
 | Migration | — | One-click import |
 
-## Prompt Library Mode
-
-Disconnected PromptChain nodes act as prompt storage:
-
-- Drop a node, paste your prompt, leave it unwired
-- Sits on your canvas as a visual "sticky note"
-- Saves with your workflow
-- Connect it when you want to use it, disconnect to deactivate
-
-Build a library of prompt fragments right in your workflow. Zero config, just nodes.
-
 ## Trait Mixing Networks
 
 Wire Randomize nodes in a **mesh** instead of a tree to create combinatorial trait mixing:
@@ -206,6 +195,17 @@ Wire Randomize nodes in a **mesh** instead of a tree to create combinatorial tra
 Each Randomize node acts as selection pressure. Cross-wire your trait pools and every run produces a unique combination - like breeding. A mesh of `Shiny Fur | Matted Fur`, `Silver | Black | Red`, and `Werewolf | Bear` naturally generates creatures like "Red Fur, Shiny Fur, Werewolf" without explicit combinatorics.
 
 Emergent behavior from simple primitives.
+
+## Prompt Library Mode
+
+Disconnected PromptChain nodes act as prompt storage:
+
+- Drop a node, paste your prompt, leave it unwired
+- Sits on your canvas as a visual "sticky note"
+- Saves with your workflow
+- Connect it when you want to use it, disconnect to deactivate
+
+Build a library of prompt fragments right in your workflow. Zero config, just nodes.
 
 ## License
 
