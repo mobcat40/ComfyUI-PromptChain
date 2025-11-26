@@ -608,12 +608,14 @@ app.registerExtension({
 				ctx.lineWidth = 1;
 				ctx.stroke();
 
-				// Draw the text (current value) - centered
+				// Draw the text (current value) - centered, with emoji prefix
 				ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
 				ctx.font = "12px Arial";
 				ctx.textAlign = "center";
 				ctx.textBaseline = "middle";
-				ctx.fillText(this.value || "", width / 2, y + marginY + H * 0.5);
+				const displayMap = { "Randomize": "🎲 Randomize Inputs", "Combine": "➕ Combine Inputs" };
+				const displayText = displayMap[this.value] || this.value || "";
+				ctx.fillText(displayText, width / 2, y + marginY + H * 0.5);
 
 				// Draw arrows on each side
 				ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
