@@ -636,10 +636,96 @@ app.registerExtension({
 			}
 		};
 
+		// Export node tree to Dynamic Prompt format
+		const exportToDynamicPrompt = (startNode, visited = new Set()) => {
+			// Prevent infinite loops from circular connections
+			if (visited.has(startNode.id)) return "";
+			visited.add(startNode.id);
+
+			// Get this node's text widget value
+			const textWidget = startNode.widgets?.find(w => w.name === "text");
+			const nodeText = textWidget?.value?.trim() || "";
+
+			// Get mode
+			const modeWidget = startNode.widgets?.find(w => w.name === "mode");
+			const mode = modeWidget?.value || "Combine";
+
+			// Collect all connected input nodes (PromptChain only)
+			const connectedInputs = [];
+			const inputSlots = startNode.inputs?.filter(i => i.name.startsWith("input_")) || [];
+			for (const slot of inputSlots) {
+				if (slot.link !== null) {
+					const linkInfo = app.graph.links[slot.link];
+					if (linkInfo) {
+						const sourceNode = app.graph.getNodeById(linkInfo.origin_id);
+						if (sourceNode?.constructor?.comfyClass === "PromptChain") {
+							const exported = exportToDynamicPrompt(sourceNode, visited);
+							if (exported) connectedInputs.push(exported);
+						}
+					}
+				}
+			}
+
+			// Convert node's wildcard text (a | b | c) to Dynamic Prompt format {a|b|c}
+			const convertWildcardToBraces = (text) => {
+				if (!text) return "";
+				// Check if text contains | (wildcard syntax)
+				if (text.includes("|")) {
+					// Split by comma first to handle multiple groups
+					const parts = text.split(",").map(p => p.trim()).filter(p => p);
+					const converted = parts.map(part => {
+						if (part.includes("|")) {
+							const options = part.split("|").map(o => o.trim()).filter(o => o);
+							return options.length > 1 ? `{${options.join("|")}}` : options[0] || "";
+						}
+						return part;
+					});
+					return converted.join(", ");
+				}
+				return text;
+			};
+
+			const convertedText = convertWildcardToBraces(nodeText);
+
+			// Build result based on mode
+			if (mode === "Randomize") {
+				// Randomize: wrap connected inputs in {a|b|c}
+				if (connectedInputs.length > 0) {
+					const randomGroup = connectedInputs.length > 1
+						? `{${connectedInputs.join("|")}}`
+						: connectedInputs[0];
+					if (convertedText) {
+						return `${convertedText}, ${randomGroup}`;
+					}
+					return randomGroup;
+				}
+				return convertedText;
+			} else {
+				// Combine: join all with commas
+				const allParts = [];
+				if (convertedText) allParts.push(convertedText);
+				allParts.push(...connectedInputs);
+				return allParts.join(", ");
+			}
+		};
+
 		// Add context menu options
 		const originalGetExtraMenuOptions = node.getExtraMenuOptions;
 		node.getExtraMenuOptions = function(_, options) {
 			originalGetExtraMenuOptions?.apply(this, arguments);
+
+			// Export to Dynamic Prompt format
+			options.unshift({
+				content: "Export",
+				callback: () => {
+					const exported = exportToDynamicPrompt(node);
+					if (exported) {
+						prompt("Exported Dynamic Prompt (Ctrl+A, Ctrl+C to copy):", exported);
+					} else {
+						alert("Nothing to export - node is empty");
+					}
+				}
+			});
 
 			// Unified Import - handles plain tags and Dynamic Prompt syntax
 			options.unshift({
