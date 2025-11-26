@@ -126,11 +126,13 @@ app.registerExtension({
 									node.widgets = node.widgets.filter(w => !w.name || !w.name.startsWith("preview_"));
 								}
 								// If turning on, widgets will be created on next execution
-								// Force node to recompute size (preserve width)
-								const currentWidth = node.size[0];
-								const sz = node.computeSize();
-								sz[0] = currentWidth;
-								node.setSize(sz);
+								// Only recompute size when turning off (removing preview widgets)
+								if (!this.value) {
+									const currentWidth = node.size[0];
+									const sz = node.computeSize();
+									sz[0] = currentWidth;
+									node.setSize(sz);
+								}
 								node.setDirtyCanvas(true, true);
 							}
 							return true;
@@ -178,12 +180,9 @@ app.registerExtension({
 
 				requestAnimationFrame(() => {
 					const sz = this.computeSize();
-					if (sz[0] < this.size[0]) {
-						sz[0] = this.size[0];
-					}
-					if (sz[1] < this.size[1]) {
-						sz[1] = this.size[1];
-					}
+					// Only grow, never shrink
+					sz[0] = Math.max(sz[0], this.size[0]);
+					sz[1] = Math.max(sz[1], this.size[1]);
 					this.onResize?.(sz);
 					app.graph.setDirtyCanvas(true, false);
 				});
