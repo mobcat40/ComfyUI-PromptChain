@@ -583,16 +583,117 @@ app.registerExtension({
 				callback: () => {
 					const input = prompt("Paste prompt (supports: tags, Dynamic Prompt {a|b} syntax):");
 					if (input && input.trim()) {
-						// Check if contains Dynamic Prompt syntax
-						const hasBraces = input.includes("{") && input.includes("}");
+						// Strip outer braces if entire input is wrapped in {}
+						let processedInput = input.trim();
+						if (processedInput.startsWith("{") && processedInput.endsWith("}")) {
+							// Check if it's a single wrapping pair (not {a}{b})
+							let depth = 0;
+							let isSingleWrap = true;
+							for (let i = 0; i < processedInput.length - 1; i++) {
+								if (processedInput[i] === "{") depth++;
+								else if (processedInput[i] === "}") depth--;
+								if (depth === 0 && i > 0) {
+									isSingleWrap = false;
+									break;
+								}
+							}
+							if (isSingleWrap) {
+								processedInput = processedInput.slice(1, -1);
+							}
+						}
 
-						if (hasBraces) {
+						// Check if contains Dynamic Prompt syntax
+						const hasBraces = processedInput.includes("{") && processedInput.includes("}");
+
+						// Check for top-level | separators (outside braces)
+						const hasTopLevelPipe = (() => {
+							let depth = 0;
+							for (const char of processedInput) {
+								if (char === "{") depth++;
+								else if (char === "}") depth--;
+								else if (char === "|" && depth === 0) return true;
+							}
+							return false;
+						})();
+
+						if (hasTopLevelPipe) {
+							// Split by top-level | and convert each to its own node
+							const options = [];
+							let current = "";
+							let braceDepth = 0;
+							for (let i = 0; i < processedInput.length; i++) {
+								const char = processedInput[i];
+								if (char === "{") braceDepth++;
+								else if (char === "}") braceDepth--;
+
+								if (char === "|" && braceDepth === 0) {
+									if (current.trim()) options.push(current.trim());
+									current = "";
+								} else {
+									current += char;
+								}
+							}
+							if (current.trim()) options.push(current.trim());
+
+							// Reset state
+							globalXOffset = -250;
+							nodeCreationQueue = [];
+
+							// Set clicked node to Randomize mode (it will collect inputs)
+							setNodeMode(node, "Randomize");
+
+							// Create a separate node for each option
+							let yOffset = 0;
+							for (const opt of options) {
+								// Check if option has nested braces
+								if (opt.includes("{")) {
+									// Has nested - process recursively
+									const braceData = extractBraceGroup(opt);
+									if (braceData && braceData.remainder) {
+										// Has both static text and nested braces
+										// Create Combine node with static text
+										const combineNode = createConnectedNode(node, braceData.remainder, "Combine", globalXOffset);
+										combineNode.pos[1] = node.pos[1] + yOffset;
+										globalXOffset -= 50;
+
+										// Queue nested brace processing
+										nodeCreationQueue.push({
+											targetNode: combineNode,
+											text: braceData.options.join(" |\n"),
+											mode: "Randomize",
+											xOffset: -250,
+											then: (randNode) => {
+												// Check for deeper nesting
+												for (const innerOpt of braceData.options) {
+													if (innerOpt.includes("{")) {
+														processSegment(innerOpt, randNode);
+													}
+												}
+											}
+										});
+									} else if (braceData) {
+										// Pure braces, create Randomize node
+										const randNode = createConnectedNode(node, braceData.options.join(" |\n"), "Randomize", globalXOffset);
+										randNode.pos[1] = node.pos[1] + yOffset;
+										globalXOffset -= 50;
+									}
+								} else {
+									// No nested braces - create simple Combine node
+									const newNode = createConnectedNode(node, opt, "Combine", globalXOffset);
+									newNode.pos[1] = node.pos[1] + yOffset;
+									globalXOffset -= 50;
+								}
+								yOffset += 150; // Stack nodes vertically
+							}
+
+							processQueue();
+						} else if (hasBraces) {
 							// Reset state for this import
 							globalXOffset = -250;
 							nodeCreationQueue = [];
 
 							// Dynamic Prompt mode - parse and create nodes
-							const segments = parseDynamicPrompt(input);
+							const segments = parseDynamicPrompt(processedInput);
 							const staticParts = [];
 
 							for (const segment of segments) {
@@ -612,7 +713,7 @@ app.registerExtension({
 							processQueue();
 						} else {
 							// Plain tags mode - convert to wildcard format
-							const tags = input
+							const tags = processedInput
 								.split(/[\n\r]+/)
 								.flatMap(line => line.split(','))
 								.map(tag => tag.trim())
