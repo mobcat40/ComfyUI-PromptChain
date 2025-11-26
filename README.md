@@ -27,10 +27,12 @@ Each node shows exactly what it output. Chain them together, see the whole promp
 
 ## Features
 
-- **Inline wildcards** — Write `red | blue | green` directly in nodes. No external files required.
+- **Inline wildcards** — Write `red | blue | green` directly in nodes. No external files.
 - **Visual chaining** — Connect nodes to build hierarchical prompt structures
 - **Dynamic inputs** — Inputs auto-expand as you connect more nodes
-- **Live preview** — Every node shows what it selected on each run
+- **Live preview** — See what fired, when it fired, in real-time
+- **Lock system** — Freeze outputs and propagate locks upstream
+- **Import/Export** — Paste Dynamic Prompts syntax, auto-generate node trees
 - **Two modes:**
   - `Randomize` — Pick one path from connected inputs
   - `Combine` — Merge all paths together
@@ -89,62 +91,62 @@ Output: "warrior, mythril sword, fire enchant, dragon slayer"
 
 ## Live Preview
 
-Check the **Preview** checkbox in the node's menubar to toggle output display. When enabled, you'll see:
-- Exactly which options were randomly selected
-- The full output string after processing
-- Updates on every execution
+Toggle the **Preview** checkbox in the node's menubar. When enabled:
 
-## Lock Feature
+- **Last run timestamp** — Shows elapsed time since execution, updates in real-time (e.g., "Last run: 20 mins ago")
+- **Selected options** — See exactly which wildcards fired
+- **Full output string** — The complete processed result
+- **Updates on every execution**
 
-Click the **lock icon** (🔒/🔓) in the node's menubar to freeze the current output. When locked:
-- The node returns its cached output instead of re-processing
-- Randomization results are preserved across executions
-- Perfect for keeping a specific roll you like
+## Lock System
 
-### Visual Indicators
+Click the **lock icon** (🔒/🔓) to freeze the current output.
 
-| Color | Meaning |
-|-------|---------|
+**When locked:**
+- Node returns cached output instead of re-processing
+- Randomization results preserved across executions
+- Perfect for keeping a roll you like
+
+**Visual indicators:**
+
+| Icon | Meaning |
+|------|---------|
 | 🔒 Bright orange | Node is self-locked |
-| 🔒 Dim orange | Locked by an upstream node |
+| 🔒 Dim orange | Locked by upstream node |
 | 🔓 Gray | Unlocked |
 
-### Upstream Lock Propagation
+**Upstream propagation:** Lock one node, the entire downstream chain freezes with it. Ensures your prompt path stays consistent.
 
-If any upstream PromptChain node is locked, all downstream nodes in the chain automatically inherit the lock state. This ensures the entire prompt path stays frozen together.
-
-### Persistence
-
-Lock state and cached output are saved with your workflow — reload it later and your locked results are still there.
+**Persistence:** Lock state and cached output save with your workflow.
 
 ## Import & Export
 
-Right-click any PromptChain node to access **Import** and **Export** options.
+Right-click any PromptChain node → **Import** or **Export**
 
-### Import
+### Import: Escape Dynamic Prompts Hell
 
-Paste prompts in multiple formats and auto-generate node structures:
+Paste your existing prompts and auto-generate clean node structures:
 
 | Format | Example | Result |
 |--------|---------|--------|
-| Plain tags | `red, blue, green` | Converts to wildcard `red \| blue \| green` |
+| Plain tags | `red, blue, green` | Converts to `red \| blue \| green` |
 | Dynamic Prompts | `{warrior\|mage}, {sword\|staff}` | Creates connected node tree |
-| Top-level OR | `option A \| option B \| option C` | Creates separate input nodes |
+| Top-level OR | `option A \| option B` | Creates separate input nodes |
 
-Nested braces like `{a\|{b\|c}}` are recursively expanded into node hierarchies.
+**Nested braces like `{a|{b|c}}` are recursively expanded into node hierarchies.**
 
 ### Export
 
-Convert your node tree back to Dynamic Prompt format for sharing or use in other tools:
+Convert your node tree back to Dynamic Prompt format:
 
-- Traverses all connected upstream PromptChain nodes
-- Converts wildcards (`a | b | c`) to brace syntax (`{a|b|c}`)
-- Respects node modes: Randomize creates `{a|b}` groups, Combine joins with commas
-- Opens a dialog with the exported string ready to copy
+- Traverses all connected upstream nodes
+- Converts wildcards to brace syntax
+- Respects modes: Randomize → `{a|b}`, Combine → comma-joined
+- Dialog with exported string ready to copy
 
 ## Tag Deduplication
 
-Duplicate tags are automatically removed with **right-to-left priority** (matching Stable Diffusion's behavior where later tags take precedence):
+Duplicates automatically removed, **right-to-left priority** (matching SD behavior):
 
 ```
 Input:  "red, blue, RED, green"
@@ -152,11 +154,11 @@ Output: "blue, red, green"
 ```
 
 - Case-insensitive matching
-- Special tags like `[BREAK]` are always preserved
+- Special tags like `[BREAK]` always preserved
 
 ## Multiline Wildcards
 
-Lines ending with `|` are auto-detected as a unified OR group:
+Lines ending with `|` form a unified OR group:
 
 ```
 warrior |
@@ -164,14 +166,27 @@ mage |
 rogue
 ```
 
-Is equivalent to `warrior | mage | rogue` — pick one randomly.
+Equivalent to `warrior | mage | rogue` — pick one randomly.
 
-## Why Not Dynamic Prompts / Other Wildcards?
+## Why PromptChain?
 
-- **No external files** — Everything lives in your workflow
-- **Visual debugging** — See the tree, not a wall of braces
-- **Workflow-native** — Hierarchies are node connections, not syntax
-- **Import compatible** — Paste Dynamic Prompts syntax and auto-generate nodes
+| Pain Point | Dynamic Prompts | PromptChain |
+|------------|-----------------|-------------|
+| Nested syntax | `{a\|{b\|{c\|d}}}` | Visual node tree |
+| Debugging | Read the string | See what lit up |
+| External files | Required | None |
+| Migration | — | One-click import |
+
+## Prompt Library Mode
+
+Disconnected PromptChain nodes act as prompt storage:
+
+- Drop a node, paste your prompt, leave it unwired
+- Sits on your canvas as a visual "sticky note"
+- Saves with your workflow
+- Connect it when you want to use it, disconnect to deactivate
+
+Build a library of prompt fragments right in your workflow. Zero config, just nodes.
 
 ## License
 
