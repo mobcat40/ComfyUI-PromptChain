@@ -117,9 +117,13 @@ If any upstream PromptChain node is locked, all downstream nodes in the chain au
 
 Lock state and cached output are saved with your workflow — reload it later and your locked results are still there.
 
-## Import
+## Import & Export
 
-Right-click any PromptChain node → **Import** to paste prompts. Supports multiple formats:
+Right-click any PromptChain node to access **Import** and **Export** options.
+
+### Import
+
+Paste prompts in multiple formats and auto-generate node structures:
 
 | Format | Example | Result |
 |--------|---------|--------|
@@ -128,6 +132,15 @@ Right-click any PromptChain node → **Import** to paste prompts. Supports multi
 | Top-level OR | `option A \| option B \| option C` | Creates separate input nodes |
 
 Nested braces like `{a\|{b\|c}}` are recursively expanded into node hierarchies.
+
+### Export
+
+Convert your node tree back to Dynamic Prompt format for sharing or use in other tools:
+
+- Traverses all connected upstream PromptChain nodes
+- Converts wildcards (`a | b | c`) to brace syntax (`{a|b|c}`)
+- Respects node modes: Randomize creates `{a|b}` groups, Combine joins with commas
+- Opens a dialog with the exported string ready to copy
 
 ## Tag Deduplication
 
