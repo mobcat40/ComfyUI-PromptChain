@@ -7,7 +7,8 @@
 Complex prompts with randomization become unreadable fast:
 
 ```
-{warrior|mage|rogue}, {iron|steel|mythril} {sword|axe|staff}, {{fire|ice|lightning} enchantment|no enchantment}, {dragon|demon|undead} slayer
+{warrior|mage|rogue}, {iron|steel|mythril} {sword|axe|staff},
+{{fire|ice|lightning} enchantment|no enchantment}, {dragon|demon|undead} slayer
 ```
 
 Now nest a few levels deeper. Add 20 options per group. Good luck debugging which path fired.
