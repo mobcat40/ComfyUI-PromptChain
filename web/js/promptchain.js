@@ -441,6 +441,49 @@ app.registerExtension({
 			}
 		};
 
+		// Style the mode widget with custom background color
+		const modeWidget = node.widgets.find(w => w.name === "mode");
+		if (modeWidget) {
+			const originalDraw = modeWidget.draw;
+			modeWidget.draw = function(ctx, node, width, y, height) {
+				const totalH = 26;  // Total widget height
+				const marginY = 2;  // Top/bottom margin
+				const H = totalH - marginY * 2;  // Actual drawn height (22px)
+				const margin = 15;
+				const w = width - margin * 2;
+
+				// Draw custom background
+				ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+				ctx.beginPath();
+				ctx.roundRect(margin, y + marginY, w, H, 12);
+				ctx.fill();
+
+				// Draw border
+				ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+				ctx.lineWidth = 1;
+				ctx.stroke();
+
+				// Draw the text (current value) - centered
+				ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+				ctx.font = "12px Arial";
+				ctx.textAlign = "center";
+				ctx.textBaseline = "middle";
+				ctx.fillText(this.value || "", width / 2, y + marginY + H * 0.5);
+
+				// Draw arrows on each side
+				ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+				ctx.font = "10px Arial";
+				// Left arrow
+				ctx.textAlign = "left";
+				ctx.fillText("◀", margin + 6, y + marginY + H * 0.5);
+				// Right arrow
+				ctx.textAlign = "right";
+				ctx.fillText("▶", width - margin - 6, y + marginY + H * 0.5);
+
+				return totalH;
+			};
+		}
+
 		// Insert menubar after mode widget visually, but we need to handle serialization carefully
 		const modeIndex = node.widgets.findIndex(w => w.name === "mode");
 		if (modeIndex > -1) {
