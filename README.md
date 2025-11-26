@@ -191,6 +191,22 @@ Disconnected PromptChain nodes act as prompt storage:
 
 Build a library of prompt fragments right in your workflow. Zero config, just nodes.
 
+## Trait Mixing Networks
+
+Wire Randomize nodes in a **mesh** instead of a tree to create combinatorial trait mixing:
+
+```
+[Fur Type]──┐     ┌──[Randomize]──┐
+            ├──→──┤               ├──→──[Combine]──→ Final Prompt
+[Fur Color]─┤     └──[Randomize]──┤
+            │                     │
+[Creature]──┴─────[Randomize]─────┘
+```
+
+Each Randomize node acts as selection pressure. Cross-wire your trait pools and every run produces a unique combination - like breeding. A mesh of `Shiny Fur | Matted Fur`, `Silver | Black | Red`, and `Werewolf | Bear` naturally generates creatures like "Red Fur, Shiny Fur, Werewolf" without explicit combinatorics.
+
+Emergent behavior from simple primitives.
+
 ## License
 
 MIT License: free to use forever!
