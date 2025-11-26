@@ -387,15 +387,189 @@ app.registerExtension({
 			return segments;
 		};
 
-		// Extract {options} from a segment
+		// Extract outermost {options} from a segment, respecting nested braces
 		const extractBraceGroup = (segment) => {
-			const match = segment.match(/\{([^}]+)\}/);
-			if (match) {
-				const options = match[1].split("|").map(o => o.trim());
-				const remainder = segment.replace(/\{[^}]+\}/, "").trim();
-				return { options, remainder };
+			const startIdx = segment.indexOf("{");
+			if (startIdx === -1) return null;
+
+			// Find matching closing brace
+			let depth = 0;
+			let endIdx = -1;
+			for (let i = startIdx; i < segment.length; i++) {
+				if (segment[i] === "{") depth++;
+				else if (segment[i] === "}") {
+					depth--;
+					if (depth === 0) {
+						endIdx = i;
+						break;
+					}
+				}
 			}
-			return null;
+			if (endIdx === -1) return null;
+
+			const braceContent = segment.slice(startIdx + 1, endIdx);
+			// Clean up remainder - remove double commas and extra spaces
+			let remainder = (segment.slice(0, startIdx) + segment.slice(endIdx + 1))
+				.replace(/,\s*,/g, ",")  // double commas to single
+				.replace(/^\s*,\s*/, "") // leading comma
+				.replace(/\s*,\s*$/, "") // trailing comma
+				.trim();
+
+			// Split by | but respect nested braces
+			const options = [];
+			let current = "";
+			let braceDepth = 0;
+			for (let i = 0; i < braceContent.length; i++) {
+				const char = braceContent[i];
+				if (char === "{") braceDepth++;
+				else if (char === "}") braceDepth--;
+
+				if (char === "|" && braceDepth === 0) {
+					options.push(current.trim());
+					current = "";
+				} else {
+					current += char;
+				}
+			}
+			if (current.trim()) options.push(current.trim());
+
+			return { options, remainder };
+		};
+
+		// Recursively process a segment, creating nodes as needed
+		// Returns the text to use (either plain text or empty if node was created)
+		let globalXOffset = -250;
+		let nodeCreationQueue = [];
+
+		const processSegment = (segment, targetNode) => {
+			const braceData = extractBraceGroup(segment);
+
+			if (!braceData) {
+				// No braces, return as-is
+				return segment;
+			}
+
+			// Check if any option contains nested braces
+			const hasNestedBraces = braceData.options.some(opt => opt.includes("{"));
+
+			if (hasNestedBraces) {
+				// Process each option - some may have nested braces
+				const processedOptions = [];
+				for (const opt of braceData.options) {
+					if (opt.includes("{")) {
+						// This option has nested braces - recursively process
+						// It becomes its own subtree
+						processedOptions.push(opt); // Keep as-is for now, will be processed when node is created
+					} else {
+						processedOptions.push(opt);
+					}
+				}
+
+				const wildcardText = processedOptions.join(" |\n");
+
+				if (braceData.remainder) {
+					// Has static suffix like "fetish swamp queen, {nested}"
+					// Create Combine node with remainder, Randomize feeds into it
+					const xPos = globalXOffset;
+					globalXOffset -= 250;
+
+					nodeCreationQueue.push({
+						targetNode,
+						text: braceData.remainder,
+						mode: "Combine",
+						xOffset: xPos,
+						then: (combineNode) => {
+							// Now create the randomize node feeding into combine
+							nodeCreationQueue.push({
+								targetNode: combineNode,
+								text: wildcardText,
+								mode: "Randomize",
+								xOffset: -250,
+								then: (randNode) => {
+									// Check each option for nested braces and process
+									for (const opt of braceData.options) {
+										if (opt.includes("{")) {
+											processSegment(opt, randNode);
+										}
+									}
+								}
+							});
+						}
+					});
+				} else {
+					// Pure {a|b|{nested}}
+					const xPos = globalXOffset;
+					globalXOffset -= 250;
+
+					nodeCreationQueue.push({
+						targetNode,
+						text: wildcardText,
+						mode: "Randomize",
+						xOffset: xPos,
+						then: (randNode) => {
+							for (const opt of braceData.options) {
+								if (opt.includes("{")) {
+									processSegment(opt, randNode);
+								}
+							}
+						}
+					});
+				}
+
+				return null; // Node was created
+			} else {
+				// Simple case - no nested braces
+				const wildcardText = braceData.options.join(" |\n");
+
+				if (braceData.remainder) {
+					const xPos = globalXOffset;
+					globalXOffset -= 250;
+
+					nodeCreationQueue.push({
+						targetNode,
+						text: braceData.remainder,
+						mode: "Combine",
+						xOffset: xPos,
+						then: (combineNode) => {
+							nodeCreationQueue.push({
+								targetNode: combineNode,
+								text: wildcardText,
+								mode: "Randomize",
+								xOffset: -250
+							});
+						}
+					});
+				} else {
+					const xPos = globalXOffset;
+					globalXOffset -= 250;
+
+					nodeCreationQueue.push({
+						targetNode,
+						text: wildcardText,
+						mode: "Randomize",
+						xOffset: xPos
+					});
+				}
+
+				return null; // Node was created
+			}
+		};
+
+		// Process the node creation queue with proper timing
+		const processQueue = () => {
+			if (nodeCreationQueue.length === 0) return;
+
+			const item = nodeCreationQueue.shift();
+			const newNode = createConnectedNode(item.targetNode, item.text, item.mode, item.xOffset);
+
+			if (item.then) {
+				setTimeout(() => {
+					item.then(newNode);
+					processQueue();
+				}, 100);
+			} else {
+				setTimeout(processQueue, 50);
+			}
 		};
 
 		// Add context menu options
@@ -413,31 +587,18 @@ app.registerExtension({
 						const hasBraces = input.includes("{") && input.includes("}");
 
 						if (hasBraces) {
+							// Reset state for this import
+							globalXOffset = -250;
+							nodeCreationQueue = [];
+
 							// Dynamic Prompt mode - parse and create nodes
 							const segments = parseDynamicPrompt(input);
 							const staticParts = [];
-							let xOffset = -250;
 
 							for (const segment of segments) {
-								const braceData = extractBraceGroup(segment);
-
-								if (braceData) {
-									const wildcardText = braceData.options.join(" | ");
-
-									if (braceData.remainder) {
-										// {a|b} suffix → Combine node with Randomize feeding it
-										const combineNode = createConnectedNode(node, braceData.remainder, "Combine", xOffset);
-										xOffset -= 250;
-										setTimeout(() => {
-											createConnectedNode(combineNode, wildcardText, "Randomize", -250);
-										}, 50);
-									} else {
-										// Pure {a|b} → Randomize node
-										createConnectedNode(node, wildcardText, "Randomize", xOffset);
-										xOffset -= 250;
-									}
-								} else {
-									staticParts.push(segment);
+								const result = processSegment(segment, node);
+								if (result !== null) {
+									staticParts.push(result);
 								}
 							}
 
@@ -446,6 +607,9 @@ app.registerExtension({
 								setNodeText(node, staticParts.join(", "));
 								setNodeMode(node, "Combine");
 							}
+
+							// Start processing the queue
+							processQueue();
 						} else {
 							// Plain tags mode - convert to wildcard format
 							const tags = input
@@ -454,7 +618,7 @@ app.registerExtension({
 								.map(tag => tag.trim())
 								.filter(tag => tag.length > 0);
 
-							const wildcardFormat = tags.join(" | ");
+							const wildcardFormat = tags.join(" |\n");
 							setNodeText(node, wildcardFormat);
 						}
 
