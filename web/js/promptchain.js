@@ -47,7 +47,7 @@ app.registerExtension({
 				textWidget.inputEl.style.padding = "4px";
 				textWidget.inputEl.style.lineHeight = "1.3";
 				textWidget.inputEl.style.borderRadius = "4px";
-				textWidget.inputEl.placeholder = "enter prompt...";
+				textWidget.inputEl.placeholder = "prompt text...";
 				// Style placeholder text and scrollbars
 				const styleId = "promptchain-prompt-placeholder-style";
 				if (!document.getElementById(styleId)) {
@@ -290,7 +290,7 @@ app.registerExtension({
 				// Preview checkbox on the right
 				const checkboxSize = 10;
 				const checkboxX = width - 13 - checkboxSize; // 5px extra margin from right edge
-				const checkboxY = y + topOffset + (H - checkboxSize) / 2;
+				const checkboxY = y + topOffset + (H - checkboxSize) / 2 - 1;
 
 				ctx.strokeStyle = node._showPreview ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.35)";
 				ctx.lineWidth = 1;
@@ -303,10 +303,10 @@ app.registerExtension({
 
 				// "Preview" label before checkbox (brighter when active)
 				ctx.fillStyle = node._showPreview ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.35)";
-				ctx.font = "11px Arial";
+				ctx.font = "12px Arial";
 				ctx.textAlign = "right";
 				ctx.textBaseline = "middle";
-				ctx.fillText("Preview", checkboxX - 4, y + topOffset + H / 2);
+				ctx.fillText("Preview", checkboxX - 6, y + topOffset + H / 2);
 
 				return H;
 			},
