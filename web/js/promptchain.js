@@ -117,9 +117,6 @@ app.registerExtension({
 	name: "mobcat40.PromptChain.Preview",
 	async beforeRegisterNodeDef(nodeType, nodeData, app) {
 		if (nodeData.name === "PromptChain") {
-			// Set default size for new nodes
-			nodeType.prototype.size = [210, 180];
-
 			// When the node is executed, store the output text
 			const onExecuted = nodeType.prototype.onExecuted;
 			nodeType.prototype.onExecuted = function (message) {
@@ -131,10 +128,16 @@ app.registerExtension({
 					}
 					// Store for preview display
 					this._outputText = textValue;
+					// Persist to properties for workflow save/load
+					if (!this.properties) this.properties = {};
+					this.properties.outputText = textValue;
 					// Update preview widget if visible
 					const previewWidget = this.widgets?.find(w => w.name === "output_preview");
 					if (previewWidget) {
 						previewWidget.value = textValue;
+						if (previewWidget.inputEl) {
+							previewWidget.inputEl.value = textValue;
+						}
 					}
 				}
 				onExecuted?.apply(this, arguments);
@@ -248,6 +251,7 @@ app.registerExtension({
 				}
 				w.inputEl.classList.add("promptchain-preview");
 				w.value = node._outputText || "";
+				w.inputEl.value = node._outputText || "";
 
 				// Move output label and preview widget to be right after the text widget
 				const textIndex = node.widgets.findIndex(w => w.name === "text");
@@ -353,6 +357,11 @@ app.registerExtension({
 						textWidget.inputEl.value = info.properties.textValue;
 					}
 				}
+			}
+
+			// Restore output text from saved properties
+			if (info.properties?.outputText !== undefined) {
+				node._outputText = info.properties.outputText;
 			}
 
 			// Restore preview state from saved properties
