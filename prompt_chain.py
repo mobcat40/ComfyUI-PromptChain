@@ -1,5 +1,14 @@
 import random
 import time
+import os
+
+# Debug log file
+DEBUG_LOG = os.path.join(os.path.dirname(__file__), "debug.log")
+
+def debug_log(msg):
+    with open(DEBUG_LOG, "a", encoding="utf-8") as f:
+        f.write(msg + "\n")
+    print(msg)
 
 
 class PromptChain:
@@ -35,6 +44,10 @@ class PromptChain:
         return float("nan")
 
     def process(self, mode, text, locked=False, cached_output="", **kwargs):
+        # Debug logging
+        text_preview = text[:50] if text else ''
+        debug_log(f"[PromptChain] mode={mode!r}, text={text_preview!r}, locked={locked}, kwargs={kwargs}")
+
         # If locked and we have cached output, return it without re-processing
         if locked and cached_output:
             return {"ui": {"text": [cached_output]}, "result": (cached_output,)}
@@ -84,16 +97,21 @@ class PromptChain:
         else:
             text_combined = ""
 
+        debug_log(f"[PromptChain] BEFORE MODE CHECK: mode={mode!r}, text_combined={text_combined!r}, inputs={inputs}")
         if mode == "Randomize":
+            debug_log(f"[PromptChain] RANDOMIZE BRANCH")
             if inputs:
                 selected_input = random.choice(inputs)
+                debug_log(f"[PromptChain] selected_input={selected_input!r}")
                 if text_combined:
                     result = text_combined + ", " + selected_input
                 else:
                     result = selected_input
             else:
                 result = text_combined
+            debug_log(f"[PromptChain] RANDOMIZE result={result!r}")
         else:  # mode == "Combine"
+            debug_log(f"[PromptChain] COMBINE BRANCH")
             # Breadth-first: interleave tags across inputs so no branch dominates
             # Split each input into tag lists
             tag_lists = []
