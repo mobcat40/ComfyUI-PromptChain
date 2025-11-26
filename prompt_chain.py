@@ -94,16 +94,27 @@ class PromptChain:
             else:
                 result = text_combined
         else:  # mode == "Combine"
+            # Breadth-first: interleave tags across inputs so no branch dominates
+            # Split each input into tag lists
+            tag_lists = []
             if text_combined:
-                if inputs:
-                    result = ", ".join([text_combined] + inputs)
-                else:
-                    result = text_combined
+                tag_lists.append([t.strip() for t in text_combined.split(',') if t.strip()])
+            for inp in inputs:
+                tags = [t.strip() for t in inp.split(',') if t.strip()]
+                if tags:
+                    tag_lists.append(tags)
+
+            if tag_lists:
+                # Round-robin across all tag lists
+                interleaved = []
+                max_len = max(len(t) for t in tag_lists)
+                for i in range(max_len):
+                    for tags in tag_lists:
+                        if i < len(tags):
+                            interleaved.append(tags[i])
+                result = ", ".join(interleaved)
             else:
-                if inputs:
-                    result = ", ".join(inputs)
-                else:
-                    result = ""
+                result = ""
 
         # Deduplicate tags, left-to-right priority (first occurrence wins)
         # Early nodes = intentional placement, later duplicates = accidental/network effects

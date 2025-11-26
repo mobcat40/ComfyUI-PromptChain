@@ -73,9 +73,9 @@ Multiline works too — lines ending with `|` continue the OR group, lines endin
 - Use for branching logic (pick one path)
 
 **Combine**
-- Concatenates ALL inputs together
-- Prepends the text field to all inputs
-- Joins everything with `", "` delimiter
+- Merges ALL inputs using breadth-first interleaving
+- Tags round-robin across branches so no single branch dominates the token budget
+- Example: `["a,b,c,d", "X,Y"]` → `"a, X, b, Y, c, d"` (not `"a, b, c, d, X, Y"`)
 
 ## Example: RPG Character Generator
 
