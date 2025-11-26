@@ -55,6 +55,7 @@ app.registerExtension({
 					style.id = styleId;
 					style.textContent = `
 						.promptchain-prompt::placeholder { color: rgba(255, 255, 255, 0.5); opacity: 1; }
+						.promptchain-prompt:focus { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8) !important; outline: none !important; }
 						.promptchain-prompt::-webkit-scrollbar { width: 8px; height: 8px; }
 						.promptchain-prompt::-webkit-scrollbar-track { background: transparent; }
 						.promptchain-prompt::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.35); border-radius: 4px; }
@@ -239,7 +240,10 @@ app.registerExtension({
 				if (!document.getElementById(styleId)) {
 					const style = document.createElement("style");
 					style.id = styleId;
-					style.textContent = `.promptchain-preview::placeholder { color: rgba(255, 255, 255, 0.5); opacity: 1; }`;
+					style.textContent = `
+						.promptchain-preview::placeholder { color: rgba(255, 255, 255, 0.5); opacity: 1; }
+						.promptchain-preview:focus { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8) !important; outline: none !important; }
+					`;
 					document.head.appendChild(style);
 				}
 				w.inputEl.classList.add("promptchain-preview");
