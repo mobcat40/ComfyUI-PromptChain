@@ -9,14 +9,13 @@ app.registerExtension({
 			return;
 		}
 
-		// Set default size [width, height] only for new nodes
-		// Use requestAnimationFrame to let ComfyUI restore saved size first
-		const defaultSize = [210, 146];
+		// Force default size for new nodes after widgets are set up
+		// Mark as new node - onConfigure will clear this flag for loaded nodes
+		node._isNewlyCreated = true;
 		requestAnimationFrame(() => {
-			// If size is still the LiteGraph default (very small), set our default
-			// Saved workflows will have already restored the user's size by now
-			if (node.size[0] < 200 && node.size[1] < 140) {
-				node.size = defaultSize;
+			// Only apply default size if still marked as new (not loaded from workflow)
+			if (node._isNewlyCreated) {
+				node.size = [210, 180];
 				node.setDirtyCanvas(true);
 			}
 		});
@@ -109,6 +108,9 @@ app.registerExtension({
 	name: "mobcat40.PromptChain.Preview",
 	async beforeRegisterNodeDef(nodeType, nodeData, app) {
 		if (nodeData.name === "PromptChain") {
+			// Set default size for new nodes
+			nodeType.prototype.size = [210, 180];
+
 			// When the node is executed, store the output text
 			const onExecuted = nodeType.prototype.onExecuted;
 			nodeType.prototype.onExecuted = function (message) {
@@ -324,6 +326,9 @@ app.registerExtension({
 		// Override onConfigure to restore widget values and preview state after node is loaded
 		const originalOnConfigure = node.onConfigure;
 		node.onConfigure = function(info) {
+			// Mark as loaded from workflow - prevents default size override
+			node._isNewlyCreated = false;
+
 			originalOnConfigure?.apply(this, arguments);
 
 			// Restore text value from properties (most reliable method)
