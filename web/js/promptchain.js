@@ -20,6 +20,9 @@ app.registerExtension({
 			}
 		});
 
+		// Store updateTextStyle on node so it can be called from onConnectionsChange
+		node._updateTextStyle = null;
+
 		// Make text widget transparent until focused (only if empty)
 		// Use setTimeout to wait for widget DOM element to be created
 		const setupTextOpacity = () => {
@@ -47,6 +50,7 @@ app.registerExtension({
 						textWidget.inputEl.style.fontStyle = "italic";
 					}
 				};
+				node._updateTextStyle = updateStyle;
 				updateStyle();
 				textWidget.inputEl.style.marginTop = "-6px"; // Pull text closer to menubar
 				textWidget.inputEl.style.fontFamily = "Arial, sans-serif";
@@ -113,6 +117,10 @@ app.registerExtension({
 		node.onConnectionsChange = function(type, index, connected, link_info) {
 			originalOnConnectionsChange?.apply(this, arguments);
 			updateInputs();
+			// Update text styling when connections change (link to text widget)
+			if (node._updateTextStyle) {
+				node._updateTextStyle();
+			}
 		};
 
 		// Initial setup
