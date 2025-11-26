@@ -129,6 +129,7 @@ app.registerExtension({
 					// Store for preview display
 					this._outputText = textValue;
 					this._outputTimestamp = Date.now();
+					this._cachedTimeAgo = "Just Now"; // Immediate update
 					// Persist to properties for workflow save/load
 					if (!this.properties) this.properties = {};
 					this.properties.outputText = textValue;
