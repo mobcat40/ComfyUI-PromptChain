@@ -27,7 +27,8 @@ app.registerExtension({
 			if (textWidget?.inputEl) {
 				const updateStyle = () => {
 					const hasText = textWidget.inputEl.value.trim().length > 0;
-					if (hasText) {
+					const isFocused = document.activeElement === textWidget.inputEl;
+					if (hasText || isFocused) {
 						textWidget.inputEl.style.opacity = 1;
 						textWidget.inputEl.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
 						textWidget.inputEl.style.color = "";
@@ -47,18 +48,25 @@ app.registerExtension({
 				textWidget.inputEl.style.lineHeight = "1.3";
 				textWidget.inputEl.style.borderRadius = "4px";
 				textWidget.inputEl.placeholder = "enter prompt...";
-				// Style placeholder text
+				// Style placeholder text and scrollbars
 				const styleId = "promptchain-prompt-placeholder-style";
 				if (!document.getElementById(styleId)) {
 					const style = document.createElement("style");
 					style.id = styleId;
-					style.textContent = `.promptchain-prompt::placeholder { color: rgba(255, 255, 255, 0.5); opacity: 1; }`;
+					style.textContent = `
+						.promptchain-prompt::placeholder { color: rgba(255, 255, 255, 0.5); opacity: 1; }
+						.promptchain-prompt::-webkit-scrollbar { width: 8px; height: 8px; }
+						.promptchain-prompt::-webkit-scrollbar-track { background: transparent; }
+						.promptchain-prompt::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.35); border-radius: 4px; }
+						.promptchain-prompt::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
+						.promptchain-prompt::-webkit-scrollbar-corner { background: transparent; }
+					`;
 					document.head.appendChild(style);
 				}
 				textWidget.inputEl.classList.add("promptchain-prompt");
 				textWidget.inputEl.addEventListener("focus", () => {
 					textWidget.inputEl.style.opacity = 1;
-					textWidget.inputEl.style.backgroundColor = "";
+					textWidget.inputEl.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
 					textWidget.inputEl.style.color = "";
 					textWidget.inputEl.style.fontStyle = "normal";
 				});
