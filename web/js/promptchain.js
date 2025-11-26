@@ -55,6 +55,7 @@ app.registerExtension({
 					style.id = styleId;
 					style.textContent = `
 						.promptchain-prompt::placeholder { color: rgba(255, 255, 255, 0.5); opacity: 1; }
+						.promptchain-prompt:hover { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4) !important; }
 						.promptchain-prompt:focus { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8) !important; outline: none !important; }
 						.promptchain-prompt::-webkit-scrollbar { width: 8px; height: 8px; }
 						.promptchain-prompt::-webkit-scrollbar-track { background: transparent; }
@@ -349,6 +350,7 @@ app.registerExtension({
 					style.id = styleId;
 					style.textContent = `
 						.promptchain-preview::placeholder { color: rgba(255, 255, 255, 0.5); opacity: 1; }
+						.promptchain-preview:hover { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4) !important; }
 						.promptchain-preview:focus { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8) !important; outline: none !important; }
 						.promptchain-preview::-webkit-scrollbar { width: 8px; height: 8px; }
 						.promptchain-preview::-webkit-scrollbar-track { background: transparent; }
