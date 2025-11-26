@@ -147,12 +147,14 @@ Convert your node tree back to Dynamic Prompt format:
 
 ## Tag Deduplication
 
-Duplicates automatically removed, **right-to-left priority** (matching SD behavior):
+Duplicates automatically removed, **first occurrence wins**:
 
 ```
 Input:  "red, blue, RED, green"
-Output: "blue, red, green"
+Output: "red, blue, green"
 ```
+
+Early nodes = intentional placement. Later duplicates from downstream merges get removed.
 
 - Case-insensitive matching
 - Special tags like `[BREAK]` always preserved

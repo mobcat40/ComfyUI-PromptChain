@@ -105,14 +105,14 @@ class PromptChain:
                 else:
                     result = ""
 
-        # Deduplicate tags, right-to-left priority (later tags win in SD prompts)
+        # Deduplicate tags, left-to-right priority (first occurrence wins)
+        # Early nodes = intentional placement, later duplicates = accidental/network effects
         # Skip special tags like [BREAK] that should always be preserved
         if result:
             parts = [p.strip() for p in result.split(',') if p.strip()]
             seen = set()
             deduped = []
-            # Iterate right-to-left, keep first occurrence (which is rightmost)
-            for part in reversed(parts):
+            for part in parts:
                 lower = part.lower()
                 # Always keep special tags like [BREAK], don't dedupe them
                 if lower.startswith('[') and lower.endswith(']'):
@@ -120,8 +120,7 @@ class PromptChain:
                 elif lower not in seen:
                     seen.add(lower)
                     deduped.append(part)
-            # Reverse back to original order (but now deduplicated with right priority)
-            result = ", ".join(reversed(deduped))
+            result = ", ".join(deduped)
 
         return {"ui": {"text": [result]}, "result": (result,)}
 
