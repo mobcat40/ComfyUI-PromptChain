@@ -9,6 +9,9 @@ app.registerExtension({
 			return;
 		}
 
+		// Set default size [width, height]
+		node.size = [210, 136];
+
 		const updateInputs = () => {
 			// Find all input_N slots
 			const inputSlots = node.inputs.filter(i => i.name.startsWith("input_"));
