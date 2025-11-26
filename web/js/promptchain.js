@@ -12,6 +12,28 @@ app.registerExtension({
 		// Set default size [width, height]
 		node.size = [210, 136];
 
+		// Make text widget transparent until focused (only if empty)
+		// Use setTimeout to wait for widget DOM element to be created
+		const setupTextOpacity = () => {
+			const textWidget = node.widgets?.find(w => w.name === "text");
+			if (textWidget?.inputEl) {
+				const updateOpacity = () => {
+					const hasText = textWidget.inputEl.value.trim().length > 0;
+					textWidget.inputEl.style.opacity = hasText ? 1.0 : 0.3;
+				};
+				updateOpacity();
+				textWidget.inputEl.addEventListener("focus", () => {
+					textWidget.inputEl.style.opacity = 1.0;
+				});
+				textWidget.inputEl.addEventListener("blur", updateOpacity);
+				textWidget.inputEl.addEventListener("input", updateOpacity);
+			} else {
+				// Widget not ready yet, try again
+				requestAnimationFrame(setupTextOpacity);
+			}
+		};
+		requestAnimationFrame(setupTextOpacity);
+
 		const updateInputs = () => {
 			// Find all input_N slots
 			const inputSlots = node.inputs.filter(i => i.name.startsWith("input_"));
