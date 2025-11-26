@@ -28,8 +28,17 @@ app.registerExtension({
 			if (textWidget?.inputEl) {
 				const updateStyle = () => {
 					const hasText = textWidget.inputEl.value.trim().length > 0;
-					textWidget.inputEl.style.opacity = hasText ? 1.0 : 0.5;
-					textWidget.inputEl.style.fontStyle = hasText ? "normal" : "italic";
+					if (hasText) {
+						textWidget.inputEl.style.opacity = 1;
+						textWidget.inputEl.style.backgroundColor = "";
+						textWidget.inputEl.style.color = "";
+						textWidget.inputEl.style.fontStyle = "normal";
+					} else {
+						textWidget.inputEl.style.opacity = 1;
+						textWidget.inputEl.style.backgroundColor = "#00000033";
+						textWidget.inputEl.style.color = "rgba(255, 255, 255, 0.85)";
+						textWidget.inputEl.style.fontStyle = "italic";
+					}
 				};
 				updateStyle();
 				textWidget.inputEl.style.marginTop = "-6px"; // Pull text closer to menubar
@@ -38,8 +47,20 @@ app.registerExtension({
 				textWidget.inputEl.style.padding = "4px";
 				textWidget.inputEl.style.lineHeight = "1.3";
 				textWidget.inputEl.style.borderRadius = "4px";
+				textWidget.inputEl.placeholder = "enter prompt...";
+				// Style placeholder text
+				const styleId = "promptchain-prompt-placeholder-style";
+				if (!document.getElementById(styleId)) {
+					const style = document.createElement("style");
+					style.id = styleId;
+					style.textContent = `.promptchain-prompt::placeholder { color: rgba(255, 255, 255, 0.5); opacity: 1; }`;
+					document.head.appendChild(style);
+				}
+				textWidget.inputEl.classList.add("promptchain-prompt");
 				textWidget.inputEl.addEventListener("focus", () => {
-					textWidget.inputEl.style.opacity = 1.0;
+					textWidget.inputEl.style.opacity = 1;
+					textWidget.inputEl.style.backgroundColor = "";
+					textWidget.inputEl.style.color = "";
 					textWidget.inputEl.style.fontStyle = "normal";
 				});
 				textWidget.inputEl.addEventListener("blur", updateStyle);
@@ -200,8 +221,8 @@ app.registerExtension({
 				w.inputEl.style.padding = "4px";
 				w.inputEl.style.lineHeight = "1.3";
 				w.inputEl.style.borderRadius = "4px";
-				w.inputEl.style.backgroundColor = "#ffffff17";
-				w.inputEl.style.color = "#fff";
+				w.inputEl.style.backgroundColor = "#00000033";
+				w.inputEl.style.color = "rgba(255, 255, 255, 0.85)";
 				w.inputEl.placeholder = "awaiting generation...";
 				// Style placeholder text
 				const styleId = "promptchain-placeholder-style";
@@ -332,8 +353,17 @@ app.registerExtension({
 					textWidget.inputEl.value = text;
 					// Update styling to reflect text presence
 					const hasText = text.trim().length > 0;
-					textWidget.inputEl.style.opacity = hasText ? 1.0 : 0.6;
-					textWidget.inputEl.style.fontStyle = hasText ? "normal" : "italic";
+					if (hasText) {
+						textWidget.inputEl.style.opacity = 1;
+						textWidget.inputEl.style.backgroundColor = "";
+						textWidget.inputEl.style.color = "";
+						textWidget.inputEl.style.fontStyle = "normal";
+					} else {
+						textWidget.inputEl.style.opacity = 1;
+						textWidget.inputEl.style.backgroundColor = "#00000033";
+						textWidget.inputEl.style.color = "rgba(255, 255, 255, 0.85)";
+						textWidget.inputEl.style.fontStyle = "italic";
+					}
 				}
 				if (!targetNode.properties) targetNode.properties = {};
 				targetNode.properties.textValue = text;
