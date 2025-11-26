@@ -302,5 +302,166 @@ app.registerExtension({
 				togglePreview();
 			}
 		};
+
+		// Helper to set text on a node
+		const setNodeText = (targetNode, text) => {
+			const textWidget = targetNode.widgets.find(w => w.name === "text");
+			if (textWidget) {
+				textWidget.value = text;
+				if (textWidget.inputEl) {
+					textWidget.inputEl.value = text;
+					// Update styling to reflect text presence
+					const hasText = text.trim().length > 0;
+					textWidget.inputEl.style.opacity = hasText ? 1.0 : 0.6;
+					textWidget.inputEl.style.fontStyle = hasText ? "normal" : "italic";
+				}
+				if (!targetNode.properties) targetNode.properties = {};
+				targetNode.properties.textValue = text;
+			}
+			targetNode.setSize(targetNode.computeSize());
+		};
+
+		// Helper to set mode on a node
+		const setNodeMode = (targetNode, mode) => {
+			const modeWidget = targetNode.widgets.find(w => w.name === "mode");
+			if (modeWidget) {
+				modeWidget.value = mode;
+			}
+		};
+
+		// Helper to create a new PromptChain node and connect it
+		const createConnectedNode = (targetNode, text, mode, xOffset) => {
+			// Access LiteGraph via the graph's constructor
+			const LiteGraph = app.graph.constructor.LiteGraph || window.LiteGraph;
+			const newNode = LiteGraph.createNode("PromptChain");
+			newNode.pos = [targetNode.pos[0] + xOffset, targetNode.pos[1]];
+			app.graph.add(newNode);
+
+			// Set text and mode after a frame to let node initialize
+			requestAnimationFrame(() => {
+				setNodeText(newNode, text);
+				setNodeMode(newNode, mode);
+
+				// Find first available input on target node
+				const inputSlots = targetNode.inputs.filter(i => i.name.startsWith("input_"));
+				let targetSlot = inputSlots.find(slot => slot.link === null);
+				if (!targetSlot) {
+					// All slots full, add a new one
+					const nextIndex = inputSlots.length + 1;
+					targetNode.addInput(`input_${nextIndex}`, "STRING");
+					targetSlot = targetNode.inputs.find(i => i.name === `input_${nextIndex}`);
+				}
+
+				// Connect new node's output to target's input
+				const outputSlot = newNode.outputs.findIndex(o => o.name === "output");
+				const inputIndex = targetNode.inputs.indexOf(targetSlot);
+				newNode.connect(outputSlot, targetNode, inputIndex);
+
+				app.graph.setDirtyCanvas(true);
+			});
+
+			return newNode;
+		};
+
+		// Parse Dynamic Prompts format
+		const parseDynamicPrompt = (input) => {
+			// Split by commas, but not inside curly braces
+			const segments = [];
+			let current = "";
+			let braceDepth = 0;
+
+			for (let i = 0; i < input.length; i++) {
+				const char = input[i];
+				if (char === "{") braceDepth++;
+				else if (char === "}") braceDepth--;
+
+				if (char === "," && braceDepth === 0) {
+					segments.push(current.trim());
+					current = "";
+				} else {
+					current += char;
+				}
+			}
+			if (current.trim()) segments.push(current.trim());
+
+			return segments;
+		};
+
+		// Extract {options} from a segment
+		const extractBraceGroup = (segment) => {
+			const match = segment.match(/\{([^}]+)\}/);
+			if (match) {
+				const options = match[1].split("|").map(o => o.trim());
+				const remainder = segment.replace(/\{[^}]+\}/, "").trim();
+				return { options, remainder };
+			}
+			return null;
+		};
+
+		// Add context menu options
+		const originalGetExtraMenuOptions = node.getExtraMenuOptions;
+		node.getExtraMenuOptions = function(_, options) {
+			originalGetExtraMenuOptions?.apply(this, arguments);
+
+			// Unified Import - handles plain tags and Dynamic Prompt syntax
+			options.unshift({
+				content: "Import",
+				callback: () => {
+					const input = prompt("Paste prompt (supports: tags, Dynamic Prompt {a|b} syntax):");
+					if (input && input.trim()) {
+						// Check if contains Dynamic Prompt syntax
+						const hasBraces = input.includes("{") && input.includes("}");
+
+						if (hasBraces) {
+							// Dynamic Prompt mode - parse and create nodes
+							const segments = parseDynamicPrompt(input);
+							const staticParts = [];
+							let xOffset = -250;
+
+							for (const segment of segments) {
+								const braceData = extractBraceGroup(segment);
+
+								if (braceData) {
+									const wildcardText = braceData.options.join(" | ");
+
+									if (braceData.remainder) {
+										// {a|b} suffix → Combine node with Randomize feeding it
+										const combineNode = createConnectedNode(node, braceData.remainder, "Combine", xOffset);
+										xOffset -= 250;
+										setTimeout(() => {
+											createConnectedNode(combineNode, wildcardText, "Randomize", -250);
+										}, 50);
+									} else {
+										// Pure {a|b} → Randomize node
+										createConnectedNode(node, wildcardText, "Randomize", xOffset);
+										xOffset -= 250;
+									}
+								} else {
+									staticParts.push(segment);
+								}
+							}
+
+							// Static parts go to clicked node
+							if (staticParts.length > 0) {
+								setNodeText(node, staticParts.join(", "));
+								setNodeMode(node, "Combine");
+							}
+						} else {
+							// Plain tags mode - convert to wildcard format
+							const tags = input
+								.split(/[\n\r]+/)
+								.flatMap(line => line.split(','))
+								.map(tag => tag.trim())
+								.filter(tag => tag.length > 0);
+
+							const wildcardFormat = tags.join(" | ");
+							setNodeText(node, wildcardFormat);
+						}
+
+						app.graph.setDirtyCanvas(true);
+					}
+				}
+			});
+		};
 	}
 });
