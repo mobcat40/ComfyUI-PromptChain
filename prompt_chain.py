@@ -17,6 +17,10 @@ class PromptChain:
             },
             "optional": {
                 "input_1": ("STRING", {"forceInput": True}),
+            },
+            "hidden": {
+                "locked": ("BOOLEAN", {"default": False}),
+                "cached_output": ("STRING", {"default": ""}),
             }
         }
 
@@ -30,7 +34,11 @@ class PromptChain:
     def IS_CHANGED(cls, **kwargs):
         return float("nan")
 
-    def process(self, mode, text, **kwargs):
+    def process(self, mode, text, locked=False, cached_output="", **kwargs):
+        # If locked and we have cached output, return it without re-processing
+        if locked and cached_output:
+            return {"ui": {"text": [cached_output]}, "result": (cached_output,)}
+
         # Seed random generator with current time for true randomness
         random.seed(time.time())
 

@@ -383,6 +383,109 @@ app.registerExtension({
 			app.graph.setDirtyCanvas(true);
 		};
 
+		// Initialize lock state
+		node._isLocked = node.properties?.isLocked || false;
+
+		// Helper to check if any upstream PromptChain node is locked
+		const isLockedByUpstream = () => {
+			const visited = new Set();
+			const checkUpstream = (n) => {
+				if (visited.has(n.id)) return false;
+				visited.add(n.id);
+
+				if (!n.inputs) return false;
+				for (const input of n.inputs) {
+					if (input.link !== null) {
+						const linkInfo = app.graph.links[input.link];
+						if (linkInfo) {
+							const sourceNode = app.graph.getNodeById(linkInfo.origin_id);
+							if (sourceNode?.constructor?.comfyClass === "PromptChain") {
+								// Check if source is locked (either directly or by its upstream)
+								if (sourceNode._isLocked) return true;
+								if (checkUpstream(sourceNode)) return true;
+							}
+						}
+					}
+				}
+				return false;
+			};
+			return checkUpstream(node);
+		};
+
+		// Add hidden widgets to pass lock state to Python
+		const lockedWidget = {
+			name: "locked",
+			type: "hidden",
+			value: false,
+			options: { serialize: true },
+			// Return true if this node OR any upstream node is locked
+			serializeValue: () => node._isLocked || isLockedByUpstream(),
+			computeSize: () => [0, 0],
+		};
+		const cachedOutputWidget = {
+			name: "cached_output",
+			type: "hidden",
+			value: "",
+			options: { serialize: true },
+			serializeValue: () => node.properties?.cachedOutput || "",
+			computeSize: () => [0, 0],
+		};
+		node.widgets.push(lockedWidget);
+		node.widgets.push(cachedOutputWidget);
+
+		// Helper to cache output on all downstream PromptChain nodes
+		const cacheDownstreamNodes = (startNode) => {
+			const visited = new Set();
+			const cacheDownstream = (n) => {
+				if (visited.has(n.id)) return;
+				visited.add(n.id);
+
+				// Find all nodes connected to this node's output
+				if (!n.outputs) return;
+				for (const output of n.outputs) {
+					if (output.links) {
+						for (const linkId of output.links) {
+							const linkInfo = app.graph.links[linkId];
+							if (linkInfo) {
+								const targetNode = app.graph.getNodeById(linkInfo.target_id);
+								if (targetNode?.constructor?.comfyClass === "PromptChain") {
+									// Cache this downstream node's output
+									if (targetNode._outputText) {
+										if (!targetNode.properties) targetNode.properties = {};
+										targetNode.properties.cachedOutput = targetNode._outputText;
+									}
+									// Continue downstream
+									cacheDownstream(targetNode);
+								}
+							}
+						}
+					}
+				}
+			};
+			cacheDownstream(startNode);
+		};
+
+		// Toggle lock function
+		const toggleLock = () => {
+			node._isLocked = !node._isLocked;
+			if (!node.properties) node.properties = {};
+			node.properties.isLocked = node._isLocked;
+
+			// When locking, cache the current output AND all downstream nodes
+			if (node._isLocked) {
+				if (node._outputText) {
+					node.properties.cachedOutput = node._outputText;
+				}
+				// Also cache all downstream nodes so they don't regenerate
+				cacheDownstreamNodes(node);
+			}
+			// Update widget values
+			lockedWidget.value = node._isLocked;
+			cachedOutputWidget.value = node.properties.cachedOutput || "";
+
+			app.graph.setDirtyCanvas(true);
+		};
+
 		// Create custom menubar widget
 		const menubar = {
 			name: "menubar",
@@ -397,12 +500,31 @@ app.registerExtension({
 				const H = 16;
 				const topOffset = 4; // Push content down to add space after mode dropdown
 
-				// "Prompt" label on the left (keep commented - do not delete)
-				// ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-				// ctx.font = "11px Arial";
-				// ctx.textAlign = "left";
-				// ctx.textBaseline = "middle";
-				// ctx.fillText("Prompt", 12, y + topOffset + H / 2);
+				// Check lock states
+				const lockedByUpstream = isLockedByUpstream();
+				const isEffectivelyLocked = node._isLocked || lockedByUpstream;
+
+				// Lock icon on the left
+				const lockX = 12;
+				const lockY = y + topOffset + H / 2;
+
+				// Different colors: orange=self-locked, dimmer orange=locked by upstream, gray=unlocked
+				if (node._isLocked) {
+					ctx.fillStyle = "#ffaa00";  // Bright orange - self locked
+				} else if (lockedByUpstream) {
+					ctx.fillStyle = "#aa7700";  // Dim orange - locked by upstream
+				} else {
+					ctx.fillStyle = "rgba(255, 255, 255, 0.35)";  // Gray - unlocked
+				}
+				ctx.font = "11px Arial";
+				ctx.textAlign = "left";
+				ctx.textBaseline = "middle";
+				ctx.fillText(isEffectivelyLocked ? "🔒" : "🔓", lockX, lockY);
+
+				// "Lock" label after icon (brighter when active)
+				ctx.fillStyle = isEffectivelyLocked ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.35)";
+				ctx.font = "12px Arial";
+				ctx.fillText(lockedByUpstream && !node._isLocked ? "Locked" : "Lock", lockX + 16, lockY);
 
 				// Preview checkbox on the right
 				const checkboxSize = 10;
@@ -429,6 +551,12 @@ app.registerExtension({
 			},
 			mouse: function(event, pos, node) {
 				if (event.type === "pointerdown") {
+					// Check if click is on lock area (left side)
+					if (pos[0] >= 8 && pos[0] <= 60) {
+						toggleLock();
+						return true;
+					}
+
 					// Check if click is on preview checkbox area (right side)
 					const checkboxSize = 10;
 					const checkboxX = node.size[0] - 13 - checkboxSize; // 5px extra margin from right edge
@@ -523,6 +651,14 @@ app.registerExtension({
 			if (info.properties?.showPreview && !node._showPreview) {
 				node._showPreview = false;
 				togglePreview(true); // skipResize to preserve saved node size
+			}
+
+			// Restore lock state from saved properties
+			if (info.properties?.isLocked !== undefined) {
+				node._isLocked = info.properties.isLocked;
+			}
+			if (info.properties?.cachedOutput !== undefined) {
+				node.properties.cachedOutput = info.properties.cachedOutput;
 			}
 		};
 

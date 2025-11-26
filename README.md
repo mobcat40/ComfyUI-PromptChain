@@ -94,6 +94,29 @@ Check the **Preview** checkbox in the node's menubar to toggle output display. W
 - The full output string after processing
 - Updates on every execution
 
+## Lock Feature
+
+Click the **lock icon** (🔒/🔓) in the node's menubar to freeze the current output. When locked:
+- The node returns its cached output instead of re-processing
+- Randomization results are preserved across executions
+- Perfect for keeping a specific roll you like
+
+### Visual Indicators
+
+| Color | Meaning |
+|-------|---------|
+| 🔒 Bright orange | Node is self-locked |
+| 🔒 Dim orange | Locked by an upstream node |
+| 🔓 Gray | Unlocked |
+
+### Upstream Lock Propagation
+
+If any upstream PromptChain node is locked, all downstream nodes in the chain automatically inherit the lock state. This ensures the entire prompt path stays frozen together.
+
+### Persistence
+
+Lock state and cached output are saved with your workflow — reload it later and your locked results are still there.
+
 ## Import
 
 Right-click any PromptChain node → **Import** to paste prompts. Supports multiple formats:
