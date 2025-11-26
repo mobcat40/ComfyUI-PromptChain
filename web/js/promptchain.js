@@ -24,6 +24,11 @@ app.registerExtension({
 				};
 				updateStyle();
 				textWidget.inputEl.style.marginTop = "-6px"; // Pull text closer to menubar
+				textWidget.inputEl.style.fontFamily = "Arial, sans-serif";
+				textWidget.inputEl.style.fontSize = "11px";
+				textWidget.inputEl.style.padding = "4px";
+				textWidget.inputEl.style.lineHeight = "1.3";
+				textWidget.inputEl.style.borderRadius = "4px";
 				textWidget.inputEl.addEventListener("focus", () => {
 					textWidget.inputEl.style.opacity = 1.0;
 					textWidget.inputEl.style.fontStyle = "normal";
@@ -166,7 +171,7 @@ app.registerExtension({
 						ctx.font = "11px Arial";
 						ctx.textAlign = "left";
 						ctx.textBaseline = "middle";
-						ctx.fillText("Output", 8, y + topOffset + H / 2);
+						ctx.fillText("Output", 12, y + topOffset + H / 2);
 						return H;
 					}
 				};
@@ -180,6 +185,11 @@ app.registerExtension({
 				w.inputEl.style.opacity = 0.6;
 				w.inputEl.style.fontStyle = "italic";
 				w.inputEl.style.marginTop = "-6px"; // Pull text closer to output label
+				w.inputEl.style.fontFamily = "Arial, sans-serif";
+				w.inputEl.style.fontSize = "11px";
+				w.inputEl.style.padding = "4px";
+				w.inputEl.style.lineHeight = "1.3";
+				w.inputEl.style.borderRadius = "4px";
 				w.inputEl.placeholder = "waiting for generation...";
 				w.value = node._outputText || "";
 
@@ -224,7 +234,7 @@ app.registerExtension({
 				ctx.font = "11px Arial";
 				ctx.textAlign = "left";
 				ctx.textBaseline = "middle";
-				ctx.fillText("Prompt", 8, y + topOffset + H / 2);
+				ctx.fillText("Prompt", 12, y + topOffset + H / 2);
 
 				// Preview checkbox on the right
 				const checkboxSize = 10;
