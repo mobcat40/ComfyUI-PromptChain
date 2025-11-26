@@ -89,16 +89,53 @@ Output: "warrior, mythril sword, fire enchant, dragon slayer"
 
 ## Live Preview
 
-Click the **Preview** button on any node to toggle output display. When enabled, you'll see:
+Check the **Preview** checkbox in the node's menubar to toggle output display. When enabled, you'll see:
 - Exactly which options were randomly selected
 - The full output string after processing
 - Updates on every execution
+
+## Import
+
+Right-click any PromptChain node → **Import** to paste prompts. Supports multiple formats:
+
+| Format | Example | Result |
+|--------|---------|--------|
+| Plain tags | `red, blue, green` | Converts to wildcard `red \| blue \| green` |
+| Dynamic Prompts | `{warrior\|mage}, {sword\|staff}` | Creates connected node tree |
+| Top-level OR | `option A \| option B \| option C` | Creates separate input nodes |
+
+Nested braces like `{a\|{b\|c}}` are recursively expanded into node hierarchies.
+
+## Tag Deduplication
+
+Duplicate tags are automatically removed with **right-to-left priority** (matching Stable Diffusion's behavior where later tags take precedence):
+
+```
+Input:  "red, blue, RED, green"
+Output: "blue, red, green"
+```
+
+- Case-insensitive matching
+- Special tags like `[BREAK]` are always preserved
+
+## Multiline Wildcards
+
+Lines ending with `|` are auto-detected as a unified OR group:
+
+```
+warrior |
+mage |
+rogue
+```
+
+Is equivalent to `warrior | mage | rogue` — pick one randomly.
 
 ## Why Not Dynamic Prompts / Other Wildcards?
 
 - **No external files** — Everything lives in your workflow
 - **Visual debugging** — See the tree, not a wall of braces
 - **Workflow-native** — Hierarchies are node connections, not syntax
+- **Import compatible** — Paste Dynamic Prompts syntax and auto-generate nodes
 
 ## License
 

@@ -230,7 +230,7 @@ app.registerExtension({
 				const topOffset = 4; // Push content down to add space after mode dropdown
 
 				// "Prompt" label on the left
-				ctx.fillStyle = "#aaa";
+				ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
 				ctx.font = "11px Arial";
 				ctx.textAlign = "left";
 				ctx.textBaseline = "middle";
@@ -241,7 +241,7 @@ app.registerExtension({
 				const checkboxX = width - 13 - checkboxSize; // 5px extra margin from right edge
 				const checkboxY = y + topOffset + (H - checkboxSize) / 2;
 
-				ctx.strokeStyle = node._showPreview ? "#ccc" : "#777";
+				ctx.strokeStyle = node._showPreview ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.35)";
 				ctx.lineWidth = 1;
 				ctx.strokeRect(checkboxX, checkboxY, checkboxSize, checkboxSize);
 
@@ -251,7 +251,7 @@ app.registerExtension({
 				}
 
 				// "Preview" label before checkbox (brighter when active)
-				ctx.fillStyle = node._showPreview ? "#ccc" : "#777";
+				ctx.fillStyle = node._showPreview ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.35)";
 				ctx.font = "11px Arial";
 				ctx.textAlign = "right";
 				ctx.fillText("Preview", checkboxX - 4, y + topOffset + H / 2);
