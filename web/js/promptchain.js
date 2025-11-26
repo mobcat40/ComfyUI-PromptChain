@@ -26,7 +26,10 @@ app.registerExtension({
 			const textWidget = node.widgets?.find(w => w.name === "text");
 			if (textWidget?.inputEl) {
 				const updateStyle = () => {
-					const hasText = textWidget.inputEl.value.trim().length > 0;
+					// Check both inputEl.value and widget.value (for when input is linked)
+					const hasText = (textWidget.inputEl.value?.trim().length > 0) ||
+					                (textWidget.value?.trim?.().length > 0) ||
+					                (node.properties?.textValue?.trim?.().length > 0);
 					const isFocused = document.activeElement === textWidget.inputEl;
 					if (hasText || isFocused) {
 						textWidget.inputEl.style.opacity = 1;
