@@ -109,6 +109,32 @@ app.registerExtension({
 
 		// Initial setup
 		updateInputs();
+
+		// Set empty labels on inputs and outputs to hide default text
+		const hideDefaultLabels = () => {
+			if (node.inputs) {
+				for (const input of node.inputs) {
+					if (input?.name?.startsWith("input_")) {
+						input.label = " ";
+					}
+				}
+			}
+			if (node.outputs) {
+				for (const output of node.outputs) {
+					if (output?.name) {
+						output.label = " ";
+					}
+				}
+			}
+		};
+		hideDefaultLabels();
+
+		// Also hide labels when inputs change
+		const origOnConnectionsChange = node.onConnectionsChange;
+		node.onConnectionsChange = function() {
+			origOnConnectionsChange?.apply(this, arguments);
+			setTimeout(hideDefaultLabels, 0);
+		};
 	}
 });
 
@@ -117,6 +143,50 @@ app.registerExtension({
 	name: "mobcat40.PromptChain.Preview",
 	async beforeRegisterNodeDef(nodeType, nodeData, app) {
 		if (nodeData.name === "PromptChain") {
+			// Draw our custom input labels (default labels hidden via input.label = " " in nodeCreated)
+			const originalOnDrawForeground = nodeType.prototype.onDrawForeground;
+			nodeType.prototype.onDrawForeground = function(ctx) {
+				originalOnDrawForeground?.apply(this, arguments);
+
+				if (this.flags?.collapsed || !this.inputs) return;
+
+				// Draw custom input labels
+				for (let i = 0; i < this.inputs.length; i++) {
+					const input = this.inputs[i];
+					if (input?.name?.startsWith("input_")) {
+						// Get actual slot position using LiteGraph method
+						const pos = this.getConnectionPos?.(true, i) || [0, 0];
+						const x = (pos[0] - this.pos[0] + 14 + 14) / 2;  // Split the difference
+						const y = pos[1] - this.pos[1];
+
+						// Draw label with custom color (same as active Preview label)
+						ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+						ctx.font = "12px Arial";
+						ctx.textAlign = "left";
+						ctx.fillText(input.name, x, y + 4);
+					}
+				}
+
+				// Draw custom output labels
+				if (this.outputs) {
+					for (let i = 0; i < this.outputs.length; i++) {
+						const output = this.outputs[i];
+						if (output?.name) {
+							// Get actual slot position using LiteGraph method (false = output)
+							const pos = this.getConnectionPos?.(false, i) || [0, 0];
+							const x = pos[0] - this.pos[0] - 10;  // Offset from slot circle (right side)
+							const y = pos[1] - this.pos[1];
+
+							// Draw label with custom color (same as active Preview label)
+							ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+							ctx.font = "12px Arial";
+							ctx.textAlign = "right";
+							ctx.fillText(output.name, x, y + 4);
+						}
+					}
+				}
+			};
+
 			// When the node is executed, store the output text
 			const onExecuted = nodeType.prototype.onExecuted;
 			nodeType.prototype.onExecuted = function (message) {
@@ -240,7 +310,7 @@ app.registerExtension({
 						const H = 16;
 						const topOffset = -10; // Draw into the gap above
 						ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
-						ctx.font = "11px Arial";
+						ctx.font = "12px Arial";
 						ctx.textAlign = "left";
 						ctx.textBaseline = "middle";
 
