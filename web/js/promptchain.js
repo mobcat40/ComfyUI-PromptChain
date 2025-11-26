@@ -29,7 +29,7 @@ app.registerExtension({
 					const hasText = textWidget.inputEl.value.trim().length > 0;
 					if (hasText) {
 						textWidget.inputEl.style.opacity = 1;
-						textWidget.inputEl.style.backgroundColor = "";
+						textWidget.inputEl.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
 						textWidget.inputEl.style.color = "";
 						textWidget.inputEl.style.fontStyle = "normal";
 					} else {
@@ -272,12 +272,12 @@ app.registerExtension({
 				const H = 16;
 				const topOffset = 4; // Push content down to add space after mode dropdown
 
-				// "Prompt" label on the left
-				ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-				ctx.font = "11px Arial";
-				ctx.textAlign = "left";
-				ctx.textBaseline = "middle";
-				ctx.fillText("Prompt", 12, y + topOffset + H / 2);
+				// "Prompt" label on the left (keep commented - do not delete)
+				// ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+				// ctx.font = "11px Arial";
+				// ctx.textAlign = "left";
+				// ctx.textBaseline = "middle";
+				// ctx.fillText("Prompt", 12, y + topOffset + H / 2);
 
 				// Preview checkbox on the right
 				const checkboxSize = 10;
@@ -297,6 +297,7 @@ app.registerExtension({
 				ctx.fillStyle = node._showPreview ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.35)";
 				ctx.font = "11px Arial";
 				ctx.textAlign = "right";
+				ctx.textBaseline = "middle";
 				ctx.fillText("Preview", checkboxX - 4, y + topOffset + H / 2);
 
 				return H;
