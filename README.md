@@ -110,11 +110,10 @@ Click the **lock icon** (🔒/🔓) to freeze the current output.
 
 **Visual indicators:**
 
-| Icon | Meaning |
-|------|---------|
-| 🔒 Bright orange | Node is self-locked |
-| 🔒 Dim orange | Locked by upstream node |
-| 🔓 Gray | Unlocked |
+| State | Appearance |
+|-------|------------|
+| Locked | 🔒 Orange icon + **bold yellow "Lock" text** + gold background overlay |
+| Unlocked | 🔓 Dim gray icon and text |
 
 **Upstream propagation:** Locking a node also locks all its input nodes (the entire upstream chain). This ensures your complete prompt path stays frozen — from source nodes all the way to the locked node.
 
