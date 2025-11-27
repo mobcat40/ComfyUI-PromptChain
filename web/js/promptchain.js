@@ -159,6 +159,43 @@ app.registerExtension({
 	name: "mobcat40.PromptChain.Preview",
 	async beforeRegisterNodeDef(nodeType, nodeData, app) {
 		if (nodeData.name === "PromptChain") {
+			// Draw diagonal stripes when locked
+			const originalOnDrawBackground = nodeType.prototype.onDrawBackground;
+			nodeType.prototype.onDrawBackground = function(ctx) {
+				originalOnDrawBackground?.apply(this, arguments);
+
+				if (this._isLocked && !this.flags?.collapsed) {
+					const stripeWidth = 6;
+					const stripeGap = 18;
+					const [w, h] = this.size;
+
+					ctx.save();
+
+					// Clip to node body bounds with rounded corners
+					const radius = 8;
+					ctx.beginPath();
+					ctx.roundRect(0, 0, w, h, [0, 0, radius, radius]);
+					ctx.clip();
+
+					ctx.globalAlpha = 0.10;
+					ctx.fillStyle = "#ffaa00";
+
+					// Draw diagonal stripes as filled parallelograms
+					const total = w + h + stripeGap;
+					for (let x = -h; x < total; x += stripeGap) {
+						ctx.beginPath();
+						ctx.moveTo(x, h);
+						ctx.lineTo(x + stripeWidth, h);
+						ctx.lineTo(x + h + stripeWidth, 0);
+						ctx.lineTo(x + h, 0);
+						ctx.closePath();
+						ctx.fill();
+					}
+
+					ctx.restore();
+				}
+			};
+
 			// Draw our custom input labels (default labels hidden via input.label = " " in nodeCreated)
 			const originalOnDrawForeground = nodeType.prototype.onDrawForeground;
 			nodeType.prototype.onDrawForeground = function(ctx) {
