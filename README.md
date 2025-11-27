@@ -28,15 +28,15 @@ Each node shows exactly what it output. Chain them together, see the whole promp
 
 ## Features
 
-- **Inline wildcards** — Write `red | blue | green` directly in nodes. No external files.
-- **Visual chaining** — Connect nodes to build hierarchical prompt structures
+- **Inline wildcards** — Write `red | blue | green` directly in nodes. No external files required.
+- **Visual chaining** — Connect nodes easily to build rich meaningful structures
 - **Dynamic inputs** — Inputs auto-expand as you connect more nodes
 - **Live preview** — See what fired, when it fired, in real-time
-- **Lock system** — Freeze outputs and propagate locks upstream
-- **Import/Export** — Paste Dynamic Prompts syntax, auto-generate node trees
+- **Lock system** — Freeze part or all of your nodes for fast testing
+- **Import/Export** — Easily import/export with common DynamicPrompt syntax
 - **Two modes:**
-  - `🎲 Randomize Inputs` — All incoming tags properly randomized
-  - `➕ Combine Inputs` — All incoming tags grouped and flattened
+  - `🎲 Randomize Inputs` — Pick one path from connected inputs
+  - `➕ Combine Inputs` — Merge all paths together
 
 ## Installation
 
