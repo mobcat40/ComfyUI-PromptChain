@@ -35,8 +35,8 @@ Each node shows exactly what it output. Chain them together, see the whole promp
 - **Lock system** — Freeze outputs and propagate locks upstream
 - **Import/Export** — Paste Dynamic Prompts syntax, auto-generate node trees
 - **Two modes:**
-  - `🎲 Randomize Inputs` — Pick one path from connected inputs
-  - `➕ Combine Inputs` — Merge all paths together
+  - `🎲 Randomize Inputs` — All incoming tags properly randomized
+  - `➕ Combine Inputs` — All incoming tags grouped and flattened
 
 ## Installation
 
