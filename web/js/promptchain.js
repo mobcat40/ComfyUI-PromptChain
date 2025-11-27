@@ -435,8 +435,8 @@ app.registerExtension({
 			type: "hidden",
 			value: false,
 			options: { serialize: true },
-			// Return true if this node OR any upstream node is locked
-			serializeValue: () => node._isLocked || isLockedByUpstream(),
+			// Return true only if this node itself is locked
+			serializeValue: () => node._isLocked,
 			computeSize: () => [0, 0],
 		};
 		const cachedOutputWidget = {
@@ -482,60 +482,60 @@ app.registerExtension({
 			cacheDownstream(startNode);
 		};
 
-		// Helper to lock/unlock all upstream PromptChain nodes
-		const setUpstreamLockState = (startNode, lockState) => {
-			const visited = new Set();
-			const traverseUpstream = (n) => {
-				if (visited.has(n.id)) return;
-				visited.add(n.id);
+		// Helper to get all input nodes (nodes that feed INTO this node)
+		const getInputNodes = (n, visited = new Set()) => {
+			const inputNodes = [];
+			if (visited.has(n.id)) return inputNodes;
+			visited.add(n.id);
 
-				if (!n.inputs) return;
-				for (const input of n.inputs) {
-					if (input.link !== null) {
-						const linkInfo = app.graph.links[input.link];
-						if (linkInfo) {
-							const sourceNode = app.graph.getNodeById(linkInfo.origin_id);
-							if (sourceNode?.constructor?.comfyClass === "PromptChain") {
-								// Set lock state on upstream node
-								sourceNode._isLocked = lockState;
-								if (!sourceNode.properties) sourceNode.properties = {};
-								sourceNode.properties.isLocked = lockState;
-
-								// Cache output when locking
-								if (lockState && sourceNode._outputText) {
-									sourceNode.properties.cachedOutput = sourceNode._outputText;
-								}
-
-								// Continue upstream
-								traverseUpstream(sourceNode);
-							}
+			if (!n.inputs) return inputNodes;
+			for (const input of n.inputs) {
+				if (input.link !== null) {
+					const linkInfo = app.graph.links[input.link];
+					if (linkInfo) {
+						const sourceNode = app.graph.getNodeById(linkInfo.origin_id);
+						if (sourceNode?.constructor?.comfyClass === "PromptChain") {
+							inputNodes.push(sourceNode);
+							// Recursively get inputs of this input
+							inputNodes.push(...getInputNodes(sourceNode, visited));
 						}
 					}
 				}
-			};
-			traverseUpstream(startNode);
+			}
+			return inputNodes;
 		};
 
-		// Toggle lock function
+		// Toggle lock function - locks this node AND all its input nodes
 		const toggleLock = () => {
-			node._isLocked = !node._isLocked;
-			if (!node.properties) node.properties = {};
-			node.properties.isLocked = node._isLocked;
+			const newLockState = !node._isLocked;
 
-			// When locking, cache the current output AND lock all upstream nodes
-			if (node._isLocked) {
-				if (node._outputText) {
-					node.properties.cachedOutput = node._outputText;
-				}
-				// Lock all upstream nodes so they don't re-roll
-				setUpstreamLockState(node, true);
-				// Also cache all downstream nodes so they don't regenerate
-				cacheDownstreamNodes(node);
-			} else {
-				// When unlocking, also unlock all upstream nodes
-				setUpstreamLockState(node, false);
+			// Get all input nodes (nodes feeding into this one)
+			const inputNodes = getInputNodes(node);
+
+			// Lock/unlock this node
+			node._isLocked = newLockState;
+			if (!node.properties) node.properties = {};
+			node.properties.isLocked = newLockState;
+			if (newLockState && node._outputText) {
+				node.properties.cachedOutput = node._outputText;
 			}
-			// Update widget values
+
+			// Lock/unlock all input nodes too
+			for (const inputNode of inputNodes) {
+				inputNode._isLocked = newLockState;
+				if (!inputNode.properties) inputNode.properties = {};
+				inputNode.properties.isLocked = newLockState;
+				if (newLockState && inputNode._outputText) {
+					inputNode.properties.cachedOutput = inputNode._outputText;
+				}
+				// Update their hidden widgets
+				const inputLockedWidget = inputNode.widgets?.find(w => w.name === "locked");
+				const inputCachedWidget = inputNode.widgets?.find(w => w.name === "cached_output");
+				if (inputLockedWidget) inputLockedWidget.value = newLockState;
+				if (inputCachedWidget) inputCachedWidget.value = inputNode.properties.cachedOutput || "";
+			}
+
+			// Update this node's widget values
 			lockedWidget.value = node._isLocked;
 			cachedOutputWidget.value = node.properties.cachedOutput || "";
 
@@ -556,31 +556,21 @@ app.registerExtension({
 				const H = 16;
 				const topOffset = 4; // Push content down to add space after mode dropdown
 
-				// Check lock states
-				const lockedByUpstream = isLockedByUpstream();
-				const isEffectivelyLocked = node._isLocked || lockedByUpstream;
-
 				// Lock icon on the left
 				const lockX = 12;
 				const lockY = y + topOffset + H / 2;
 
-				// Different colors: orange=self-locked, dimmer orange=locked by upstream, gray=unlocked
-				if (node._isLocked) {
-					ctx.fillStyle = "#ffaa00";  // Bright orange - self locked
-				} else if (lockedByUpstream) {
-					ctx.fillStyle = "#aa7700";  // Dim orange - locked by upstream
-				} else {
-					ctx.fillStyle = "rgba(255, 255, 255, 0.35)";  // Gray - unlocked
-				}
+				// Orange when locked, gray when unlocked
+				ctx.fillStyle = node._isLocked ? "#ffaa00" : "rgba(255, 255, 255, 0.35)";
 				ctx.font = "11px Arial";
 				ctx.textAlign = "left";
 				ctx.textBaseline = "middle";
-				ctx.fillText(isEffectivelyLocked ? "🔒" : "🔓", lockX, lockY);
+				ctx.fillText(node._isLocked ? "🔒" : "🔓", lockX, lockY);
 
-				// "Lock" label after icon (brighter when active)
-				ctx.fillStyle = isEffectivelyLocked ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.35)";
+				// "Lock" label after icon
+				ctx.fillStyle = node._isLocked ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.35)";
 				ctx.font = "12px Arial";
-				ctx.fillText(lockedByUpstream && !node._isLocked ? "Locked" : "Lock", lockX + 16, lockY);
+				ctx.fillText("Lock", lockX + 16, lockY);
 
 				// Preview checkbox on the right
 				const checkboxSize = 10;
