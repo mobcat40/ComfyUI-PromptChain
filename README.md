@@ -116,7 +116,7 @@ Click the **lock icon** (🔒/🔓) to freeze the current output.
 | 🔒 Dim orange | Locked by upstream node |
 | 🔓 Gray | Unlocked |
 
-**Upstream propagation:** Lock one node, the entire downstream chain freezes with it. Ensures your prompt path stays consistent.
+**Upstream propagation:** Locking a node also locks all its input nodes (the entire upstream chain). This ensures your complete prompt path stays frozen — from source nodes all the way to the locked node.
 
 **Persistence:** Lock state and cached output save with your workflow.
 
