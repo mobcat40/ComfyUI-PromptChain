@@ -482,19 +482,58 @@ app.registerExtension({
 			cacheDownstream(startNode);
 		};
 
+		// Helper to lock/unlock all upstream PromptChain nodes
+		const setUpstreamLockState = (startNode, lockState) => {
+			const visited = new Set();
+			const traverseUpstream = (n) => {
+				if (visited.has(n.id)) return;
+				visited.add(n.id);
+
+				if (!n.inputs) return;
+				for (const input of n.inputs) {
+					if (input.link !== null) {
+						const linkInfo = app.graph.links[input.link];
+						if (linkInfo) {
+							const sourceNode = app.graph.getNodeById(linkInfo.origin_id);
+							if (sourceNode?.constructor?.comfyClass === "PromptChain") {
+								// Set lock state on upstream node
+								sourceNode._isLocked = lockState;
+								if (!sourceNode.properties) sourceNode.properties = {};
+								sourceNode.properties.isLocked = lockState;
+
+								// Cache output when locking
+								if (lockState && sourceNode._outputText) {
+									sourceNode.properties.cachedOutput = sourceNode._outputText;
+								}
+
+								// Continue upstream
+								traverseUpstream(sourceNode);
+							}
+						}
+					}
+				}
+			};
+			traverseUpstream(startNode);
+		};
+
 		// Toggle lock function
 		const toggleLock = () => {
 			node._isLocked = !node._isLocked;
 			if (!node.properties) node.properties = {};
 			node.properties.isLocked = node._isLocked;
 
-			// When locking, cache the current output AND all downstream nodes
+			// When locking, cache the current output AND lock all upstream nodes
 			if (node._isLocked) {
 				if (node._outputText) {
 					node.properties.cachedOutput = node._outputText;
 				}
+				// Lock all upstream nodes so they don't re-roll
+				setUpstreamLockState(node, true);
 				// Also cache all downstream nodes so they don't regenerate
 				cacheDownstreamNodes(node);
+			} else {
+				// When unlocking, also unlock all upstream nodes
+				setUpstreamLockState(node, false);
 			}
 			// Update widget values
 			lockedWidget.value = node._isLocked;
