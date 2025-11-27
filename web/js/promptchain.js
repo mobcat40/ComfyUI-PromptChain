@@ -159,7 +159,7 @@ app.registerExtension({
 	name: "mobcat40.PromptChain.Preview",
 	async beforeRegisterNodeDef(nodeType, nodeData, app) {
 		if (nodeData.name === "PromptChain") {
-			// Draw diagonal stripes when locked
+			// Draw yellow filter + diagonal stripes for locked nodes
 			const originalOnDrawBackground = nodeType.prototype.onDrawBackground;
 			nodeType.prototype.onDrawBackground = function(ctx) {
 				originalOnDrawBackground?.apply(this, arguments);
@@ -177,10 +177,15 @@ app.registerExtension({
 					ctx.roundRect(0, 0, w, h, [0, 0, radius, radius]);
 					ctx.clip();
 
-					ctx.globalAlpha = 0.05;
+					// Yellow filter overlay
+					ctx.globalAlpha = 1.0;
+					ctx.fillStyle = "#9e6e19";
+					ctx.fillRect(0, 0, w, h);
+
+					// Draw diagonal stripes
+					ctx.globalAlpha = 0.04;
 					ctx.fillStyle = "#000000";
 
-					// Draw diagonal stripes as filled parallelograms
 					const total = w + h + stripeGap;
 					for (let x = -h - stripeGap; x < total; x += stripeGap) {
 						ctx.beginPath();
