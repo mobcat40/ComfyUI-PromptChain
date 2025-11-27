@@ -35,8 +35,8 @@ Each node shows exactly what it output. Chain them together, see the whole promp
 - **Lock system** — Freeze outputs and propagate locks upstream
 - **Import/Export** — Paste Dynamic Prompts syntax, auto-generate node trees
 - **Two modes:**
-  - `Randomize` — Pick one path from connected inputs
-  - `Combine` — Merge all paths together
+  - `🎲 Randomize Inputs` — Pick one path from connected inputs
+  - `➕ Combine Inputs` — Merge all paths together
 
 ## Installation
 
@@ -61,18 +61,18 @@ Multiline works too — lines ending with `|` continue the OR group, lines endin
 ## The Node
 
 **PromptChain** is the single node type. It has:
-- **Mode selector** — `Randomize` or `Combine`
+- **Mode selector** — `🎲 Randomize Inputs` or `➕ Combine Inputs`
 - **Text field** — Wildcard processing with `|` and `,` syntax
 - **Dynamic inputs** — Connect as many inputs as you need, slots auto-expand
 
 ### Modes
 
-**Randomize**
+**🎲 Randomize Inputs**
 - Picks ONE random input from connected inputs
 - Prepends the text field to the selected input
 - Use for branching logic (pick one path)
 
-**Combine**
+**➕ Combine Inputs**
 - Merges ALL inputs using breadth-first interleaving
 - Tags round-robin across branches so no single branch dominates the token budget
 - Example: `["a,b,c,d", "X,Y"]` → `"a, X, b, Y, c, d"` (not `"a, b, c, d, X, Y"`)
