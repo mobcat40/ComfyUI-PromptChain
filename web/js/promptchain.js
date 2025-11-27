@@ -177,12 +177,12 @@ app.registerExtension({
 					ctx.roundRect(0, 0, w, h, [0, 0, radius, radius]);
 					ctx.clip();
 
-					ctx.globalAlpha = 0.10;
-					ctx.fillStyle = "#ffaa00";
+					ctx.globalAlpha = 0.05;
+					ctx.fillStyle = "#000000";
 
 					// Draw diagonal stripes as filled parallelograms
 					const total = w + h + stripeGap;
-					for (let x = -h; x < total; x += stripeGap) {
+					for (let x = -h - stripeGap; x < total; x += stripeGap) {
 						ctx.beginPath();
 						ctx.moveTo(x, h);
 						ctx.lineTo(x + stripeWidth, h);
@@ -604,9 +604,9 @@ app.registerExtension({
 				ctx.textBaseline = "middle";
 				ctx.fillText(node._isLocked ? "🔒" : "🔓", lockX, lockY);
 
-				// "Lock" label after icon
-				ctx.fillStyle = node._isLocked ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.35)";
-				ctx.font = "12px Arial";
+				// "Lock" label after icon - bright yellow bold when locked
+				ctx.fillStyle = node._isLocked ? "#ffcc00" : "rgba(255, 255, 255, 0.35)";
+				ctx.font = node._isLocked ? "bold 12px Arial" : "12px Arial";
 				ctx.fillText("Lock", lockX + 16, lockY);
 
 				// Preview checkbox on the right
