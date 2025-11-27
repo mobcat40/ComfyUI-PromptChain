@@ -1,6 +1,6 @@
 # ComfyUI-PromptChain
 
-A visual tool for prompt randomization and advanced combinations.
+A visual tool for prompt randomization and advanced combinations inside of your ComfyUI workflows.
 
 ## The Problem
 
