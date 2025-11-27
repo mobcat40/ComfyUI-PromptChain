@@ -1,6 +1,6 @@
 # ComfyUI-PromptChain
 
-**Visual hierarchy for prompt randomization. No more nested wildcard hell.**
+A visual tool for prompt randomization and advanced combinations.
 
 ## The Problem
 
