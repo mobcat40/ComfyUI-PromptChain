@@ -283,6 +283,9 @@ app.registerExtension({
 		// Track preview state (restore from properties if saved)
 		node._showPreview = node.properties?.showPreview || false;
 
+		// Track prompt visibility state (default: true = visible)
+		node._showPrompt = node.properties?.showPrompt !== false;
+
 		// Save text value to properties whenever it changes (for reliable persistence)
 		const setupTextPersistence = () => {
 			const textWidget = node.widgets?.find(w => w.name === "text");
@@ -362,11 +365,10 @@ app.registerExtension({
 					options: { serialize: false },
 					serializeValue: () => undefined, // Skip serialization
 					computeSize: function() {
-						return [node.size[0], 0]; // Zero height - we draw into space above
+						return [node.size[0], 20]; // Actual height for the label
 					},
 					draw: function(ctx, _, width, y) {
-						const H = 16;
-						const topOffset = -10; // Draw into the gap above
+						const H = 20;
 						ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
 						ctx.font = "12px Arial";
 						ctx.textAlign = "left";
@@ -374,7 +376,7 @@ app.registerExtension({
 
 						// Build label with cached time ago (empty if never run)
 						if (node._cachedTimeAgo) {
-							ctx.fillText(`Last run: ${node._cachedTimeAgo}`, 12, y + topOffset + H / 2);
+							ctx.fillText(`Last run: ${node._cachedTimeAgo}`, 12, y + H / 2);
 						}
 						return H;
 					},
@@ -391,7 +393,6 @@ app.registerExtension({
 				w.inputEl.readOnly = true;
 				w.inputEl.style.opacity = 1;
 				w.inputEl.style.fontStyle = "italic";
-				w.inputEl.style.marginTop = "-6px"; // Pull text closer to output label
 				w.inputEl.style.fontFamily = "Arial, sans-serif";
 				w.inputEl.style.fontSize = "11px";
 				w.inputEl.style.padding = "4px";
@@ -437,6 +438,32 @@ app.registerExtension({
 					const newTextIndex = node.widgets.findIndex(w => w.name === "text");
 					node.widgets.splice(newTextIndex + 1, 0, outputLabel);
 					node.widgets.splice(newTextIndex + 2, 0, previewWidget);
+				}
+			}
+			app.graph.setDirtyCanvas(true);
+		};
+
+		// Toggle prompt visibility function
+		const togglePrompt = () => {
+			node._showPrompt = !node._showPrompt;
+			// Save state to properties for persistence
+			if (!node.properties) node.properties = {};
+			node.properties.showPrompt = node._showPrompt;
+
+			const textWidget = node.widgets?.find(w => w.name === "text");
+			if (textWidget) {
+				if (node._showPrompt) {
+					// Show the text widget
+					textWidget.type = "customtext";
+					if (textWidget.inputEl) {
+						textWidget.inputEl.style.display = "";
+					}
+				} else {
+					// Hide the text widget
+					textWidget.type = "hidden";
+					if (textWidget.inputEl) {
+						textWidget.inputEl.style.display = "none";
+					}
 				}
 			}
 			app.graph.setDirtyCanvas(true);
@@ -592,10 +619,11 @@ app.registerExtension({
 			options: { serialize: false },
 			serializeValue: () => undefined, // Skip serialization
 			computeSize: function() {
-				return [node.size[0], 16];
+				return [node.size[0], 26];  // 16 content + 10 bottom margin
 			},
 			draw: function(ctx, node, width, y, height) {
 				const H = 16;
+				const totalH = 26;  // Includes bottom margin
 				const topOffset = 4; // Push content down to add space after mode dropdown
 
 				// Lock icon on the left
@@ -614,18 +642,19 @@ app.registerExtension({
 				ctx.font = node._isLocked ? "bold 12px Arial" : "12px Arial";
 				ctx.fillText("Lock", lockX + 16, lockY);
 
-				// Preview checkbox on the right
 				const checkboxSize = 10;
-				const checkboxX = width - 13 - checkboxSize; // 5px extra margin from right edge
 				const checkboxY = y + topOffset + (H - checkboxSize) / 2 - 1;
+
+				// Preview checkbox on the right
+				const previewCheckboxX = width - 13 - checkboxSize;
 
 				ctx.strokeStyle = node._showPreview ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.35)";
 				ctx.lineWidth = 1;
-				ctx.strokeRect(checkboxX, checkboxY, checkboxSize, checkboxSize);
+				ctx.strokeRect(previewCheckboxX, checkboxY, checkboxSize, checkboxSize);
 
 				if (node._showPreview) {
 					ctx.fillStyle = "#4a9eff";
-					ctx.fillRect(checkboxX + 2, checkboxY + 2, checkboxSize - 4, checkboxSize - 4);
+					ctx.fillRect(previewCheckboxX + 2, checkboxY + 2, checkboxSize - 4, checkboxSize - 4);
 				}
 
 				// "Preview" label before checkbox (brighter when active)
@@ -633,9 +662,28 @@ app.registerExtension({
 				ctx.font = "12px Arial";
 				ctx.textAlign = "right";
 				ctx.textBaseline = "middle";
-				ctx.fillText("Preview", checkboxX - 6, y + topOffset + H / 2);
+				ctx.fillText("Preview", previewCheckboxX - 6, y + topOffset + H / 2);
 
-				return H;
+				// Prompt checkbox (before Preview)
+				const promptCheckboxX = previewCheckboxX - 75;
+
+				ctx.strokeStyle = node._showPrompt ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.35)";
+				ctx.lineWidth = 1;
+				ctx.strokeRect(promptCheckboxX, checkboxY, checkboxSize, checkboxSize);
+
+				if (node._showPrompt) {
+					ctx.fillStyle = "#4a9eff";
+					ctx.fillRect(promptCheckboxX + 2, checkboxY + 2, checkboxSize - 4, checkboxSize - 4);
+				}
+
+				// "Prompt" label before checkbox (brighter when active)
+				ctx.fillStyle = node._showPrompt ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.35)";
+				ctx.font = "12px Arial";
+				ctx.textAlign = "right";
+				ctx.textBaseline = "middle";
+				ctx.fillText("Prompt", promptCheckboxX - 6, y + topOffset + H / 2);
+
+				return totalH;
 			},
 			mouse: function(event, pos, node) {
 				if (event.type === "pointerdown") {
@@ -645,11 +693,19 @@ app.registerExtension({
 						return true;
 					}
 
-					// Check if click is on preview checkbox area (right side)
 					const checkboxSize = 10;
-					const checkboxX = node.size[0] - 13 - checkboxSize; // 5px extra margin from right edge
-					if (pos[0] >= checkboxX - 50 && pos[0] <= node.size[0] - 4) {
+					const previewCheckboxX = node.size[0] - 13 - checkboxSize;
+					const promptCheckboxX = previewCheckboxX - 75;
+
+					// Check if click is on preview checkbox area (right side)
+					if (pos[0] >= previewCheckboxX - 50 && pos[0] <= node.size[0] - 4) {
 						togglePreview();
+						return true;
+					}
+
+					// Check if click is on prompt checkbox area
+					if (pos[0] >= promptCheckboxX - 45 && pos[0] < previewCheckboxX - 50) {
+						togglePrompt();
 						return true;
 					}
 				}
@@ -954,6 +1010,12 @@ app.registerExtension({
 			// Restore switch index from saved properties
 			if (info.properties?.switchIndex !== undefined) {
 				node._switchIndex = info.properties.switchIndex;
+			}
+
+			// Restore prompt visibility from saved properties
+			if (info.properties?.showPrompt === false && node._showPrompt) {
+				node._showPrompt = true;
+				togglePrompt(); // Will toggle to false and hide prompt
 			}
 
 			// Update switch selector visibility based on restored mode
