@@ -21,7 +21,7 @@ class PromptChain:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "mode": (["Randomize", "Combine"],),
+                "mode": (["Randomize", "Combine", "Switch"],),
                 "text": ("STRING", {"default": "", "multiline": True}),
             },
             "optional": {
@@ -30,6 +30,7 @@ class PromptChain:
             "hidden": {
                 "locked": ("BOOLEAN", {"default": False}),
                 "cached_output": ("STRING", {"default": ""}),
+                "switch_index": ("INT", {"default": 1}),
             }
         }
 
@@ -43,7 +44,7 @@ class PromptChain:
     def IS_CHANGED(cls, **kwargs):
         return float("nan")
 
-    def process(self, mode, text, locked=False, cached_output="", **kwargs):
+    def process(self, mode, text, locked=False, cached_output="", switch_index=1, **kwargs):
         # Debug logging
         text_preview = text[:50] if text else ''
         debug_log(f"[PromptChain] mode={mode!r}, text={text_preview!r}, locked={locked}, kwargs={kwargs}")
@@ -98,7 +99,20 @@ class PromptChain:
             text_combined = ""
 
         debug_log(f"[PromptChain] BEFORE MODE CHECK: mode={mode!r}, text_combined={text_combined!r}, inputs={inputs}")
-        if mode == "Randomize":
+        if mode == "Switch":
+            debug_log(f"[PromptChain] SWITCH BRANCH, switch_index={switch_index}")
+            # Switch mode: only pass through the selected input
+            selected_key = f"input_{switch_index}"
+            selected_value = kwargs.get(selected_key, "")
+            if selected_value and selected_value.strip():
+                if text_combined:
+                    result = text_combined + ", " + selected_value.strip()
+                else:
+                    result = selected_value.strip()
+            else:
+                result = text_combined
+            debug_log(f"[PromptChain] SWITCH result={result!r}")
+        elif mode == "Randomize":
             debug_log(f"[PromptChain] RANDOMIZE BRANCH")
             if inputs:
                 selected_input = random.choice(inputs)

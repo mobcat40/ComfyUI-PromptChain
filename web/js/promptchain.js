@@ -684,7 +684,7 @@ app.registerExtension({
 				ctx.font = "12px Arial";
 				ctx.textAlign = "center";
 				ctx.textBaseline = "middle";
-				const displayMap = { "Randomize": "🎲 Randomize Inputs", "Combine": "➕ Combine Inputs" };
+				const displayMap = { "Randomize": "🎲 Randomize Inputs", "Combine": "➕ Combine Inputs", "Switch": "🔛 Switch Input" };
 				const displayText = displayMap[this.value] || this.value || "";
 				ctx.fillText(displayText, width / 2, y + marginY + H * 0.5);
 
@@ -700,12 +700,212 @@ app.registerExtension({
 
 				return totalH;
 			};
+
+			// Track mode changes to show/hide switch selector
+			const originalCallback = modeWidget.callback;
+			modeWidget.callback = function(value) {
+				originalCallback?.call(this, value);
+				updateSwitchSelectorVisibility();
+			};
+
+			// Use Object.defineProperty to intercept value changes on combo widget
+			let currentValue = modeWidget.value;
+			Object.defineProperty(modeWidget, 'value', {
+				get() { return currentValue; },
+				set(newValue) {
+					currentValue = newValue;
+					// Defer visibility update to next frame
+					requestAnimationFrame(() => updateSwitchSelectorVisibility());
+				}
+			});
 		}
 
-		// Insert menubar after mode widget visually, but we need to handle serialization carefully
+		// Helper to get connected input labels
+		const getConnectedInputLabels = () => {
+			const labels = [];
+			if (!node.inputs) return labels;
+
+			for (const input of node.inputs) {
+				if (input.name.startsWith("input_") && input.link !== null) {
+					const linkInfo = app.graph.links[input.link];
+					if (linkInfo) {
+						const sourceNode = app.graph.getNodeById(linkInfo.origin_id);
+						if (sourceNode) {
+							// Show node title if it's custom (not default "PromptChain"), otherwise fall back to "input_N"
+							const hasCustomTitle = sourceNode.title && sourceNode.title !== "PromptChain";
+							const label = hasCustomTitle ? sourceNode.title : input.name;
+							const index = parseInt(input.name.split("_")[1]);
+							labels.push({ label, index, inputName: input.name });
+						}
+					}
+				}
+			}
+			return labels;
+		};
+
+		// Create switch selector widget (hidden by default)
+		node._switchIndex = node.properties?.switchIndex || 1;
+
+		const switchSelector = {
+			name: "switch_selector",
+			type: "custom",
+			value: null,
+			options: { serialize: false },
+			hidden: true,
+			serializeValue: () => undefined,
+			computeSize: function() {
+				if (this.hidden) return [0, 0];
+				return [node.size[0], 34];  // 8 top padding + 26 widget
+			},
+			draw: function(ctx, _, width, y, height) {
+				if (this.hidden) return 0;
+
+				const totalH = 34;
+				const topPadding = 8;  // Breathing room above
+				const marginY = 2;
+				const H = 22;  // Box height
+				const margin = 15;
+				const w = width - margin * 2;
+
+				// Draw background (matching mode widget style)
+				ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+				ctx.beginPath();
+				ctx.roundRect(margin, y + topPadding + marginY, w, H, 12);
+				ctx.fill();
+
+				// Draw border
+				ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+				ctx.lineWidth = 1;
+				ctx.stroke();
+
+				// Get current selection label
+				const labels = getConnectedInputLabels();
+				let displayText = "(no connections)";
+				if (labels.length > 0) {
+					const selected = labels.find(l => l.index === node._switchIndex);
+					displayText = selected ? `🟢 ${selected.label}` : `🟢 ${labels[0].label}`;
+				}
+
+				// Draw text (matching mode widget style)
+				ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+				ctx.font = "12px Arial";
+				ctx.textAlign = "center";
+				ctx.textBaseline = "middle";
+				ctx.fillText(displayText, width / 2, y + topPadding + marginY + H * 0.5);
+
+				// Draw arrows (matching mode widget style)
+				ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+				ctx.font = "10px Arial";
+				ctx.textAlign = "left";
+				ctx.fillText("◀", margin + 6, y + topPadding + marginY + H * 0.5);
+				ctx.textAlign = "right";
+				ctx.fillText("▶", width - margin - 6, y + topPadding + marginY + H * 0.5);
+
+				return totalH;
+			},
+			mouse: function(event, pos, node) {
+				if (this.hidden) return false;
+				if (event.type !== "pointerdown") return false;
+
+				const labels = getConnectedInputLabels();
+				if (labels.length === 0) return false;
+
+				const margin = 15;
+				const arrowWidth = 25;
+				const leftArrowEnd = margin + arrowWidth;
+				const rightArrowStart = node.size[0] - margin - arrowWidth;
+
+				// Check if clicking on arrows (cycle) or center (dropdown)
+				if (pos[0] < leftArrowEnd) {
+					// Left arrow - previous
+					let currentIdx = labels.findIndex(l => l.index === node._switchIndex);
+					if (currentIdx === -1) currentIdx = 0;
+					currentIdx = (currentIdx - 1 + labels.length) % labels.length;
+					node._switchIndex = labels[currentIdx].index;
+					if (!node.properties) node.properties = {};
+					node.properties.switchIndex = node._switchIndex;
+					app.graph.setDirtyCanvas(true);
+					return true;
+				} else if (pos[0] > rightArrowStart) {
+					// Right arrow - next
+					let currentIdx = labels.findIndex(l => l.index === node._switchIndex);
+					if (currentIdx === -1) currentIdx = 0;
+					currentIdx = (currentIdx + 1) % labels.length;
+					node._switchIndex = labels[currentIdx].index;
+					if (!node.properties) node.properties = {};
+					node.properties.switchIndex = node._switchIndex;
+					app.graph.setDirtyCanvas(true);
+					return true;
+				} else {
+					// Center - show dropdown menu
+					const options = labels.map(l => ({
+						content: l.label,
+						callback: () => {
+							node._switchIndex = l.index;
+							if (!node.properties) node.properties = {};
+							node.properties.switchIndex = node._switchIndex;
+							app.graph.setDirtyCanvas(true);
+						}
+					}));
+
+					// Use LiteGraph's context menu
+					const canvas = app.canvas;
+					new LiteGraph.ContextMenu(options, {
+						event: event,
+						callback: null,
+						scale: canvas.ds.scale
+					}, canvas.getCanvasWindow());
+					return true;
+				}
+			}
+		};
+
+		// Update switch selector visibility based on mode
+		const updateSwitchSelectorVisibility = () => {
+			const modeWidget = node.widgets.find(w => w.name === "mode");
+			const isSwitch = modeWidget?.value === "Switch";
+			switchSelector.hidden = !isSwitch;
+			app.graph.setDirtyCanvas(true);
+		};
+
+		// Add hidden widget to pass switch_index to Python
+		const switchIndexWidget = {
+			name: "switch_index",
+			type: "hidden",
+			value: 1,
+			options: { serialize: true },
+			serializeValue: () => node._switchIndex || 1,
+			computeSize: () => [0, 0],
+		};
+		node.widgets.push(switchIndexWidget);
+
+		// Insert switch selector after mode widget
 		const modeIndex = node.widgets.findIndex(w => w.name === "mode");
 		if (modeIndex > -1) {
-			node.widgets.splice(modeIndex + 1, 0, menubar);
+			node.widgets.splice(modeIndex + 1, 0, switchSelector);
+		}
+
+		// Update visibility on connections change
+		const existingOnConnectionsChange = node.onConnectionsChange;
+		node.onConnectionsChange = function() {
+			existingOnConnectionsChange?.apply(this, arguments);
+			// Validate switch index is still valid
+			const labels = getConnectedInputLabels();
+			if (labels.length > 0 && !labels.find(l => l.index === node._switchIndex)) {
+				node._switchIndex = labels[0].index;
+				if (!node.properties) node.properties = {};
+				node.properties.switchIndex = node._switchIndex;
+			}
+			app.graph.setDirtyCanvas(true);
+		};
+
+		// Initialize visibility
+		updateSwitchSelectorVisibility();
+
+		// Insert menubar after switch selector (which is after mode widget)
+		const menubarInsertIndex = node.widgets.findIndex(w => w.name === "switch_selector");
+		if (menubarInsertIndex > -1) {
+			node.widgets.splice(menubarInsertIndex + 1, 0, menubar);
 		} else {
 			node.widgets.push(menubar);
 		}
@@ -750,6 +950,14 @@ app.registerExtension({
 			if (info.properties?.cachedOutput !== undefined) {
 				node.properties.cachedOutput = info.properties.cachedOutput;
 			}
+
+			// Restore switch index from saved properties
+			if (info.properties?.switchIndex !== undefined) {
+				node._switchIndex = info.properties.switchIndex;
+			}
+
+			// Update switch selector visibility based on restored mode
+			updateSwitchSelectorVisibility();
 		};
 
 		// Helper to set text on a node
