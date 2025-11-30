@@ -754,11 +754,11 @@ app.registerExtension({
 				// Create textarea preview widget using ComfyWidgets
 				const previewWidget = ComfyWidgets["STRING"](node, "output_preview", ["STRING", { multiline: true }], app).widget;
 				previewWidget.inputEl.readOnly = true;
-				previewWidget.inputEl.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-				previewWidget.inputEl.style.color = "rgba(255, 255, 255, 0.85)";
+				previewWidget.inputEl.style.backgroundColor = "rgb(0 0 0 / 20%)";
+				previewWidget.inputEl.style.color = "rgb(255 255 255 / 88%)";
 				previewWidget.inputEl.style.fontFamily = "Arial, sans-serif";
 				previewWidget.inputEl.style.fontSize = "11px";
-				previewWidget.inputEl.style.padding = "22px 8px 8px 8px"; // Extra top padding for fake cap
+				previewWidget.inputEl.style.padding = "8px";
 				previewWidget.inputEl.style.lineHeight = "1.4";
 				previewWidget.inputEl.style.borderRadius = "4px";
 				previewWidget.inputEl.style.border = "none";
@@ -768,42 +768,13 @@ app.registerExtension({
 				previewWidget.options = { serialize: false };
 				previewWidget.serializeValue = () => undefined;
 
-				// Add fake cap label "Resulting prompt" with retry pattern
-				const setupPreviewCap = () => {
-					const textarea = previewWidget.inputEl;
-					if (textarea && !textarea.parentElement?.querySelector(".promptchain-fake-cap-preview")) {
-						// Make textarea wrapper positioned
-						const wrapper = textarea.parentElement;
-						wrapper.style.position = "relative";
-
-						const fakeCapLabel = document.createElement("div");
-						fakeCapLabel.className = "promptchain-fake-cap-preview";
-						fakeCapLabel.textContent = "Resulting prompt";
-						fakeCapLabel.style.cssText = `
-							position: absolute;
-							top: 6px;
-							left: 7px;
-							font-family: Arial, sans-serif;
-							font-size: 10px;
-							font-weight: bold;
-							color: rgba(255, 255, 255, 0.5);
-							pointer-events: none;
-							z-index: 10;
-						`;
-						wrapper.appendChild(fakeCapLabel);
-					} else if (!textarea) {
-						requestAnimationFrame(setupPreviewCap);
-					}
-				};
-				requestAnimationFrame(setupPreviewCap);
-
 				// Update content helper
 				previewWidget.updateContent = function() {
 					const posText = node._outputText || "";
 					const negText = node._negOutputText || "";
-					let content = posText || "(empty)";
+					let content = "Prompt result:\n" + (posText || "(empty)");
 					if (negText && negText.trim()) {
-						content += "\n\nNegative: " + negText;
+						content += "\n\nNegative prompt:\n" + negText;
 					}
 					this.inputEl.value = content;
 					this.value = content;
