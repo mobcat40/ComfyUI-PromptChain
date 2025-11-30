@@ -325,7 +325,7 @@ app.registerExtension({
 						const x = (pos[0] - this.pos[0] + 14 + 14) / 2;  // Split the difference
 						const y = pos[1] - this.pos[1];
 
-						// Dynamic label: show connected node's name, or "chain in" if connected to default PromptChain, or empty if no connection
+						// Dynamic label: show connected node's name, or "in" if default/disconnected
 						let labelText = "";
 						let hasDropdown = false;
 						let sourceNode = null;
@@ -337,7 +337,7 @@ app.registerExtension({
 								if (sourceNode) {
 									const isPromptChain = sourceNode.constructor?.comfyClass === "PromptChain";
 									const hasCustomTitle = sourceNode.title && sourceNode.title !== "PromptChain";
-									const baseLabel = hasCustomTitle ? sourceNode.title : "chain in";
+									const baseLabel = hasCustomTitle ? sourceNode.title : "Untitled Node";
 
 									// Check if child has connected inputs (making dropdown useful)
 									const childOptions = getChildSwitchOptions(sourceNode);
@@ -351,8 +351,10 @@ app.registerExtension({
 									}
 								}
 							}
+						} else {
+							// No connection - show default label
+							labelText = "in";
 						}
-						// If no connection, labelText stays empty
 
 						// Draw label - green if has dropdown
 						ctx.fillStyle = hasDropdown ? "rgba(144, 238, 144, 0.9)" : "rgba(255, 255, 255, 0.7)";
@@ -385,11 +387,11 @@ app.registerExtension({
 							const x = pos[0] - this.pos[0] - 10;  // Offset from slot circle (right side)
 							const y = pos[1] - this.pos[1];
 
-							// Draw output label - "chain out" for 'chain', keep other names as-is
+							// Draw output label - "out" for chain, keep others as-is
 							ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
 							ctx.font = "12px Arial";
 							ctx.textAlign = "right";
-							const outputLabel = output.name === "chain" ? "chain out" : output.name;
+							const outputLabel = output.name === "chain" ? "out" : output.name;
 							ctx.fillText(outputLabel, x, y + 4);
 						}
 					}
@@ -1346,6 +1348,12 @@ app.registerExtension({
 			}
 		};
 
+		// Helper to check if node has connected inputs
+		const hasConnectedInputs = () => {
+			if (!node.inputs) return false;
+			return node.inputs.some(i => i.name.startsWith("input_") && i.link !== null);
+		};
+
 		// Style the mode widget with custom background color
 		const modeWidget = node.widgets.find(w => w.name === "mode");
 		if (modeWidget) {
@@ -1357,35 +1365,45 @@ app.registerExtension({
 				const margin = 15;
 				const w = width - margin * 2;
 
+				// Check if dropdown should be disabled (no connected inputs)
+				const isDisabled = !hasConnectedInputs();
+
 				// Draw custom background
-				ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+				ctx.fillStyle = isDisabled ? "rgba(0, 0, 0, 0.15)" : "rgba(0, 0, 0, 0.3)";
 				ctx.beginPath();
 				ctx.roundRect(margin, y + marginY, w, H, 12);
 				ctx.fill();
 
 				// Draw border
-				ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+				ctx.strokeStyle = isDisabled ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0.2)";
 				ctx.lineWidth = 1;
 				ctx.stroke();
 
 				// Draw the text (current value) - centered, with emoji prefix
-				ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+				ctx.fillStyle = isDisabled ? "rgba(255, 255, 255, 0.3)" : "rgba(255, 255, 255, 0.7)";
 				ctx.font = "12px Arial";
 				ctx.textAlign = "center";
 				ctx.textBaseline = "middle";
-				const displayMap = { "Randomize": "🎲 Randomize Inputs", "Combine": "➕ Combine Inputs", "Switch": "🔛 Switch Input" };
-				const displayText = displayMap[this.value] || this.value || "";
+				let displayText;
+				if (isDisabled) {
+					displayText = "No Inputs";
+				} else {
+					const displayMap = { "Randomize": "🎲 Randomize Inputs", "Combine": "➕ Combine Inputs", "Switch": "🔛 Switch Input" };
+					displayText = displayMap[this.value] || this.value || "";
+				}
 				ctx.fillText(displayText, width / 2, y + marginY + H * 0.5);
 
-				// Draw arrows on each side
-				ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-				ctx.font = "10px Arial";
-				// Left arrow
-				ctx.textAlign = "left";
-				ctx.fillText("◀", margin + 6, y + marginY + H * 0.5);
-				// Right arrow
-				ctx.textAlign = "right";
-				ctx.fillText("▶", width - margin - 6, y + marginY + H * 0.5);
+				// Draw arrows on each side (hidden when disabled)
+				if (!isDisabled) {
+					ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+					ctx.font = "10px Arial";
+					// Left arrow
+					ctx.textAlign = "left";
+					ctx.fillText("◀", margin + 6, y + marginY + H * 0.5);
+					// Right arrow
+					ctx.textAlign = "right";
+					ctx.fillText("▶", width - margin - 6, y + marginY + H * 0.5);
+				}
 
 				return totalH;
 			};
@@ -1393,8 +1411,42 @@ app.registerExtension({
 			// Track mode changes to show/hide switch selector
 			const originalCallback = modeWidget.callback;
 			modeWidget.callback = function(value) {
+				// Block value changes when no inputs are connected
+				if (!hasConnectedInputs()) {
+					return;
+				}
 				originalCallback?.call(this, value);
 				updateSwitchSelectorVisibility();
+			};
+
+			// Update disabled state when connections change
+			const updateModeWidgetDisabled = () => {
+				modeWidget.disabled = !hasConnectedInputs();
+				app.graph.setDirtyCanvas(true);
+			};
+
+			// Hook into connection changes to update disabled state
+			const origOnConnectionsChange = node.onConnectionsChange;
+			node.onConnectionsChange = function() {
+				origOnConnectionsChange?.apply(this, arguments);
+				updateModeWidgetDisabled();
+			};
+
+			// Initial disabled state
+			updateModeWidgetDisabled();
+
+			// Override mouse handler to consume clicks when disabled
+			const originalMouse = modeWidget.mouse;
+			modeWidget.mouse = function(event, pos, node) {
+				// Consume click events when disabled (no inputs connected)
+				if (!hasConnectedInputs()) {
+					return true; // Return true to consume the event and prevent default handling
+				}
+				// Call original handler if it exists
+				if (originalMouse) {
+					return originalMouse.call(this, event, pos, node);
+				}
+				return false;
 			};
 
 			// Use Object.defineProperty to intercept value changes on combo widget
@@ -1402,6 +1454,10 @@ app.registerExtension({
 			Object.defineProperty(modeWidget, 'value', {
 				get() { return currentValue; },
 				set(newValue) {
+					// Block value changes when no inputs are connected
+					if (!hasConnectedInputs() && currentValue !== newValue) {
+						return;
+					}
 					currentValue = newValue;
 					// Defer visibility update to next frame
 					requestAnimationFrame(() => updateSwitchSelectorVisibility());
