@@ -593,7 +593,7 @@ app.registerExtension({
 				posPreview.inputEl.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
 				posPreview.inputEl.style.color = "rgba(255, 255, 255, 0.85)";
 				posPreview.inputEl.style.marginTop = "0px";
-				posPreview.inputEl.placeholder = "awaiting generation...";
+				posPreview.inputEl.placeholder = "(empty)";
 				// Style placeholder text
 				const styleId = "promptchain-placeholder-style";
 				if (!document.getElementById(styleId)) {
@@ -675,7 +675,7 @@ app.registerExtension({
 				negPreview.inputEl.style.backgroundColor = "rgba(40, 0, 0, 0.5)";  // Subtle red tint
 				negPreview.inputEl.style.color = "rgba(255, 255, 255, 0.85)";
 				negPreview.inputEl.style.marginTop = "0px";
-				negPreview.inputEl.placeholder = "awaiting generation...";
+				negPreview.inputEl.placeholder = "(empty)";
 				negPreview.inputEl.classList.add("promptchain-preview-neg");
 				negPreview.value = node._negOutputText || "";
 				negPreview.inputEl.value = node._negOutputText || "";
@@ -774,7 +774,7 @@ app.registerExtension({
 		};
 
 		// Add hidden widgets to pass lock state to Python
-		// Use -4 height to counteract LiteGraph's inter-widget spacing
+		// Use -4 height to counteract LiteGraph's inter-widget spacing while keeping proper bottom margin
 		const lockedWidget = {
 			name: "locked",
 			type: "hidden",
@@ -1591,8 +1591,17 @@ app.registerExtension({
 
 			// Restore preview state from saved properties
 			if (info.properties?.showPreview && !node._showPreview) {
+				// Save current size before toggling preview
+				const savedSize = [...node.size];
 				node._showPreview = false;
+				node._restoringPreview = true; // Flag to prevent auto-shrink
 				togglePreview(true); // skipResize to preserve saved node size
+				// Restore size after a delay to let preview widgets initialize
+				setTimeout(() => {
+					node.setSize(savedSize);
+					node._restoringPreview = false;
+					app.graph.setDirtyCanvas(true);
+				}, 150);
 			}
 
 			// Restore lock state from saved properties
@@ -1658,10 +1667,15 @@ app.registerExtension({
 				}
 
 				// Recalculate node size to fit content properly after all widgets are set up
-				const minSize = node.computeSize();
-				if (node.size[1] > minSize[1] + 10) {
-					// Node is taller than needed, shrink it
-					node.setSize([node.size[0], minSize[1]]);
+				// Only shrink if preview is NOT shown and not currently restoring preview
+				if (!node._showPreview && !node._restoringPreview) {
+					const minSize = node.computeSize();
+					// Add 6px bottom margin to match ComfyUI's standard node padding
+					const targetHeight = minSize[1] + 6;
+					if (node.size[1] > targetHeight + 10) {
+						// Node is taller than needed, shrink it
+						node.setSize([node.size[0], targetHeight]);
+					}
 				}
 			}, 100);
 		};
