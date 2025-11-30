@@ -389,17 +389,9 @@ app.registerExtension({
 		node._isDisabled = node.properties?.isDisabled || false;
 
 		// Save text value to properties whenever it changes (for reliable persistence)
-		// Also override computeSize to return negative height when hidden
 		const setupTextPersistence = () => {
 			const textWidget = node.widgets?.find(w => w.name === "text");
 			if (textWidget?.inputEl) {
-				// Override computeSize to return negative height when hidden
-				const originalTextComputeSize = textWidget.computeSize?.bind(textWidget);
-				textWidget.computeSize = function(width) {
-					if (!node._showPositive) return [0, -4]; // Negative to counteract widget spacing
-					return originalTextComputeSize ? originalTextComputeSize(width) : [width, 60];
-				};
-
 				textWidget.inputEl.addEventListener("input", () => {
 					if (!node.properties) node.properties = {};
 					node.properties.textValue = textWidget.inputEl.value;
@@ -1466,11 +1458,11 @@ app.registerExtension({
 			serializeValue: () => undefined,
 			computeSize: function() {
 				// Only show if positive text is visible
-				if (!node._showPositive) return [0, -4]; // Negative to counteract widget spacing
+				if (!node._showPositive) return [0, 0];
 				return [node.size[0], 4]; // Height tuned for seamless connection
 			},
 			draw: function(ctx, _, width, y) {
-				if (!node._showPositive) return -4;
+				if (!node._showPositive) return 0;
 
 				const H = 18; // Draw taller than computeSize to overlap gap
 				// Get the actual textbox element position
