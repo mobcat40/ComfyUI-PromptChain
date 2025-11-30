@@ -499,8 +499,11 @@ app.registerExtension({
 						let w = width - margin * 2;
 						if (previewWidget?.inputEl) {
 							const boxWidth = previewWidget.inputEl.offsetWidth;
-							margin = (width - boxWidth) / 2;
-							w = boxWidth;
+							// Only use textbox width if it's valid (between reasonable bounds)
+							if (boxWidth > 50 && boxWidth < width) {
+								margin = (width - boxWidth) / 2;
+								w = boxWidth;
+							}
 						}
 						ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
 						ctx.beginPath();
@@ -578,8 +581,11 @@ app.registerExtension({
 						let w = width - margin * 2;
 						if (negPreviewWidget?.inputEl) {
 							const boxWidth = negPreviewWidget.inputEl.offsetWidth;
-							margin = (width - boxWidth) / 2;
-							w = boxWidth;
+							// Only use textbox width if it's valid (between reasonable bounds)
+							if (boxWidth > 50 && boxWidth < width) {
+								margin = (width - boxWidth) / 2;
+								w = boxWidth;
+							}
 						}
 						ctx.fillStyle = "rgba(40, 0, 0, 0.3)";  // Subtle red tint
 						ctx.beginPath();
@@ -881,6 +887,11 @@ app.registerExtension({
 				const totalH = 26;  // Includes bottom margin
 				const topOffset = 4; // Push content down to add space after mode dropdown
 
+				// Collapse labels when node is narrow
+				const showLabels = width >= 260;
+				const iconSpacing = showLabels ? 52 : 22;  // Spacing between icon groups
+				const disableSpacing = showLabels ? 68 : 22;
+
 				// Lock icon on the left
 				const lockX = 12;
 				const lockY = y + topOffset + H / 2;
@@ -892,34 +903,40 @@ app.registerExtension({
 				ctx.textBaseline = "middle";
 				ctx.fillText(node._isLocked ? "🔒" : "🔓", lockX, lockY);
 
-				// "Lock" label after icon - bright yellow bold when locked
-				ctx.fillStyle = node._isLocked ? "#ffcc00" : "rgba(255, 255, 255, 0.35)";
-				ctx.font = node._isLocked ? "bold 12px Arial" : "12px Arial";
-				ctx.fillText("Lock", lockX + 16, lockY);
+				// "Lock" label after icon - bright yellow bold when locked (only if wide enough)
+				if (showLabels) {
+					ctx.fillStyle = node._isLocked ? "#ffcc00" : "rgba(255, 255, 255, 0.35)";
+					ctx.font = node._isLocked ? "bold 12px Arial" : "12px Arial";
+					ctx.fillText("Lock", lockX + 16, lockY);
+				}
 
 				// Disable icon and label (after Lock)
-				const disableX = lockX + 52;
+				const disableX = lockX + iconSpacing;
 				ctx.fillStyle = node._isDisabled ? "#ff4444" : "rgba(255, 255, 255, 0.35)";
 				ctx.font = "11px Arial";
 				ctx.textAlign = "left";
 				ctx.fillText("⛔", disableX, lockY);
 
-				// "Disable" label - red bold when disabled
-				ctx.fillStyle = node._isDisabled ? "#ff6666" : "rgba(255, 255, 255, 0.35)";
-				ctx.font = node._isDisabled ? "bold 12px Arial" : "12px Arial";
-				ctx.fillText("Disable", disableX + 16, lockY);
+				// "Disable" label - red bold when disabled (only if wide enough)
+				if (showLabels) {
+					ctx.fillStyle = node._isDisabled ? "#ff6666" : "rgba(255, 255, 255, 0.35)";
+					ctx.font = node._isDisabled ? "bold 12px Arial" : "12px Arial";
+					ctx.fillText("Disable", disableX + 16, lockY);
+				}
 
 				// Preview icon and label (after Disable) - on the left side
-				const previewLabelX = disableX + 68;
+				const previewLabelX = disableX + disableSpacing;
 				ctx.fillStyle = node._showPreview ? "#4a9eff" : "rgba(255, 255, 255, 0.35)";
 				ctx.font = "11px Arial";
 				ctx.textAlign = "left";
 				ctx.fillText("ℹ️", previewLabelX, lockY);
 
-				// "Preview" label - blue bold when active
-				ctx.fillStyle = node._showPreview ? "#4a9eff" : "rgba(255, 255, 255, 0.35)";
-				ctx.font = node._showPreview ? "bold 12px Arial" : "12px Arial";
-				ctx.fillText("Preview", previewLabelX + 16, lockY);
+				// "Preview" label - blue bold when active (only if wide enough)
+				if (showLabels) {
+					ctx.fillStyle = node._showPreview ? "#4a9eff" : "rgba(255, 255, 255, 0.35)";
+					ctx.font = node._showPreview ? "bold 12px Arial" : "12px Arial";
+					ctx.fillText("Preview", previewLabelX + 16, lockY);
+				}
 
 				const checkboxSize = 10;
 				const checkboxY = y + topOffset + (H - checkboxSize) / 2 - 1;
@@ -991,9 +1008,22 @@ app.registerExtension({
 				return totalH;
 			},
 			mouse: function(event, pos, node) {
+				const width = node.size[0];
+				const showLabels = width >= 260;
+				const iconSpacing = showLabels ? 52 : 22;
+				const disableSpacing = showLabels ? 68 : 22;
+				const lockX = 12;
+				const disableX = lockX + iconSpacing;
+				const previewLabelX = disableX + disableSpacing;
+
 				const checkboxSize = 10;
-				const negX = node.size[0] - 13 - checkboxSize;
+				const negX = width - 13 - checkboxSize;
 				const posX = negX - 30;
+
+				// Calculate click areas based on current layout
+				const lockEndX = showLabels ? lockX + 50 : lockX + 18;
+				const disableEndX = showLabels ? disableX + 64 : disableX + 18;
+				const previewEndX = showLabels ? previewLabelX + 70 : previewLabelX + 18;
 
 				// Handle hover for tooltips
 				if (event.type === "pointermove" || event.type === "mousemove") {
@@ -1016,22 +1046,20 @@ app.registerExtension({
 				}
 
 				if (event.type === "pointerdown") {
-					// Check if click is on lock area (left side)
-					if (pos[0] >= 8 && pos[0] <= 55) {
+					// Check if click is on lock area
+					if (pos[0] >= lockX - 4 && pos[0] <= lockEndX) {
 						toggleLock();
 						return true;
 					}
 
-					// Check if click is on disable area (after lock)
-					const disableX = 12 + 52; // lockX + 52
-					if (pos[0] >= disableX - 4 && pos[0] <= disableX + 60) {
+					// Check if click is on disable area
+					if (pos[0] >= disableX - 4 && pos[0] <= disableEndX) {
 						toggleDisable();
 						return true;
 					}
 
-					// Check if click is on preview area (after disable, on left side)
-					const previewLabelX = disableX + 68;
-					if (pos[0] >= previewLabelX - 4 && pos[0] <= previewLabelX + 70) {
+					// Check if click is on preview area
+					if (pos[0] >= previewLabelX - 4 && pos[0] <= previewEndX) {
 						togglePreview();
 						return true;
 					}
