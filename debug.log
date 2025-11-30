@@ -8569,3 +8569,355 @@
 [PromptChain] pos_text_combined='RPG Hero Character, 16 bit', neg_text_combined=''
 [PromptChain] pos_inputs=['mage', 'Iron Sword', 'lightning enchantment', 'undead slayer'], neg_inputs=[]
 [PromptChain] FINAL pos_result='RPG Hero Character, mage, Iron Sword, lightning enchantment, undead slayer, 16 bit', neg_result=''
+[PromptChain] mode='Randomize', text='dual ornate golden stiletto daggers gripped in han', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges', neg_result=''
+[PromptChain] mode='Randomize', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=True
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Randomize', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Switch', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges'], neg_inputs=[]
+[PromptChain] FINAL pos_result='dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges', neg_result=''
+[PromptChain] mode='Randomize', text='rainy cyberpunk metropolis rooftop at midnight,\nto', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards', neg_result=''
+[PromptChain] mode='Randomize', text='crazed confident smile, wide unhinged grin with mo', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='crazed confident smile, wide unhinged grin with mouth open and fangs, looking at camera, intense crimson red eyes with dilated pupils and manic gleam, wild excited stare, thick tears streaming down cheeks, heavy bright red blushing, disheveled wind-swept hair, ultra-detailed sweat and rain droplets on skin', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='crazed confident smile, wide unhinged grin with mouth open and fangs, looking at camera, intense crimson red eyes with dilated pupils and manic gleam, wild excited stare, thick tears streaming down cheeks, heavy bright red blushing, disheveled wind-swept hair, ultra-detailed sweat and rain droplets on skin', neg_result=''
+[PromptChain] mode='Randomize', text='dynamic rooftop stance,\nbody slightly twisted mid-', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress', neg_result=''
+[PromptChain] mode='Randomize', text='shallow depth of field on 50mm f/1.2 lens,\n16k res', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='shallow depth of field on 50mm f/1.2 lens, 16k resolution, hyperrealistic textures, flawless anatomy and material physics', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='shallow depth of field on 50mm f/1.2 lens, 16k resolution, hyperrealistic textures, flawless anatomy and material physics', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress'], neg_inputs=[]
+[PromptChain] FINAL pos_result='dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress', neg_result=''
+[PromptChain] mode='Combine', text='hyperrealistic CG anime, \nprofessional cinematic p', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='hyperrealistic CG anime, professional cinematic photography', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='hyperrealistic CG anime, professional cinematic photography', neg_result=''
+[PromptChain] mode='Switch', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['hyperrealistic CG anime, professional cinematic photography'], neg_inputs=[]
+[PromptChain] FINAL pos_result='hyperrealistic CG anime, professional cinematic photography', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards'], neg_inputs=[]
+[PromptChain] FINAL pos_result='rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards', neg_result=''
+[PromptChain] mode='Randomize', text='sleek form-fitting black velvet evening gown,\nintr', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon'], neg_inputs=[]
+[PromptChain] FINAL pos_result='sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon', neg_result=''
+[PromptChain] mode='Randomize', text='completely unhinged ahegao face,\nmindless ecstatic', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', 'crazed confident smile, wide unhinged grin with mouth open and fangs, looking at camera, intense crimson red eyes with dilated pupils and manic gleam, wild excited stare, thick tears streaming down cheeks, heavy bright red blushing, disheveled wind-swept hair, ultra-detailed sweat and rain droplets on skin'], neg_inputs=[]
+[PromptChain] FINAL pos_result='completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', neg_result=''
+[PromptChain] mode='Combine', text='portrait of Yor Forger as Thorn Princess,\ndeadly e', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline'], neg_inputs=[]
+[PromptChain] FINAL pos_result='portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline', neg_result=''
+[PromptChain] mode='Combine', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['hyperrealistic CG anime, professional cinematic photography', 'portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline', 'completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', 'sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon', 'dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress', 'dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges', 'rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards'], neg_inputs=[]
+[PromptChain] FINAL pos_result='hyperrealistic CG anime, portrait of Yor Forger as Thorn Princess, completely unhinged ahegao face, sleek form-fitting black velvet evening gown, dynamic rooftop stance, dual ornate golden stiletto daggers gripped in hands, rainy cyberpunk metropolis rooftop at midnight, professional cinematic photography, deadly elegant female assassin, mindless ecstatic expression, intricate ruched fabric and subtle stitching, body slightly twisted mid-motion, engraved thorn patterns on blades, towering skyscrapers with red holographic billboards, late-20s athletic build, intense crimson red eyes rolled back with heart-shaped pupils, deep asymmetrical thigh-high side slits exposing toned legs, wind-blown hair and dress, fresh crimson blood rivulets dripping from serrated edges, blurred cityscape bokeh, porcelain skin with subtle pores and faint veins, drooling tongue lolling out long with thick saliva strands dripping from open mouth, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, volumetric fog and red-purple neon glow, long straight glossy black hair with individual strands and natural volume, thick tears streaming down cheeks, ornate gold rose hairpins with etched thorns glinting under neon, distant lightning flashes, thin old scar on jawline, heavy bright red blushing, cinematic rim lighting from distant billboards, ultra-detailed sweat and saliva physics', neg_result=''
+[PromptChain] mode='Randomize', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['shallow depth of field on 50mm f/1.2 lens, 16k resolution, hyperrealistic textures, flawless anatomy and material physics'], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Randomize', text='dual ornate golden stiletto daggers gripped in han', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges', neg_result=''
+[PromptChain] mode='Randomize', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=True
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Randomize', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Switch', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges'], neg_inputs=[]
+[PromptChain] FINAL pos_result='dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges', neg_result=''
+[PromptChain] mode='Randomize', text='rainy cyberpunk metropolis rooftop at midnight,\nto', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards', neg_result=''
+[PromptChain] mode='Randomize', text='crazed confident smile, wide unhinged grin with mo', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='crazed confident smile, wide unhinged grin with mouth open and fangs, looking at camera, intense crimson red eyes with dilated pupils and manic gleam, wild excited stare, thick tears streaming down cheeks, heavy bright red blushing, disheveled wind-swept hair, ultra-detailed sweat and rain droplets on skin', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='crazed confident smile, wide unhinged grin with mouth open and fangs, looking at camera, intense crimson red eyes with dilated pupils and manic gleam, wild excited stare, thick tears streaming down cheeks, heavy bright red blushing, disheveled wind-swept hair, ultra-detailed sweat and rain droplets on skin', neg_result=''
+[PromptChain] mode='Randomize', text='dynamic rooftop stance,\nbody slightly twisted mid-', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress', neg_result=''
+[PromptChain] mode='Randomize', text='shallow depth of field on 50mm f/1.2 lens,\n16k res', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='shallow depth of field on 50mm f/1.2 lens, 16k resolution, hyperrealistic textures, flawless anatomy and material physics', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='shallow depth of field on 50mm f/1.2 lens, 16k resolution, hyperrealistic textures, flawless anatomy and material physics', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress'], neg_inputs=[]
+[PromptChain] FINAL pos_result='dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress', neg_result=''
+[PromptChain] mode='Combine', text='hyperrealistic CG anime, \nprofessional cinematic p', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='hyperrealistic CG anime, professional cinematic photography', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='hyperrealistic CG anime, professional cinematic photography', neg_result=''
+[PromptChain] mode='Switch', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['hyperrealistic CG anime, professional cinematic photography'], neg_inputs=[]
+[PromptChain] FINAL pos_result='hyperrealistic CG anime, professional cinematic photography', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards'], neg_inputs=[]
+[PromptChain] FINAL pos_result='rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards', neg_result=''
+[PromptChain] mode='Randomize', text='sleek form-fitting black velvet evening gown,\nintr', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon'], neg_inputs=[]
+[PromptChain] FINAL pos_result='sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon', neg_result=''
+[PromptChain] mode='Randomize', text='completely unhinged ahegao face,\nmindless ecstatic', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', 'crazed confident smile, wide unhinged grin with mouth open and fangs, looking at camera, intense crimson red eyes with dilated pupils and manic gleam, wild excited stare, thick tears streaming down cheeks, heavy bright red blushing, disheveled wind-swept hair, ultra-detailed sweat and rain droplets on skin'], neg_inputs=[]
+[PromptChain] FINAL pos_result='completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', neg_result=''
+[PromptChain] mode='Combine', text='portrait of Yor Forger as Thorn Princess,\ndeadly e', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline'], neg_inputs=[]
+[PromptChain] FINAL pos_result='portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline', neg_result=''
+[PromptChain] mode='Combine', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['hyperrealistic CG anime, professional cinematic photography', 'portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline', 'completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', 'sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon', 'dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress', 'dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges', 'rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards'], neg_inputs=[]
+[PromptChain] FINAL pos_result='hyperrealistic CG anime, portrait of Yor Forger as Thorn Princess, completely unhinged ahegao face, sleek form-fitting black velvet evening gown, dynamic rooftop stance, dual ornate golden stiletto daggers gripped in hands, rainy cyberpunk metropolis rooftop at midnight, professional cinematic photography, deadly elegant female assassin, mindless ecstatic expression, intricate ruched fabric and subtle stitching, body slightly twisted mid-motion, engraved thorn patterns on blades, towering skyscrapers with red holographic billboards, late-20s athletic build, intense crimson red eyes rolled back with heart-shaped pupils, deep asymmetrical thigh-high side slits exposing toned legs, wind-blown hair and dress, fresh crimson blood rivulets dripping from serrated edges, blurred cityscape bokeh, porcelain skin with subtle pores and faint veins, drooling tongue lolling out long with thick saliva strands dripping from open mouth, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, volumetric fog and red-purple neon glow, long straight glossy black hair with individual strands and natural volume, thick tears streaming down cheeks, ornate gold rose hairpins with etched thorns glinting under neon, distant lightning flashes, thin old scar on jawline, heavy bright red blushing, cinematic rim lighting from distant billboards, ultra-detailed sweat and saliva physics', neg_result=''
+[PromptChain] mode='Randomize', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['shallow depth of field on 50mm f/1.2 lens, 16k resolution, hyperrealistic textures, flawless anatomy and material physics'], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Randomize', text='dual ornate golden stiletto daggers gripped in han', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges', neg_result=''
+[PromptChain] mode='Randomize', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=True
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Randomize', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Switch', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges'], neg_inputs=[]
+[PromptChain] FINAL pos_result='dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges', neg_result=''
+[PromptChain] mode='Randomize', text='rainy cyberpunk metropolis rooftop at midnight,\nto', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards', neg_result=''
+[PromptChain] mode='Randomize', text='crazed confident smile, wide unhinged grin with mo', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='crazed confident smile, wide unhinged grin with mouth open and fangs, looking at camera, intense crimson red eyes with dilated pupils and manic gleam, wild excited stare, thick tears streaming down cheeks, heavy bright red blushing, disheveled wind-swept hair, ultra-detailed sweat and rain droplets on skin', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='crazed confident smile, wide unhinged grin with mouth open and fangs, looking at camera, intense crimson red eyes with dilated pupils and manic gleam, wild excited stare, thick tears streaming down cheeks, heavy bright red blushing, disheveled wind-swept hair, ultra-detailed sweat and rain droplets on skin', neg_result=''
+[PromptChain] mode='Randomize', text='dynamic rooftop stance,\nbody slightly twisted mid-', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress', neg_result=''
+[PromptChain] mode='Randomize', text='shallow depth of field on 50mm f/1.2 lens,\n16k res', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='shallow depth of field on 50mm f/1.2 lens, 16k resolution, hyperrealistic textures, flawless anatomy and material physics', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='shallow depth of field on 50mm f/1.2 lens, 16k resolution, hyperrealistic textures, flawless anatomy and material physics', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress'], neg_inputs=[]
+[PromptChain] FINAL pos_result='dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress', neg_result=''
+[PromptChain] mode='Combine', text='hyperrealistic CG anime, \nprofessional cinematic p', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='hyperrealistic CG anime, professional cinematic photography', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='hyperrealistic CG anime, professional cinematic photography', neg_result=''
+[PromptChain] mode='Switch', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['hyperrealistic CG anime, professional cinematic photography'], neg_inputs=[]
+[PromptChain] FINAL pos_result='hyperrealistic CG anime, professional cinematic photography', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards'], neg_inputs=[]
+[PromptChain] FINAL pos_result='rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards', neg_result=''
+[PromptChain] mode='Randomize', text='sleek form-fitting black velvet evening gown,\nintr', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon'], neg_inputs=[]
+[PromptChain] FINAL pos_result='sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon', neg_result=''
+[PromptChain] mode='Randomize', text='completely unhinged ahegao face,\nmindless ecstatic', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', 'crazed confident smile, wide unhinged grin with mouth open and fangs, looking at camera, intense crimson red eyes with dilated pupils and manic gleam, wild excited stare, thick tears streaming down cheeks, heavy bright red blushing, disheveled wind-swept hair, ultra-detailed sweat and rain droplets on skin'], neg_inputs=[]
+[PromptChain] FINAL pos_result='completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', neg_result=''
+[PromptChain] mode='Combine', text='portrait of Yor Forger as Thorn Princess,\ndeadly e', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline'], neg_inputs=[]
+[PromptChain] FINAL pos_result='portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline', neg_result=''
+[PromptChain] mode='Combine', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['hyperrealistic CG anime, professional cinematic photography', 'portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline', 'completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', 'sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon', 'dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress', 'dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges', 'rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards'], neg_inputs=[]
+[PromptChain] FINAL pos_result='hyperrealistic CG anime, portrait of Yor Forger as Thorn Princess, completely unhinged ahegao face, sleek form-fitting black velvet evening gown, dynamic rooftop stance, dual ornate golden stiletto daggers gripped in hands, rainy cyberpunk metropolis rooftop at midnight, professional cinematic photography, deadly elegant female assassin, mindless ecstatic expression, intricate ruched fabric and subtle stitching, body slightly twisted mid-motion, engraved thorn patterns on blades, towering skyscrapers with red holographic billboards, late-20s athletic build, intense crimson red eyes rolled back with heart-shaped pupils, deep asymmetrical thigh-high side slits exposing toned legs, wind-blown hair and dress, fresh crimson blood rivulets dripping from serrated edges, blurred cityscape bokeh, porcelain skin with subtle pores and faint veins, drooling tongue lolling out long with thick saliva strands dripping from open mouth, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, volumetric fog and red-purple neon glow, long straight glossy black hair with individual strands and natural volume, thick tears streaming down cheeks, ornate gold rose hairpins with etched thorns glinting under neon, distant lightning flashes, thin old scar on jawline, heavy bright red blushing, cinematic rim lighting from distant billboards, ultra-detailed sweat and saliva physics', neg_result=''
+[PromptChain] mode='Randomize', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['shallow depth of field on 50mm f/1.2 lens, 16k resolution, hyperrealistic textures, flawless anatomy and material physics'], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Randomize', text='dual ornate golden stiletto daggers gripped in han', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges', neg_result=''
+[PromptChain] mode='Randomize', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=True
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Randomize', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Switch', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges'], neg_inputs=[]
+[PromptChain] FINAL pos_result='dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges', neg_result=''
+[PromptChain] mode='Randomize', text='rainy cyberpunk metropolis rooftop at midnight,\nto', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards', neg_result=''
+[PromptChain] mode='Randomize', text='crazed confident smile, \nwide unhinged grin with m', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='crazed confident smile, wide unhinged grin with mouth open and fangs, looking at camera, intense crimson red eyes with dilated pupils and manic gleam, wild excited stare, thick tears streaming down cheeks, heavy bright red blushing, disheveled wind-swept hair, ultra-detailed sweat and rain droplets on skin', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='crazed confident smile, wide unhinged grin with mouth open and fangs, looking at camera, intense crimson red eyes with dilated pupils and manic gleam, wild excited stare, thick tears streaming down cheeks, heavy bright red blushing, disheveled wind-swept hair, ultra-detailed sweat and rain droplets on skin', neg_result=''
+[PromptChain] mode='Randomize', text='dynamic rooftop stance,\nbody slightly twisted mid-', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress', neg_result=''
+[PromptChain] mode='Randomize', text='shallow depth of field on 50mm f/1.2 lens,\n16k res', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='shallow depth of field on 50mm f/1.2 lens, 16k resolution, hyperrealistic textures, flawless anatomy and material physics', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='shallow depth of field on 50mm f/1.2 lens, 16k resolution, hyperrealistic textures, flawless anatomy and material physics', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress'], neg_inputs=[]
+[PromptChain] FINAL pos_result='dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress', neg_result=''
+[PromptChain] mode='Combine', text='hyperrealistic CG anime, \nprofessional cinematic p', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='hyperrealistic CG anime, professional cinematic photography', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='hyperrealistic CG anime, professional cinematic photography', neg_result=''
+[PromptChain] mode='Switch', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['hyperrealistic CG anime, professional cinematic photography'], neg_inputs=[]
+[PromptChain] FINAL pos_result='hyperrealistic CG anime, professional cinematic photography', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards'], neg_inputs=[]
+[PromptChain] FINAL pos_result='rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards', neg_result=''
+[PromptChain] mode='Randomize', text='sleek form-fitting black velvet evening gown,\nintr', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon'], neg_inputs=[]
+[PromptChain] FINAL pos_result='sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon', neg_result=''
+[PromptChain] mode='Randomize', text='completely unhinged ahegao face,\nmindless ecstatic', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', 'crazed confident smile, wide unhinged grin with mouth open and fangs, looking at camera, intense crimson red eyes with dilated pupils and manic gleam, wild excited stare, thick tears streaming down cheeks, heavy bright red blushing, disheveled wind-swept hair, ultra-detailed sweat and rain droplets on skin'], neg_inputs=[]
+[PromptChain] FINAL pos_result='completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', neg_result=''
+[PromptChain] mode='Combine', text='portrait of Yor Forger as Thorn Princess,\ndeadly e', neg_text='', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline'], neg_inputs=[]
+[PromptChain] FINAL pos_result='portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline', neg_result=''
+[PromptChain] mode='Combine', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['hyperrealistic CG anime, professional cinematic photography', 'portrait of Yor Forger as Thorn Princess, deadly elegant female assassin, late-20s athletic build, porcelain skin with subtle pores and faint veins, long straight glossy black hair with individual strands and natural volume, thin old scar on jawline', 'completely unhinged ahegao face, mindless ecstatic expression, intense crimson red eyes rolled back with heart-shaped pupils, drooling tongue lolling out long with thick saliva strands dripping from open mouth, thick tears streaming down cheeks, heavy bright red blushing, ultra-detailed sweat and saliva physics', 'sleek form-fitting black velvet evening gown, intricate ruched fabric and subtle stitching, deep asymmetrical thigh-high side slits exposing toned legs, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, ornate gold rose hairpins with etched thorns glinting under neon', 'dynamic rooftop stance, body slightly twisted mid-motion, wind-blown hair and dress', 'dual ornate golden stiletto daggers gripped in hands, engraved thorn patterns on blades, fresh crimson blood rivulets dripping from serrated edges', 'rainy cyberpunk metropolis rooftop at midnight, towering skyscrapers with red holographic billboards, blurred cityscape bokeh, volumetric fog and red-purple neon glow, distant lightning flashes, cinematic rim lighting from distant billboards'], neg_inputs=[]
+[PromptChain] FINAL pos_result='hyperrealistic CG anime, portrait of Yor Forger as Thorn Princess, completely unhinged ahegao face, sleek form-fitting black velvet evening gown, dynamic rooftop stance, dual ornate golden stiletto daggers gripped in hands, rainy cyberpunk metropolis rooftop at midnight, professional cinematic photography, deadly elegant female assassin, mindless ecstatic expression, intricate ruched fabric and subtle stitching, body slightly twisted mid-motion, engraved thorn patterns on blades, towering skyscrapers with red holographic billboards, late-20s athletic build, intense crimson red eyes rolled back with heart-shaped pupils, deep asymmetrical thigh-high side slits exposing toned legs, wind-blown hair and dress, fresh crimson blood rivulets dripping from serrated edges, blurred cityscape bokeh, porcelain skin with subtle pores and faint veins, drooling tongue lolling out long with thick saliva strands dripping from open mouth, sheer black thighhigh stockings with realistic nylon sheen and lace garter tops hugging curves, volumetric fog and red-purple neon glow, long straight glossy black hair with individual strands and natural volume, thick tears streaming down cheeks, ornate gold rose hairpins with etched thorns glinting under neon, distant lightning flashes, thin old scar on jawline, heavy bright red blushing, cinematic rim lighting from distant billboards, ultra-detailed sweat and saliva physics', neg_result=''
+[PromptChain] mode='Randomize', text='', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Switch', text='hyperrealistic CG anime', neg_text='', locked=False, disabled=False, show_positive=False, show_negative=False
+[PromptChain] pos_text_combined='', neg_text_combined=''
+[PromptChain] pos_inputs=['shallow depth of field on 50mm f/1.2 lens, 16k resolution, hyperrealistic textures, flawless anatomy and material physics'], neg_inputs=[]
+[PromptChain] FINAL pos_result='', neg_result=''
