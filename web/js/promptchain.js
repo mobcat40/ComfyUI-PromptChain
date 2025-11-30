@@ -20,44 +20,20 @@ app.registerExtension({
 			}
 		});
 
-		// Store updateTextStyle on node so it can be called from onConnectionsChange
-		node._updateTextStyle = null;
-
-		// Make text widget transparent until focused (only if empty)
+		// Style the text widget
 		// Use setTimeout to wait for widget DOM element to be created
-		const setupTextOpacity = () => {
+		const setupTextStyle = () => {
 			const textWidget = node.widgets?.find(w => w.name === "text");
 			if (textWidget?.inputEl) {
-				const updateStyle = () => {
-					// Check if text widget has a link connected (receiving input from another node)
-					const textInput = node.inputs?.find(i => i.name === "text");
-					const hasLink = textInput?.link != null;
-					// Check both inputEl.value and widget.value (for when input is linked)
-					const hasText = hasLink ||
-					                (textWidget.inputEl.value?.trim().length > 0) ||
-					                (textWidget.value?.trim?.().length > 0) ||
-					                (node.properties?.textValue?.trim?.().length > 0);
-					const isFocused = document.activeElement === textWidget.inputEl;
-					if (hasText || isFocused) {
-						textWidget.inputEl.style.opacity = 1;
-						textWidget.inputEl.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-						textWidget.inputEl.style.color = "";
-						textWidget.inputEl.style.fontStyle = "normal";
-					} else {
-						textWidget.inputEl.style.opacity = 1;
-						textWidget.inputEl.style.backgroundColor = "#00000033";
-						textWidget.inputEl.style.color = "rgba(255, 255, 255, 0.85)";
-						textWidget.inputEl.style.fontStyle = "italic";
-					}
-				};
-				node._updateTextStyle = updateStyle;
-				updateStyle();
-				textWidget.inputEl.style.marginTop = "-6px"; // Pull text closer to menubar
+				// Apply consistent styling - no fading based on content
+				textWidget.inputEl.style.opacity = 1;
+				textWidget.inputEl.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+				textWidget.inputEl.style.marginTop = "0px"; // No gap - cap connects directly
 				textWidget.inputEl.style.fontFamily = "Arial, sans-serif";
 				textWidget.inputEl.style.fontSize = "11px";
 				textWidget.inputEl.style.padding = "4px";
 				textWidget.inputEl.style.lineHeight = "1.3";
-				textWidget.inputEl.style.borderRadius = "4px";
+				textWidget.inputEl.style.borderRadius = "0 0 4px 4px"; // Only bottom corners rounded
 				textWidget.inputEl.placeholder = "prompt text...";
 				// Style placeholder text and scrollbars
 				const styleId = "promptchain-prompt-placeholder-style";
@@ -77,20 +53,12 @@ app.registerExtension({
 					document.head.appendChild(style);
 				}
 				textWidget.inputEl.classList.add("promptchain-prompt");
-				textWidget.inputEl.addEventListener("focus", () => {
-					textWidget.inputEl.style.opacity = 1;
-					textWidget.inputEl.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-					textWidget.inputEl.style.color = "";
-					textWidget.inputEl.style.fontStyle = "normal";
-				});
-				textWidget.inputEl.addEventListener("blur", updateStyle);
-				textWidget.inputEl.addEventListener("input", updateStyle);
 			} else {
 				// Widget not ready yet, try again
-				requestAnimationFrame(setupTextOpacity);
+				requestAnimationFrame(setupTextStyle);
 			}
 		};
-		requestAnimationFrame(setupTextOpacity);
+		requestAnimationFrame(setupTextStyle);
 
 		const updateInputs = () => {
 			// Find all input_N slots
@@ -117,10 +85,6 @@ app.registerExtension({
 		node.onConnectionsChange = function(type, index, connected, link_info) {
 			originalOnConnectionsChange?.apply(this, arguments);
 			updateInputs();
-			// Update text styling when connections change (link to text widget)
-			if (node._updateTextStyle) {
-				node._updateTextStyle();
-			}
 		};
 
 		// Initial setup
@@ -388,12 +352,12 @@ app.registerExtension({
 			const negTextWidget = node.widgets?.find(w => w.name === "neg_text");
 			if (negTextWidget?.inputEl) {
 				// Style the neg_text widget
-				negTextWidget.inputEl.style.marginTop = "-6px";
+				negTextWidget.inputEl.style.marginTop = "0px"; // No gap - cap connects directly
 				negTextWidget.inputEl.style.fontFamily = "Arial, sans-serif";
 				negTextWidget.inputEl.style.fontSize = "11px";
 				negTextWidget.inputEl.style.padding = "4px";
 				negTextWidget.inputEl.style.lineHeight = "1.3";
-				negTextWidget.inputEl.style.borderRadius = "4px";
+				negTextWidget.inputEl.style.borderRadius = "0 0 4px 4px"; // Only bottom corners rounded
 				negTextWidget.inputEl.style.backgroundColor = "rgba(80, 0, 0, 0.3)";
 				negTextWidget.inputEl.style.color = "rgba(255, 200, 200, 0.9)";
 				negTextWidget.inputEl.placeholder = "negative prompt...";
@@ -1190,6 +1154,129 @@ app.registerExtension({
 			node.widgets.push(menubar);
 		}
 
+		// Create "Positive" cap widget - header bar above text widget
+		const positiveCap = {
+			name: "positive_cap",
+			type: "custom",
+			value: null,
+			options: { serialize: false },
+			serializeValue: () => undefined,
+			computeSize: function() {
+				// Only show if positive text is visible
+				if (!node._showPositive) return [0, 0];
+				return [node.size[0], 4]; // Height tuned for seamless connection
+			},
+			draw: function(ctx, _, width, y) {
+				if (!node._showPositive) return 0;
+
+				const H = 18; // Draw taller than computeSize to overlap gap
+				// Get the actual textbox element position
+				const textWidget = node.widgets?.find(w => w.name === "text");
+				let margin = 15;
+				let w = width - margin * 2;
+
+				if (textWidget?.inputEl) {
+					// Use the textbox's actual width and position
+					const boxWidth = textWidget.inputEl.offsetWidth;
+					// Calculate margin from node width
+					margin = (width - boxWidth) / 2;
+					w = boxWidth;
+				}
+
+				// Draw cap background with top rounded corners
+				ctx.fillStyle = "rgba(74, 158, 255, 0.25)";
+				ctx.beginPath();
+				ctx.roundRect(margin, y, w, H, [4, 4, 0, 0]);
+				ctx.fill();
+
+				// Draw label
+				ctx.fillStyle = "rgba(74, 158, 255, 0.9)";
+				ctx.font = "bold 10px Arial";
+				ctx.textAlign = "left";
+				ctx.textBaseline = "middle";
+				ctx.fillText("POSITIVE", margin + 6, y + H / 2);
+
+				return 4; // Return smaller size to pull textbox up
+			}
+		};
+
+		// Create "Negative" cap widget - header bar above neg_text widget
+		const negativeCap = {
+			name: "negative_cap",
+			type: "custom",
+			value: null,
+			options: { serialize: false },
+			serializeValue: () => undefined,
+			computeSize: function() {
+				// Only show if negative text is visible
+				if (!node._showNegative) return [0, 0];
+				return [node.size[0], 4]; // Height tuned for seamless connection
+			},
+			draw: function(ctx, _, width, y) {
+				if (!node._showNegative) return 0;
+
+				const H = 18; // Draw taller than computeSize to overlap gap
+				// Get the actual textbox element position
+				const negTextWidget = node.widgets?.find(w => w.name === "neg_text");
+				let margin = 15;
+				let w = width - margin * 2;
+
+				if (negTextWidget?.inputEl) {
+					// Use the textbox's actual width and position
+					const boxWidth = negTextWidget.inputEl.offsetWidth;
+					// Calculate margin from node width
+					margin = (width - boxWidth) / 2;
+					w = boxWidth;
+				}
+
+				// Draw cap background with top rounded corners
+				ctx.fillStyle = "rgba(255, 107, 107, 0.25)";
+				ctx.beginPath();
+				ctx.roundRect(margin, y, w, H, [4, 4, 0, 0]);
+				ctx.fill();
+
+				// Draw label
+				ctx.fillStyle = "rgba(255, 107, 107, 0.9)";
+				ctx.font = "bold 10px Arial";
+				ctx.textAlign = "left";
+				ctx.textBaseline = "middle";
+				ctx.fillText("NEGATIVE", margin + 6, y + H / 2);
+
+				return 4; // Return smaller size to pull textbox up
+			}
+		};
+
+		// Insert cap widgets before their respective text widgets
+		const insertCaps = () => {
+			// Check if text widget exists
+			const textWidget = node.widgets?.find(w => w.name === "text");
+			if (!textWidget) {
+				// Retry next frame
+				requestAnimationFrame(insertCaps);
+				return;
+			}
+
+			const textIndex = node.widgets.findIndex(w => w.name === "text");
+
+			// Insert positive cap before text widget (if not already there)
+			if (textIndex > -1 && !node.widgets.find(w => w.name === "positive_cap")) {
+				node.widgets.splice(textIndex, 0, positiveCap);
+			}
+
+			// Re-find neg_text index after insertion
+			const newNegTextIndex = node.widgets.findIndex(w => w.name === "neg_text");
+
+			// Insert negative cap before neg_text widget (if not already there)
+			if (newNegTextIndex > -1 && !node.widgets.find(w => w.name === "negative_cap")) {
+				node.widgets.splice(newNegTextIndex, 0, negativeCap);
+			}
+
+			app.graph.setDirtyCanvas(true);
+		};
+
+		// Delay cap insertion to ensure text widgets are positioned
+		setTimeout(insertCaps, 100);
+
 		// Override onConfigure to restore widget values and preview state after node is loaded
 		const originalOnConfigure = node.onConfigure;
 		node.onConfigure = function(info) {
@@ -1270,6 +1357,9 @@ app.registerExtension({
 
 			// Update switch selector visibility based on restored mode
 			updateSwitchSelectorVisibility();
+
+			// Re-insert caps if needed (they may have been lost during configure)
+			setTimeout(insertCaps, 50);
 		};
 
 		// Helper to set text on a node
@@ -1279,19 +1369,6 @@ app.registerExtension({
 				textWidget.value = text;
 				if (textWidget.inputEl) {
 					textWidget.inputEl.value = text;
-					// Update styling to reflect text presence
-					const hasText = text.trim().length > 0;
-					if (hasText) {
-						textWidget.inputEl.style.opacity = 1;
-						textWidget.inputEl.style.backgroundColor = "";
-						textWidget.inputEl.style.color = "";
-						textWidget.inputEl.style.fontStyle = "normal";
-					} else {
-						textWidget.inputEl.style.opacity = 1;
-						textWidget.inputEl.style.backgroundColor = "#00000033";
-						textWidget.inputEl.style.color = "rgba(255, 255, 255, 0.85)";
-						textWidget.inputEl.style.fontStyle = "italic";
-					}
 				}
 				if (!targetNode.properties) targetNode.properties = {};
 				targetNode.properties.textValue = text;
