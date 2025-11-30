@@ -310,7 +310,26 @@ app.registerExtension({
 			// Get display label based on mode
 			const getChildModeLabel = (sourceNode) => {
 				const mode = getChildMode(sourceNode);
-				if (mode === "Randomize") return "🎲 Roll";
+				if (mode === "Randomize") {
+					// Show winning node's title if available
+					const winnerIndex = sourceNode._randomWinnerIndex || sourceNode.properties?.randomWinnerIndex;
+					if (winnerIndex) {
+						// Find the input slot that won
+						const winnerInput = sourceNode.inputs?.find(i => i.name === `input_${winnerIndex}`);
+						if (winnerInput?.link) {
+							const linkInfo = app.graph.links[winnerInput.link];
+							if (linkInfo) {
+								const winnerNode = app.graph.getNodeById(linkInfo.origin_id);
+								if (winnerNode) {
+									const hasCustomTitle = winnerNode.title && winnerNode.title !== "PromptChain";
+									const winnerTitle = hasCustomTitle ? winnerNode.title : `input_${winnerIndex}`;
+									return `🎲 ${winnerTitle}`;
+								}
+							}
+						}
+					}
+					return "🎲 Roll";
+				}
 				if (mode === "Combine") return "➕ Combo";
 				// Switch mode - show selected option
 				const selectedLabel = getChildSwitchLabel(sourceNode);
@@ -544,6 +563,19 @@ app.registerExtension({
 					this._negOutputText = negValue;
 					if (!this.properties) this.properties = {};
 					this.properties.negOutputText = negValue;
+				}
+				// Handle random winner index (which input slot won the randomization)
+				if (message?.random_winner) {
+					let winnerIndex = message.random_winner;
+					if (Array.isArray(winnerIndex)) {
+						winnerIndex = winnerIndex[0];
+					}
+					this._randomWinnerIndex = winnerIndex;
+					if (!this.properties) this.properties = {};
+					this.properties.randomWinnerIndex = winnerIndex;
+				} else {
+					this._randomWinnerIndex = null;
+					if (this.properties) this.properties.randomWinnerIndex = null;
 				}
 				// Update preview widget if visible
 				if (this._previewWidget?.updateContent) {

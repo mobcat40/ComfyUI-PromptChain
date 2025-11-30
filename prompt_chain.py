@@ -210,8 +210,18 @@ class PromptChain:
             i += 1
 
         # Build pos_inputs and neg_inputs for Combine/Randomize modes (skip empty)
-        pos_inputs = [b[0] for b in input_bundles if b[0]]
-        neg_inputs = [b[1] for b in input_bundles if b[1]]
+        # Keep track of original slot indices (1-based) for each non-empty input
+        pos_inputs = []
+        pos_input_indices = []
+        neg_inputs = []
+        neg_input_indices = []
+        for idx, b in enumerate(input_bundles):
+            if b[0]:
+                pos_inputs.append(b[0])
+                pos_input_indices.append(idx + 1)  # 1-based index
+            if b[1]:
+                neg_inputs.append(b[1])
+                neg_input_indices.append(idx + 1)  # 1-based index
 
         # Process this node's text fields (only if that section is enabled)
         pos_text_combined = self._process_text(text) if show_positive else ""
@@ -243,21 +253,59 @@ class PromptChain:
                 neg_result = selected_neg
             else:
                 neg_result = neg_text_combined
+            random_winner_index = None
+        elif mode == "Randomize":
+            # Randomize mode - pick one random input and track which won
+            random_winner_index = None
+            if pos_inputs:
+                winner_list_idx = random.randrange(len(pos_inputs))
+                selected_input = pos_inputs[winner_list_idx]
+                random_winner_index = pos_input_indices[winner_list_idx]  # Original 1-based slot index
+                if pos_text_combined:
+                    pos_result = pos_text_combined + ", " + selected_input
+                else:
+                    pos_result = selected_input
+            else:
+                pos_result = pos_text_combined
+
+            # For neg, use same winner index if available, otherwise pick randomly from neg_inputs
+            if neg_inputs:
+                if random_winner_index and random_winner_index <= len(input_bundles):
+                    # Use the same slot's negative (pos and neg from same input)
+                    selected_neg = input_bundles[random_winner_index - 1][1]
+                else:
+                    # No pos winner - pick randomly from neg_inputs and track it
+                    winner_list_idx = random.randrange(len(neg_inputs))
+                    selected_neg = neg_inputs[winner_list_idx]
+                    random_winner_index = neg_input_indices[winner_list_idx]
+                if neg_text_combined and selected_neg:
+                    neg_result = neg_text_combined + ", " + selected_neg
+                elif selected_neg:
+                    neg_result = selected_neg
+                else:
+                    neg_result = neg_text_combined
+            else:
+                neg_result = neg_text_combined
         else:
-            # Combine/Randomize modes use the filtered lists
+            # Combine mode
+            random_winner_index = None
             pos_result = self._combine_with_mode(mode, pos_text_combined, pos_inputs, switch_index)
             neg_result = self._combine_with_mode(mode, neg_text_combined, neg_inputs, switch_index)
 
         pos_result = self._deduplicate(pos_result)
         neg_result = self._deduplicate(neg_result)
 
-        debug_log(f"[PromptChain] FINAL pos_result={pos_result!r}, neg_result={neg_result!r}")
+        debug_log(f"[PromptChain] FINAL pos_result={pos_result!r}, neg_result={neg_result!r}, random_winner={random_winner_index}")
 
         # Create bundle string for chaining to other PromptChain nodes
         bundle = make_bundle(pos_result, neg_result)
 
         # Return: chain, positive, negative (slots 0, 1, 2)
-        return {"ui": {"text": [pos_result], "neg_text": [neg_result]}, "result": (bundle, pos_result, neg_result)}
+        # Include random_winner_index in UI for JS to display winning node's title
+        ui_data = {"text": [pos_result], "neg_text": [neg_result]}
+        if random_winner_index is not None:
+            ui_data["random_winner"] = [random_winner_index]
+        return {"ui": ui_data, "result": (bundle, pos_result, neg_result)}
 
 
 class PromptChainDebug:
