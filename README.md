@@ -42,10 +42,6 @@ Each node shows exactly what it output. Chain them together, see the whole promp
 
 ## Installation
 
-**ComfyUI Manager:**
-Search "PromptChain" → Install → Restart
-
-**Manual:**
 ```bash
 cd ComfyUI/custom_nodes
 git clone https://github.com/mobcat40/ComfyUI-PromptChain.git
