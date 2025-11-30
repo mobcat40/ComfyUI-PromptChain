@@ -1176,6 +1176,43 @@ app.registerExtension({
 				const lockX = 12;
 				const lockY = y + topOffset + H / 2;
 
+				// Disable position (after Lock)
+				const disableX = lockX + iconSpacing;
+
+				// Preview position (after Disable)
+				const previewLabelX = disableX + disableSpacing;
+
+				// Background pill dimensions
+				const pillHeight = 17;
+				const pillY = y + topOffset - 1;
+				const pillRadius = 4;
+				const pillPadding = 1;
+
+				// Draw toggle backgrounds (40% black opacity with rounded corners)
+				if (node._isLocked) {
+					const pillWidth = showLabels ? 48 : 17;
+					ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+					ctx.beginPath();
+					ctx.roundRect(lockX - pillPadding, pillY, pillWidth, pillHeight, pillRadius);
+					ctx.fill();
+				}
+
+				if (node._isDisabled) {
+					const pillWidth = showLabels ? 64 : 17;
+					ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+					ctx.beginPath();
+					ctx.roundRect(disableX - pillPadding, pillY, pillWidth, pillHeight, pillRadius);
+					ctx.fill();
+				}
+
+				if (node._showPreview) {
+					const pillWidth = showLabels ? 66 : 17;
+					ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+					ctx.beginPath();
+					ctx.roundRect(previewLabelX - pillPadding, pillY, pillWidth, pillHeight, pillRadius);
+					ctx.fill();
+				}
+
 				// Orange when locked, gray when unlocked
 				ctx.fillStyle = node._isLocked ? "#ffaa00" : "rgba(255, 255, 255, 0.35)";
 				ctx.font = "11px Arial";
@@ -1190,8 +1227,7 @@ app.registerExtension({
 					ctx.fillText("Lock", lockX + 16, lockY);
 				}
 
-				// Disable icon and label (after Lock)
-				const disableX = lockX + iconSpacing;
+				// Disable icon and label
 				ctx.fillStyle = node._isDisabled ? "#ff4444" : "rgba(255, 255, 255, 0.35)";
 				ctx.font = "11px Arial";
 				ctx.textAlign = "left";
@@ -1204,16 +1240,15 @@ app.registerExtension({
 					ctx.fillText("Disable", disableX + 16, lockY);
 				}
 
-				// Preview icon and label (after Disable) - on the left side
-				const previewLabelX = disableX + disableSpacing;
-				ctx.fillStyle = node._showPreview ? "#4a9eff" : "rgba(255, 255, 255, 0.35)";
+				// Preview icon and label - on the left side
+				ctx.fillStyle = node._showPreview ? "#bcbcbc" : "rgba(255, 255, 255, 0.35)";
 				ctx.font = "11px Arial";
 				ctx.textAlign = "left";
 				ctx.fillText("ℹ️", previewLabelX, lockY);
 
 				// "Preview" label - blue bold when active (only if wide enough)
 				if (showLabels) {
-					ctx.fillStyle = node._showPreview ? "#4a9eff" : "rgba(255, 255, 255, 0.35)";
+					ctx.fillStyle = node._showPreview ? "#bcbcbc" : "rgba(255, 255, 255, 0.35)";
 					ctx.font = node._showPreview ? "bold 12px Arial" : "12px Arial";
 					ctx.fillText("Preview", previewLabelX + 16, lockY);
 				}
