@@ -87,6 +87,62 @@ app.registerExtension({
 					node.removeInput(node.inputs.indexOf(lastSlot));
 				}
 			}
+
+			// Update output slot visibility based on connected inputs
+			updateOutputVisibility();
+		};
+
+		// Hide positive/negative outputs when node has connected inputs (pass-through mode)
+		// Store original outputs for restoration
+		let originalOutputs = null;
+
+		const updateOutputVisibility = () => {
+			const inputSlots = node.inputs?.filter(i => i.name.startsWith("input_")) || [];
+			const hasConnectedInputs = inputSlots.some(slot => slot.link !== null);
+
+			// Check if chain output is connected
+			const chainOutput = node.outputs?.find(o => o.name === "chain");
+			const chainIsConnected = chainOutput?.links && chainOutput.links.length > 0;
+
+			// Store original outputs on first call
+			if (!originalOutputs && node.outputs) {
+				originalOutputs = node.outputs.map(o => ({ name: o.name, type: o.type, links: o.links }));
+			}
+
+			// Only hide positive/negative if BOTH inputs AND chain output are connected (complete pass-through)
+			// If inputs connected but chain not connected, show all outputs (hanging state needs reconnection)
+			if (hasConnectedInputs && chainIsConnected) {
+				// Keep only the chain output (remove positive/negative)
+				// But only if they don't have connections
+				const posOutput = node.outputs?.find(o => o.name === "positive");
+				const negOutput = node.outputs?.find(o => o.name === "negative");
+
+				if (posOutput && (!posOutput.links || posOutput.links.length === 0)) {
+					const idx = node.outputs.indexOf(posOutput);
+					if (idx > -1) node.removeOutput(idx);
+				}
+				if (negOutput && (!negOutput.links || negOutput.links.length === 0)) {
+					const idx = node.outputs.indexOf(negOutput);
+					if (idx > -1) node.removeOutput(idx);
+				}
+			} else {
+				// Restore positive/negative outputs if missing
+				const hasPositive = node.outputs?.some(o => o.name === "positive");
+				const hasNegative = node.outputs?.some(o => o.name === "negative");
+
+				if (!hasPositive) {
+					node.addOutput("positive", "STRING");
+					// Set empty label
+					const out = node.outputs.find(o => o.name === "positive");
+					if (out) out.label = " ";
+				}
+				if (!hasNegative) {
+					node.addOutput("negative", "STRING");
+					// Set empty label
+					const out = node.outputs.find(o => o.name === "negative");
+					if (out) out.label = " ";
+				}
+			}
 		};
 
 		const originalOnConnectionsChange = node.onConnectionsChange;
@@ -227,24 +283,26 @@ app.registerExtension({
 						const x = (pos[0] - this.pos[0] + 14 + 14) / 2;  // Split the difference
 						const y = pos[1] - this.pos[1];
 
-						// Determine label text based on connection
-						const inputIndex = input.name.split("_").pop();
-						let labelText = `input: ${inputIndex}`;
-
+						// Dynamic label: show connected node's name, or "chain in" if connected to default PromptChain, or empty if no connection
+						let labelText = "";
 						if (input.link !== null) {
 							const linkInfo = app.graph.links[input.link];
 							if (linkInfo) {
 								const sourceNode = app.graph.getNodeById(linkInfo.origin_id);
 								if (sourceNode) {
-									// Use source node's title if it's not a PromptChain or has a custom title
 									const isPromptChain = sourceNode.constructor?.comfyClass === "PromptChain";
 									const hasCustomTitle = sourceNode.title && sourceNode.title !== "PromptChain";
-									if (!isPromptChain || hasCustomTitle) {
-										labelText = `input: ${sourceNode.title || sourceNode.type}`;
+									if (hasCustomTitle) {
+										// Show the custom title
+										labelText = sourceNode.title;
+									} else {
+										// Default PromptChain or other node type
+										labelText = "chain in";
 									}
 								}
 							}
 						}
+						// If no connection, labelText stays empty
 
 						// Draw label
 						ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
@@ -264,11 +322,12 @@ app.registerExtension({
 							const x = pos[0] - this.pos[0] - 10;  // Offset from slot circle (right side)
 							const y = pos[1] - this.pos[1];
 
-							// Draw label with custom color (same as active Preview label)
+							// Draw output label - "chain out" for 'chain', keep other names as-is
 							ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
 							ctx.font = "12px Arial";
 							ctx.textAlign = "right";
-							ctx.fillText(output.name, x, y + 4);
+							const outputLabel = output.name === "chain" ? "chain out" : output.name;
+							ctx.fillText(outputLabel, x, y + 4);
 						}
 					}
 				}
@@ -474,6 +533,8 @@ app.registerExtension({
 						ctx.textBaseline = "middle";
 						if (node._cachedTimeAgo) {
 							ctx.fillText(`Last run: ${node._cachedTimeAgo}`, 12, y + H / 2);
+						} else {
+							ctx.fillText("Awaiting first run...", 12, y + H / 2);
 						}
 						return H;
 					},
@@ -744,10 +805,30 @@ app.registerExtension({
 			serializeValue: () => node._isDisabled,
 			computeSize: () => [0, 0],
 		};
+		// Hidden widgets to pass positive/negative visibility state to Python
+		// When hidden (false), the corresponding output should be empty
+		const showPositiveWidget = {
+			name: "show_positive",
+			type: "hidden",
+			value: true,
+			options: { serialize: true },
+			serializeValue: () => node._showPositive,
+			computeSize: () => [0, 0],
+		};
+		const showNegativeWidget = {
+			name: "show_negative",
+			type: "hidden",
+			value: false,
+			options: { serialize: true },
+			serializeValue: () => node._showNegative,
+			computeSize: () => [0, 0],
+		};
 		node.widgets.push(lockedWidget);
 		node.widgets.push(cachedOutputWidget);
 		node.widgets.push(cachedNegOutputWidget);
 		node.widgets.push(disabledWidget);
+		node.widgets.push(showPositiveWidget);
+		node.widgets.push(showNegativeWidget);
 
 		// Helper to cache output on all downstream PromptChain nodes
 		const cacheDownstreamNodes = (startNode) => {
@@ -1549,6 +1630,32 @@ app.registerExtension({
 
 			// Re-insert caps if needed (they may have been lost during configure)
 			setTimeout(insertCaps, 50);
+
+			// Update output visibility based on connected inputs and chain output
+			setTimeout(() => {
+				const inputSlots = node.inputs?.filter(i => i.name.startsWith("input_")) || [];
+				const hasConnectedInputs = inputSlots.some(slot => slot.link !== null);
+
+				// Check if chain output is connected
+				const chainOutput = node.outputs?.find(o => o.name === "chain");
+				const chainIsConnected = chainOutput?.links && chainOutput.links.length > 0;
+
+				// Only hide if both inputs AND chain are connected (complete pass-through)
+				if (hasConnectedInputs && chainIsConnected) {
+					// Remove positive/negative outputs if they have no connections
+					const posOutput = node.outputs?.find(o => o.name === "positive");
+					const negOutput = node.outputs?.find(o => o.name === "negative");
+
+					if (posOutput && (!posOutput.links || posOutput.links.length === 0)) {
+						const idx = node.outputs.indexOf(posOutput);
+						if (idx > -1) node.removeOutput(idx);
+					}
+					if (negOutput && (!negOutput.links || negOutput.links.length === 0)) {
+						const idx = node.outputs.indexOf(negOutput);
+						if (idx > -1) node.removeOutput(idx);
+					}
+				}
+			}, 100);
 		};
 
 		// Helper to set text on a node

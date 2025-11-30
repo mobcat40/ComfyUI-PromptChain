@@ -56,6 +56,8 @@ class PromptChain:
                 "cached_neg_output": ("STRING", {"default": ""}),
                 "switch_index": ("INT", {"default": 1}),
                 "disabled": ("BOOLEAN", {"default": False}),
+                "show_positive": ("BOOLEAN", {"default": True}),
+                "show_negative": ("BOOLEAN", {"default": False}),
             }
         }
 
@@ -172,11 +174,11 @@ class PromptChain:
         return ", ".join(deduped)
 
     def process(self, mode, text, neg_text="", locked=False, cached_output="", cached_neg_output="",
-                switch_index=1, disabled=False, **kwargs):
+                switch_index=1, disabled=False, show_positive=True, show_negative=False, **kwargs):
         # Debug logging
         text_preview = text[:50] if text else ''
         neg_preview = neg_text[:50] if neg_text else ''
-        debug_log(f"[PromptChain] mode={mode!r}, text={text_preview!r}, neg_text={neg_preview!r}, locked={locked}, disabled={disabled}")
+        debug_log(f"[PromptChain] mode={mode!r}, text={text_preview!r}, neg_text={neg_preview!r}, locked={locked}, disabled={disabled}, show_positive={show_positive}, show_negative={show_negative}")
 
         # If disabled, return empty bundle
         if disabled:
@@ -214,9 +216,9 @@ class PromptChain:
                     neg_inputs.append(neg_part)
             i += 1
 
-        # Process this node's text fields
-        pos_text_combined = self._process_text(text)
-        neg_text_combined = self._process_text(neg_text)
+        # Process this node's text fields (only if that section is enabled)
+        pos_text_combined = self._process_text(text) if show_positive else ""
+        neg_text_combined = self._process_text(neg_text) if show_negative else ""
 
         debug_log(f"[PromptChain] pos_text_combined={pos_text_combined!r}, neg_text_combined={neg_text_combined!r}")
         debug_log(f"[PromptChain] pos_inputs={pos_inputs}, neg_inputs={neg_inputs}")
