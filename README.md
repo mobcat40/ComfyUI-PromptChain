@@ -1,6 +1,6 @@
 # ComfyUI-PromptChain
 
-A visual prompt management system for ComfyUI. Build, randomize, route, and debug your prompts using connected nodes instead of nested syntax.
+A visual prompt engineering toolkit for ComfyUI. Chain prompts together, see what fires, lock what works.
 
 ## The Problem
 
