@@ -384,6 +384,30 @@ Natural output: "Red, Shiny Fur, Werewolf" — emergent behavior from simple pri
 
 ---
 
+## Prompt Palette
+
+Use Switch mode to build a reusable prompt control panel:
+
+![Prompt Palette](screenshots/Palette.png)
+
+**How it works:**
+
+1. Create a Switch node for each category (Style, Pose, Character, Outfit, etc.)
+2. Connect pre-built prompt options to each Switch
+3. Use the dropdown or arrow keys to flip between presets
+4. All Switches feed into a final Combine node
+
+**Why this pattern is powerful:**
+
+- **Instant iteration** — Change any category without rewiring
+- **Saved presets** — Your options persist with the workflow
+- **Mix and match** — Combine any style with any pose with any character
+- **Quick comparison** — Flip through options to find what works
+
+Build your prompt palette once, reuse it forever. Each workflow becomes a custom prompt mixer tailored to your subject.
+
+---
+
 ## Prompt Library Mode
 
 Disconnected PromptChain nodes act as prompt storage:
