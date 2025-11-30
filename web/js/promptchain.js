@@ -20,13 +20,34 @@ app.registerExtension({
 				// Apply consistent styling - no fading based on content
 				textWidget.inputEl.style.opacity = 1;
 				textWidget.inputEl.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-				textWidget.inputEl.style.marginTop = "0px"; // No gap - cap connects directly
+				textWidget.inputEl.style.marginTop = "0px";
 				textWidget.inputEl.style.fontFamily = "Arial, sans-serif";
 				textWidget.inputEl.style.fontSize = "11px";
-				textWidget.inputEl.style.padding = "4px 6px";
+				textWidget.inputEl.style.padding = "22px 6px 4px 6px"; // Extra top padding for fake cap
 				textWidget.inputEl.style.lineHeight = "1.3";
-				textWidget.inputEl.style.borderRadius = "0 0 4px 4px"; // Only bottom corners rounded
+				textWidget.inputEl.style.borderRadius = "4px"; // All corners rounded now
 				textWidget.inputEl.placeholder = "enter text...";
+
+				// Create fake cap label inside the textbox
+				const wrapper = textWidget.inputEl.parentElement;
+				if (wrapper && !wrapper.querySelector(".promptchain-fake-cap")) {
+					wrapper.style.position = "relative";
+					const fakeCapLabel = document.createElement("div");
+					fakeCapLabel.className = "promptchain-fake-cap";
+					fakeCapLabel.textContent = "Prompt";
+					fakeCapLabel.style.cssText = `
+						position: absolute;
+						top: 5px;
+						left: 6px;
+						font-family: Arial, sans-serif;
+						font-size: 10px;
+						font-weight: bold;
+						color: rgba(74, 158, 255, 0.9);
+						pointer-events: none;
+						z-index: 1;
+					`;
+					wrapper.appendChild(fakeCapLabel);
+				}
 				// Style placeholder text and scrollbars
 				const styleId = "promptchain-prompt-placeholder-style";
 				if (!document.getElementById(styleId)) {
@@ -591,16 +612,37 @@ app.registerExtension({
 					return originalComputeSize ? originalComputeSize(width) : [width, 60];
 				};
 				// Style the neg_text widget
-				negTextWidget.inputEl.style.marginTop = "0px"; // No gap - cap connects directly
+				negTextWidget.inputEl.style.marginTop = "0px";
 				negTextWidget.inputEl.style.fontFamily = "Arial, sans-serif";
 				negTextWidget.inputEl.style.fontSize = "11px";
-				negTextWidget.inputEl.style.padding = "4px 6px";
+				negTextWidget.inputEl.style.padding = "22px 6px 4px 6px"; // Extra top padding for fake cap
 				negTextWidget.inputEl.style.lineHeight = "1.3";
-				negTextWidget.inputEl.style.borderRadius = "0 0 4px 4px"; // Only bottom corners rounded
+				negTextWidget.inputEl.style.borderRadius = "4px"; // All corners rounded now
 				negTextWidget.inputEl.style.backgroundColor = "rgba(40, 0, 0, 0.5)";  // Subtle red tint
 				negTextWidget.inputEl.style.color = "";  // Default white text like positive
 				negTextWidget.inputEl.placeholder = "enter text...";
 				negTextWidget.inputEl.classList.add("promptchain-prompt-neg");
+
+				// Create fake cap label inside the textbox
+				const negWrapper = negTextWidget.inputEl.parentElement;
+				if (negWrapper && !negWrapper.querySelector(".promptchain-fake-cap-neg")) {
+					negWrapper.style.position = "relative";
+					const fakeCapLabel = document.createElement("div");
+					fakeCapLabel.className = "promptchain-fake-cap-neg";
+					fakeCapLabel.textContent = "Negative Prompt";
+					fakeCapLabel.style.cssText = `
+						position: absolute;
+						top: 5px;
+						left: 6px;
+						font-family: Arial, sans-serif;
+						font-size: 10px;
+						font-weight: bold;
+						color: rgba(255, 107, 107, 0.9);
+						pointer-events: none;
+						z-index: 1;
+					`;
+					negWrapper.appendChild(fakeCapLabel);
+				}
 
 				// Save value to properties
 				negTextWidget.inputEl.addEventListener("input", () => {
@@ -1712,128 +1754,8 @@ app.registerExtension({
 			node.widgets.push(menubar);
 		}
 
-		// Create "Positive" cap widget - header bar above text widget
-		const positiveCap = {
-			name: "positive_cap",
-			type: "custom",
-			value: null,
-			options: { serialize: false },
-			serializeValue: () => undefined,
-			computeSize: function() {
-				// Only show if positive text is visible
-				if (!node._showPositive) return [0, 0];
-				return [node.size[0], 4]; // Height tuned for seamless connection
-			},
-			draw: function(ctx, _, width, y) {
-				if (!node._showPositive) return 0;
-
-				const H = 18; // Draw taller than computeSize to overlap gap
-				// Get the actual textbox element position
-				const textWidget = node.widgets?.find(w => w.name === "text");
-				let margin = 15;
-				let w = width - margin * 2;
-
-				if (textWidget?.inputEl) {
-					// Use the textbox's actual width and position
-					const boxWidth = textWidget.inputEl.offsetWidth;
-					// Calculate margin from node width
-					margin = (width - boxWidth) / 2;
-					w = boxWidth;
-				}
-
-				// Draw cap background with transparent black
-				ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
-				ctx.beginPath();
-				ctx.roundRect(margin, y, w, H, [4, 4, 0, 0]);
-				ctx.fill();
-
-				// Draw label
-				ctx.fillStyle = "rgba(74, 158, 255, 0.9)";
-				ctx.font = "bold 10px Arial";
-				ctx.textAlign = "left";
-				ctx.textBaseline = "middle";
-				ctx.fillText("Prompt", margin + 6, y + H / 2 + 1);
-
-				return 4; // Return smaller size to pull textbox up
-			}
-		};
-
-		// Create "Negative" cap widget - header bar above neg_text widget
-		const negativeCap = {
-			name: "negative_cap",
-			type: "custom",
-			value: null,
-			options: { serialize: false },
-			serializeValue: () => undefined,
-			computeSize: function() {
-				// Only show if negative text is visible
-				if (!node._showNegative) return [0, -4]; // Negative to counteract widget spacing
-				return [node.size[0], 4]; // Height tuned for seamless connection
-			},
-			draw: function(ctx, _, width, y) {
-				if (!node._showNegative) return -4;
-
-				const H = 18; // Draw taller than computeSize to overlap gap
-				// Get the actual textbox element position
-				const negTextWidget = node.widgets?.find(w => w.name === "neg_text");
-				let margin = 15;
-				let w = width - margin * 2;
-
-				if (negTextWidget?.inputEl) {
-					// Use the textbox's actual width and position
-					const boxWidth = negTextWidget.inputEl.offsetWidth;
-					// Calculate margin from node width
-					margin = (width - boxWidth) / 2;
-					w = boxWidth;
-				}
-
-				// Draw cap background with subtle red tint
-				ctx.fillStyle = "rgba(40, 0, 0, 0.3)";
-				ctx.beginPath();
-				ctx.roundRect(margin, y, w, H, [4, 4, 0, 0]);
-				ctx.fill();
-
-				// Draw label
-				ctx.fillStyle = "rgba(255, 107, 107, 0.9)";
-				ctx.font = "bold 10px Arial";
-				ctx.textAlign = "left";
-				ctx.textBaseline = "middle";
-				ctx.fillText("Negative Prompt", margin + 6, y + H / 2 + 1);
-
-				return 4; // Return smaller size to pull textbox up
-			}
-		};
-
-		// Insert cap widgets before their respective text widgets
-		const insertCaps = () => {
-			// Check if text widget exists
-			const textWidget = node.widgets?.find(w => w.name === "text");
-			if (!textWidget) {
-				// Retry next frame
-				requestAnimationFrame(insertCaps);
-				return;
-			}
-
-			const textIndex = node.widgets.findIndex(w => w.name === "text");
-
-			// Insert positive cap before text widget (if not already there)
-			if (textIndex > -1 && !node.widgets.find(w => w.name === "positive_cap")) {
-				node.widgets.splice(textIndex, 0, positiveCap);
-			}
-
-			// Re-find neg_text index after insertion
-			const newNegTextIndex = node.widgets.findIndex(w => w.name === "neg_text");
-
-			// Insert negative cap before neg_text widget (if not already there)
-			if (newNegTextIndex > -1 && !node.widgets.find(w => w.name === "negative_cap")) {
-				node.widgets.splice(newNegTextIndex, 0, negativeCap);
-			}
-
-			app.graph.setDirtyCanvas(true);
-		};
-
-		// Delay cap insertion to ensure text widgets are positioned
-		setTimeout(insertCaps, 100);
+		// Cap labels are now embedded inside the textboxes via CSS (fake cap trick)
+		// No separate cap widgets needed - labels are positioned absolutely inside the textbox padding
 
 		// Override onConfigure to restore widget values and preview state after node is loaded
 		const originalOnConfigure = node.onConfigure;
@@ -1937,8 +1859,7 @@ app.registerExtension({
 			// Update switch selector visibility based on restored mode
 			updateSwitchSelectorVisibility();
 
-			// Re-insert caps if needed (they may have been lost during configure)
-			setTimeout(insertCaps, 50);
+			// Caps are now embedded in textboxes via CSS - no insertion needed
 
 			// Update output visibility based on connected inputs and chain output
 			setTimeout(() => {
@@ -1972,7 +1893,7 @@ app.registerExtension({
 			}, 100);
 
 			// Final size restoration after all delayed operations complete
-			// This ensures the saved size is respected even after insertCaps and other async work
+			// This ensures the saved size is respected even after async work
 			setTimeout(() => {
 				if (savedSize) {
 					node.setSize(savedSize);
