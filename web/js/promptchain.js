@@ -1578,6 +1578,9 @@ app.registerExtension({
 			// Mark as loaded from workflow - prevents default size override
 			node._isNewlyCreated = false;
 
+			// Save the size from workflow before anything modifies it
+			const savedSize = info.size ? [...info.size] : null;
+
 			originalOnConfigure?.apply(this, arguments);
 
 			// Restore text value from properties (most reliable method)
@@ -1699,8 +1702,20 @@ app.registerExtension({
 					}
 				}
 
-				// Don't auto-shrink on load - respect saved node sizes
+				// Restore saved size after all async operations
+				if (savedSize) {
+					node.setSize(savedSize);
+				}
 			}, 100);
+
+			// Final size restoration after all delayed operations complete
+			// This ensures the saved size is respected even after insertCaps and other async work
+			setTimeout(() => {
+				if (savedSize) {
+					node.setSize(savedSize);
+					app.graph.setDirtyCanvas(true);
+				}
+			}, 200);
 		};
 
 		// Helper to set text on a node
