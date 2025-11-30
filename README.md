@@ -136,8 +136,16 @@ Click **⛔ Disable** in the menubar to temporarily exclude a node from the prom
 **When disabled:**
 - Node outputs an empty string
 - Downstream nodes ignore this input entirely
-- The entire upstream branch is effectively muted
-- Visual indicator: Red ⛔ icon + **bold red "Disable" text**
+- Visual indicator: Red ⛔ icon + **bold red "Disable" text** + dark red background overlay with diagonal stripes
+
+**Visual indicators:**
+
+| State | Appearance |
+|-------|------------|
+| Disabled | ⛔ Red icon + **bold red "Disable" text** + dark red background overlay |
+| Enabled | ⛔ Dim gray icon and text |
+
+**Upstream propagation:** Disabling a node also disables all its input nodes (the entire upstream chain). This lets you mute an entire branch with one click — from source nodes all the way to the disabled node.
 
 **Use cases:**
 - A/B testing different branches without rewiring

@@ -199,6 +199,43 @@ app.registerExtension({
 
 					ctx.restore();
 				}
+
+				// Draw red darkened overlay for disabled nodes
+				if (this._isDisabled && !this.flags?.collapsed) {
+					const stripeWidth = 6;
+					const stripeGap = 18;
+					const [w, h] = this.size;
+
+					ctx.save();
+
+					// Clip to node body bounds with rounded corners
+					const radius = 8;
+					ctx.beginPath();
+					ctx.roundRect(0, 0, w, h, [0, 0, radius, radius]);
+					ctx.clip();
+
+					// Red darkened filter overlay
+					ctx.globalAlpha = 1.0;
+					ctx.fillStyle = "#4a1a1a";
+					ctx.fillRect(0, 0, w, h);
+
+					// Draw diagonal stripes (opposite direction from lock)
+					ctx.globalAlpha = 0.06;
+					ctx.fillStyle = "#000000";
+
+					const total = w + h + stripeGap;
+					for (let x = -h - stripeGap; x < total; x += stripeGap) {
+						ctx.beginPath();
+						ctx.moveTo(x, 0);
+						ctx.lineTo(x + stripeWidth, 0);
+						ctx.lineTo(x + h + stripeWidth, h);
+						ctx.lineTo(x + h, h);
+						ctx.closePath();
+						ctx.fill();
+					}
+
+					ctx.restore();
+				}
 			};
 
 			// Draw our custom input labels (default labels hidden via input.label = " " in nodeCreated)
@@ -472,15 +509,6 @@ app.registerExtension({
 			app.graph.setDirtyCanvas(true);
 		};
 
-		// Toggle disable function - disables this node (its input is ignored by downstream)
-		const toggleDisable = () => {
-			node._isDisabled = !node._isDisabled;
-			// Save state to properties for persistence
-			if (!node.properties) node.properties = {};
-			node.properties.isDisabled = node._isDisabled;
-			app.graph.setDirtyCanvas(true);
-		};
-
 		// Initialize lock state
 		node._isLocked = node.properties?.isLocked || false;
 
@@ -628,6 +656,34 @@ app.registerExtension({
 			// Update this node's widget values
 			lockedWidget.value = node._isLocked;
 			cachedOutputWidget.value = node.properties.cachedOutput || "";
+
+			app.graph.setDirtyCanvas(true);
+		};
+
+		// Toggle disable function - disables this node AND all its input nodes
+		const toggleDisable = () => {
+			const newDisabledState = !node._isDisabled;
+
+			// Get all input nodes (nodes feeding into this one)
+			const inputNodes = getInputNodes(node);
+
+			// Disable/enable this node
+			node._isDisabled = newDisabledState;
+			if (!node.properties) node.properties = {};
+			node.properties.isDisabled = newDisabledState;
+
+			// Disable/enable all input nodes too
+			for (const inputNode of inputNodes) {
+				inputNode._isDisabled = newDisabledState;
+				if (!inputNode.properties) inputNode.properties = {};
+				inputNode.properties.isDisabled = newDisabledState;
+				// Update their hidden widgets
+				const inputDisabledWidget = inputNode.widgets?.find(w => w.name === "disabled");
+				if (inputDisabledWidget) inputDisabledWidget.value = newDisabledState;
+			}
+
+			// Update this node's widget value
+			disabledWidget.value = node._isDisabled;
 
 			app.graph.setDirtyCanvas(true);
 		};
