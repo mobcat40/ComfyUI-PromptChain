@@ -1682,17 +1682,7 @@ app.registerExtension({
 					}
 				}
 
-				// Recalculate node size to fit content properly after all widgets are set up
-				// Only shrink if preview is NOT shown and not currently restoring preview
-				if (!node._showPreview && !node._restoringPreview) {
-					const minSize = node.computeSize();
-					// Add 6px bottom margin to match ComfyUI's standard node padding
-					const targetHeight = minSize[1] + 6;
-					if (node.size[1] > targetHeight + 10) {
-						// Node is taller than needed, shrink it
-						node.setSize([node.size[0], targetHeight]);
-					}
-				}
+				// Don't auto-shrink on load - respect saved node sizes
 			}, 100);
 		};
 
