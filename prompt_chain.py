@@ -12,6 +12,25 @@ def debug_log(msg):
     print(msg)
 
 
+# Bundle delimiter - uses a sequence unlikely to appear in prompts
+BUNDLE_DELIM = "\x1FPROMPTCHAIN_NEG\x1F"
+
+def make_bundle(pos, neg):
+    """Create a bundle string that carries both pos and neg."""
+    if neg:
+        return pos + BUNDLE_DELIM + neg
+    return pos
+
+def parse_bundle(value):
+    """Parse a bundle string into (pos, neg) tuple."""
+    if not value:
+        return "", ""
+    if BUNDLE_DELIM in value:
+        parts = value.split(BUNDLE_DELIM, 1)
+        return parts[0], parts[1] if len(parts) > 1 else ""
+    return value, ""
+
+
 class PromptChain:
     """
     Dynamic input version - accepts unlimited inputs via JS-managed dynamic slots.
@@ -27,6 +46,7 @@ class PromptChain:
                 "text": ("STRING", {"default": "", "multiline": True}),
             },
             "optional": {
+                # Accept STRING - may contain bundle delimiter for neg
                 "input_1": ("STRING", {"forceInput": True}),
                 "neg_text": ("STRING", {"default": "", "multiline": True}),
             },
@@ -39,8 +59,9 @@ class PromptChain:
             }
         }
 
-    RETURN_TYPES = ("STRING", "STRING")
-    RETURN_NAMES = ("output", "neg_output")
+    # Output STRING for chaining (with hidden neg), plus STRING outputs for CLIP nodes
+    RETURN_TYPES = ("STRING", "STRING", "STRING")
+    RETURN_NAMES = ("chain", "positive", "negative")
     OUTPUT_NODE = True
     FUNCTION = "process"
     CATEGORY = "text/prompt_chain"
@@ -83,20 +104,15 @@ class PromptChain:
             return ", ".join(processed_parts)
 
     def _parse_input(self, value):
-        """Parse input - could be JSON bundle or plain string."""
-        if not value or not value.strip():
+        """Parse input - may contain bundle delimiter for neg."""
+        if not value:
             return "", ""
 
-        # Try to parse as JSON bundle
-        try:
-            data = json.loads(value)
-            if isinstance(data, dict) and "pos" in data:
-                return data.get("pos", ""), data.get("neg", "")
-        except (json.JSONDecodeError, TypeError):
-            pass
+        if isinstance(value, str):
+            pos, neg = parse_bundle(value)
+            return pos.strip(), neg.strip()
 
-        # Plain string - treat as positive only
-        return value.strip(), ""
+        return "", ""
 
     def _combine_with_mode(self, mode, text_combined, inputs, switch_index):
         """Combine text and inputs based on mode."""
@@ -215,17 +231,50 @@ class PromptChain:
 
         debug_log(f"[PromptChain] FINAL pos_result={pos_result!r}, neg_result={neg_result!r}")
 
-        # Bundle pos and neg together as JSON for the output wire
-        bundle = json.dumps({"pos": pos_result, "neg": neg_result})
+        # Create bundle string for chaining to other PromptChain nodes
+        bundle = make_bundle(pos_result, neg_result)
 
-        # Return: output is the bundle (for chaining), neg_output is just the neg string (for CLIP-)
-        return {"ui": {"text": [pos_result], "neg_text": [neg_result]}, "result": (bundle, neg_result)}
+        # Return: chain, positive, negative (slots 0, 1, 2)
+        return {"ui": {"text": [pos_result], "neg_text": [neg_result]}, "result": (bundle, pos_result, neg_result)}
+
+
+class PromptChainDebug:
+    """
+    Debug node to inspect what text is reaching CLIP/KSampler.
+    Insert between PromptChain output and CLIP Encode to see the exact text.
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "text": ("STRING", {"forceInput": True}),
+                "label": ("STRING", {"default": "positive"}),
+            },
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("text",)
+    OUTPUT_NODE = True
+    FUNCTION = "inspect"
+    CATEGORY = "text/prompt_chain"
+
+    def inspect(self, text, label="positive"):
+        debug_log(f"[PromptChainDebug:{label}] ===== TEXT REACHING CLIP =====")
+        debug_log(f"[PromptChainDebug:{label}] Length: {len(text) if text else 0} chars")
+        debug_log(f"[PromptChainDebug:{label}] Content: {text!r}")
+        debug_log(f"[PromptChainDebug:{label}] ================================")
+
+        # Also return as UI so it shows in the node
+        return {"ui": {"text": [text]}, "result": (text,)}
 
 
 NODE_CLASS_MAPPINGS = {
     "PromptChain": PromptChain,
+    "PromptChainDebug": PromptChainDebug,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "PromptChain": "PromptChain",
+    "PromptChainDebug": "PromptChain Debug",
 }

@@ -113,44 +113,10 @@ app.registerExtension({
 			}
 		};
 
-		// Check if this is a root node (no parent inputs connected)
-		const isRootNode = () => {
-			// Check if any input_N slots have connections
-			const hasParentInputs = node.inputs?.some(i =>
-				i.name.startsWith("input_") &&
-				i.link !== null
-			);
-			return !hasParentInputs;
-		};
-
-		// Update neg_output slot visibility based on root status
-		const updateNegOutputVisibility = () => {
-			const shouldShowNegOutput = isRootNode();
-			const negOutputIndex = node.outputs?.findIndex(o => o.name === "neg_output");
-			const hasNegOutput = negOutputIndex !== -1;
-
-			if (shouldShowNegOutput && !hasNegOutput) {
-				// Add neg_output slot
-				node.addOutput("neg_output", "STRING");
-				// Hide default label
-				const newOutput = node.outputs[node.outputs.length - 1];
-				if (newOutput) newOutput.label = " ";
-			} else if (!shouldShowNegOutput && hasNegOutput) {
-				// Remove neg_output slot (only if not connected)
-				const negOutput = node.outputs[negOutputIndex];
-				if (!negOutput.links || negOutput.links.length === 0) {
-					node.removeOutput(negOutputIndex);
-				}
-			}
-		};
-		// Store on node so other extensions can call it
-		node._updateNegOutputVisibility = updateNegOutputVisibility;
-
 		const originalOnConnectionsChange = node.onConnectionsChange;
 		node.onConnectionsChange = function(type, index, connected, link_info) {
 			originalOnConnectionsChange?.apply(this, arguments);
 			updateInputs();
-			updateNegOutputVisibility();
 			// Update text styling when connections change (link to text widget)
 			if (node._updateTextStyle) {
 				node._updateTextStyle();
@@ -159,7 +125,6 @@ app.registerExtension({
 
 		// Initial setup
 		updateInputs();
-		updateNegOutputVisibility();
 
 		// Set empty labels on inputs and outputs to hide default text
 		const hideDefaultLabels = () => {
@@ -393,8 +358,9 @@ app.registerExtension({
 		// Track preview state (restore from properties if saved)
 		node._showPreview = node.properties?.showPreview || false;
 
-		// Track prompt visibility state (default: true = visible)
-		node._showPrompt = node.properties?.showPrompt !== false;
+		// Track which prompts to show (independent checkboxes)
+		node._showPositive = node.properties?.showPositive !== false;  // default: show positive
+		node._showNegative = node.properties?.showNegative || false;   // default: hide negative
 
 		// Track disabled state (default: false = enabled)
 		node._isDisabled = node.properties?.isDisabled || false;
@@ -442,6 +408,23 @@ app.registerExtension({
 					if (!node.properties) node.properties = {};
 					node.properties.negTextValue = negTextWidget.inputEl.value;
 				});
+
+				// Move neg_text widget to be right after text widget
+				const negIndex = node.widgets.indexOf(negTextWidget);
+				const textIndex = node.widgets.findIndex(w => w.name === "text");
+				if (negIndex > -1 && textIndex > -1 && negIndex !== textIndex + 1) {
+					node.widgets.splice(negIndex, 1);
+					// Recalculate text index after removal
+					const newTextIndex = node.widgets.findIndex(w => w.name === "text");
+					node.widgets.splice(newTextIndex + 1, 0, negTextWidget);
+				}
+
+				// Initialize negative visibility based on _showNegative state
+				// By default hide negative (neg_text)
+				if (!node._showNegative) {
+					negTextWidget.type = "hidden";
+					negTextWidget.inputEl.style.display = "none";
+				}
 			} else {
 				requestAnimationFrame(setupNegTextWidget);
 			}
@@ -566,64 +549,60 @@ app.registerExtension({
 				w.value = node._outputText || "";
 				w.inputEl.value = node._outputText || "";
 
-				// Move output label and preview widget to be right after the text widget
-				const textIndex = node.widgets.findIndex(w => w.name === "text");
+				// Move output label and preview widget to be right after neg_text widget
+				const negTextIndex = node.widgets.findIndex(w => w.name === "neg_text");
 				const labelIndex = node.widgets.findIndex(w => w.name === "output_label");
 				const previewWidget = node.widgets.find(w => w.name === "output_preview");
 				const previewIndex = node.widgets.indexOf(previewWidget);
 
-				// Insert label after text, then preview after label
-				if (textIndex > -1) {
+				// Insert label after neg_text, then preview after label
+				if (negTextIndex > -1) {
 					// Remove widgets from current positions
 					if (previewIndex > -1) node.widgets.splice(previewIndex, 1);
 					if (labelIndex > -1) node.widgets.splice(node.widgets.findIndex(w => w.name === "output_label"), 1);
 
-					// Insert in correct order after text widget
-					const newTextIndex = node.widgets.findIndex(w => w.name === "text");
-					node.widgets.splice(newTextIndex + 1, 0, outputLabel);
-					node.widgets.splice(newTextIndex + 2, 0, previewWidget);
+					// Insert in correct order after neg_text widget
+					const newNegTextIndex = node.widgets.findIndex(w => w.name === "neg_text");
+					node.widgets.splice(newNegTextIndex + 1, 0, outputLabel);
+					node.widgets.splice(newNegTextIndex + 2, 0, previewWidget);
 				}
 			}
 			app.graph.setDirtyCanvas(true);
 		};
 
-		// Toggle prompt visibility function
-		const togglePrompt = () => {
-			node._showPrompt = !node._showPrompt;
-			// Save state to properties for persistence
+		// Toggle positive prompt visibility
+		const togglePositive = () => {
+			node._showPositive = !node._showPositive;
 			if (!node.properties) node.properties = {};
-			node.properties.showPrompt = node._showPrompt;
+			node.properties.showPositive = node._showPositive;
 
 			const textWidget = node.widgets?.find(w => w.name === "text");
-			const negTextWidget = node.widgets?.find(w => w.name === "neg_text");
-
-			if (node._showPrompt) {
-				// Show the text widgets
-				if (textWidget) {
+			if (textWidget) {
+				if (node._showPositive) {
 					textWidget.type = "customtext";
-					if (textWidget.inputEl) {
-						textWidget.inputEl.style.display = "";
-					}
-				}
-				if (negTextWidget) {
-					negTextWidget.type = "customtext";
-					if (negTextWidget.inputEl) {
-						negTextWidget.inputEl.style.display = "";
-					}
-				}
-			} else {
-				// Hide the text widgets
-				if (textWidget) {
+					if (textWidget.inputEl) textWidget.inputEl.style.display = "";
+				} else {
 					textWidget.type = "hidden";
-					if (textWidget.inputEl) {
-						textWidget.inputEl.style.display = "none";
-					}
+					if (textWidget.inputEl) textWidget.inputEl.style.display = "none";
 				}
-				if (negTextWidget) {
+			}
+			app.graph.setDirtyCanvas(true);
+		};
+
+		// Toggle negative prompt visibility
+		const toggleNegative = () => {
+			node._showNegative = !node._showNegative;
+			if (!node.properties) node.properties = {};
+			node.properties.showNegative = node._showNegative;
+
+			const negTextWidget = node.widgets?.find(w => w.name === "neg_text");
+			if (negTextWidget) {
+				if (node._showNegative) {
+					negTextWidget.type = "customtext";
+					if (negTextWidget.inputEl) negTextWidget.inputEl.style.display = "";
+				} else {
 					negTextWidget.type = "hidden";
-					if (negTextWidget.inputEl) {
-						negTextWidget.inputEl.style.display = "none";
-					}
+					if (negTextWidget.inputEl) negTextWidget.inputEl.style.display = "none";
 				}
 			}
 			app.graph.setDirtyCanvas(true);
@@ -860,46 +839,55 @@ app.registerExtension({
 				ctx.font = node._isDisabled ? "bold 12px Arial" : "12px Arial";
 				ctx.fillText("Disable", disableX + 16, lockY);
 
+				// Preview icon and label (after Disable) - on the left side
+				const previewLabelX = disableX + 68;
+				ctx.fillStyle = node._showPreview ? "#4a9eff" : "rgba(255, 255, 255, 0.35)";
+				ctx.font = "11px Arial";
+				ctx.textAlign = "left";
+				ctx.fillText("ℹ️", previewLabelX, lockY);
+
+				// "Preview" label - blue bold when active
+				ctx.fillStyle = node._showPreview ? "#4a9eff" : "rgba(255, 255, 255, 0.35)";
+				ctx.font = node._showPreview ? "bold 12px Arial" : "12px Arial";
+				ctx.fillText("Preview", previewLabelX + 16, lockY);
+
 				const checkboxSize = 10;
 				const checkboxY = y + topOffset + (H - checkboxSize) / 2 - 1;
 
-				// Preview checkbox on the right
-				const previewCheckboxX = width - 13 - checkboxSize;
-
-				ctx.strokeStyle = node._showPreview ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.35)";
-				ctx.lineWidth = 1;
-				ctx.strokeRect(previewCheckboxX, checkboxY, checkboxSize, checkboxSize);
-
-				if (node._showPreview) {
-					ctx.fillStyle = "#4a9eff";
-					ctx.fillRect(previewCheckboxX + 2, checkboxY + 2, checkboxSize - 4, checkboxSize - 4);
-				}
-
-				// "Preview" label before checkbox (brighter when active)
-				ctx.fillStyle = node._showPreview ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.35)";
-				ctx.font = "12px Arial";
+				// Negative checkbox -[_] on the right
+				const negX = width - 13 - checkboxSize;
+				ctx.font = "bold 16px Arial";
 				ctx.textAlign = "right";
 				ctx.textBaseline = "middle";
-				ctx.fillText("Preview", previewCheckboxX - 6, y + topOffset + H / 2);
 
-				// Prompt checkbox (before Preview)
-				const promptCheckboxX = previewCheckboxX - 75;
+				// Draw - label
+				ctx.fillStyle = node._showNegative ? "#ff6b6b" : "rgba(255, 107, 107, 0.4)";
+				ctx.fillText("-", negX - 4, y + topOffset + H / 2);
 
-				ctx.strokeStyle = node._showPrompt ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.35)";
+				// Draw negative checkbox
+				ctx.strokeStyle = node._showNegative ? "#ff6b6b" : "rgba(255, 107, 107, 0.4)";
 				ctx.lineWidth = 1;
-				ctx.strokeRect(promptCheckboxX, checkboxY, checkboxSize, checkboxSize);
-
-				if (node._showPrompt) {
-					ctx.fillStyle = "#4a9eff";
-					ctx.fillRect(promptCheckboxX + 2, checkboxY + 2, checkboxSize - 4, checkboxSize - 4);
+				ctx.strokeRect(negX, checkboxY, checkboxSize, checkboxSize);
+				if (node._showNegative) {
+					ctx.fillStyle = "#ff6b6b";
+					ctx.fillRect(negX + 2, checkboxY + 2, checkboxSize - 4, checkboxSize - 4);
 				}
 
-				// "Prompt" label before checkbox (brighter when active)
-				ctx.fillStyle = node._showPrompt ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.35)";
-				ctx.font = "12px Arial";
-				ctx.textAlign = "right";
-				ctx.textBaseline = "middle";
-				ctx.fillText("Prompt", promptCheckboxX - 6, y + topOffset + H / 2);
+				// Positive checkbox +[_] (before negative)
+				const posX = negX - 30;
+
+				// Draw + label
+				ctx.fillStyle = node._showPositive ? "#4a9eff" : "rgba(74, 158, 255, 0.4)";
+				ctx.fillText("+", posX - 4, y + topOffset + H / 2);
+
+				// Draw positive checkbox
+				ctx.strokeStyle = node._showPositive ? "#4a9eff" : "rgba(74, 158, 255, 0.4)";
+				ctx.lineWidth = 1;
+				ctx.strokeRect(posX, checkboxY, checkboxSize, checkboxSize);
+				if (node._showPositive) {
+					ctx.fillStyle = "#4a9eff";
+					ctx.fillRect(posX + 2, checkboxY + 2, checkboxSize - 4, checkboxSize - 4);
+				}
 
 				return totalH;
 			},
@@ -918,19 +906,30 @@ app.registerExtension({
 						return true;
 					}
 
-					const checkboxSize = 10;
-					const previewCheckboxX = node.size[0] - 13 - checkboxSize;
-					const promptCheckboxX = previewCheckboxX - 75;
-
-					// Check if click is on preview checkbox area (right side)
-					if (pos[0] >= previewCheckboxX - 50 && pos[0] <= node.size[0] - 4) {
+					// Check if click is on preview area (after disable, on left side)
+					const previewLabelX = disableX + 68;
+					if (pos[0] >= previewLabelX - 4 && pos[0] <= previewLabelX + 70) {
 						togglePreview();
 						return true;
 					}
 
-					// Check if click is on prompt checkbox area
-					if (pos[0] >= promptCheckboxX - 45 && pos[0] < previewCheckboxX - 50) {
-						togglePrompt();
+					const checkboxSize = 10;
+
+					// Negative checkbox -[_] on the right
+					const negX = node.size[0] - 13 - checkboxSize;
+
+					// Positive checkbox +[_] (before negative)
+					const posX = negX - 30;
+
+					// Check if click is on negative checkbox area
+					if (pos[0] >= negX - 15 && pos[0] < negX + checkboxSize + 5) {
+						toggleNegative();
+						return true;
+					}
+
+					// Check if click is on positive checkbox area
+					if (pos[0] >= posX - 15 && pos[0] < posX + checkboxSize + 5) {
+						togglePositive();
 						return true;
 					}
 				}
@@ -1259,19 +1258,18 @@ app.registerExtension({
 				node._switchIndex = info.properties.switchIndex;
 			}
 
-			// Restore prompt visibility from saved properties
-			if (info.properties?.showPrompt === false && node._showPrompt) {
-				node._showPrompt = true;
-				togglePrompt(); // Will toggle to false and hide prompt
+			// Restore positive/negative visibility from saved properties
+			if (info.properties?.showPositive === false && node._showPositive) {
+				node._showPositive = true;
+				togglePositive(); // Will toggle to hide positive
+			}
+			if (info.properties?.showNegative === true && !node._showNegative) {
+				node._showNegative = false;
+				toggleNegative(); // Will toggle to show negative
 			}
 
 			// Update switch selector visibility based on restored mode
 			updateSwitchSelectorVisibility();
-
-			// Update neg_output visibility based on restored connections
-			if (node._updateNegOutputVisibility) {
-				node._updateNegOutputVisibility();
-			}
 		};
 
 		// Helper to set text on a node
