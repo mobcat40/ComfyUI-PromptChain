@@ -17,12 +17,7 @@ Now nest a few levels deeper. Add 20 options per group. Good luck debugging whic
 
 PromptChain makes the hierarchy *spatial*. Instead of parsing nested braces in your head, you see the decision tree as connected nodes:
 
-```
-[Class Node] ──→ [Weapon Node] ──→ [Enchant Node] ──→ [Title Node]
-     │                │                 │                  │
-warrior|mage     iron|steel        fire|ice|         dragon|demon
-   |rogue        sword|axe|staff   lightning         |undead slayer
-```
+![PromptChain Workflow](screenshots/Intro.png)
 
 Each node shows exactly what it output. Chain them together, see the whole prompt path at a glance.
 
