@@ -286,6 +286,9 @@ app.registerExtension({
 		// Track prompt visibility state (default: true = visible)
 		node._showPrompt = node.properties?.showPrompt !== false;
 
+		// Track disabled state (default: false = enabled)
+		node._isDisabled = node.properties?.isDisabled || false;
+
 		// Save text value to properties whenever it changes (for reliable persistence)
 		const setupTextPersistence = () => {
 			const textWidget = node.widgets?.find(w => w.name === "text");
@@ -469,6 +472,15 @@ app.registerExtension({
 			app.graph.setDirtyCanvas(true);
 		};
 
+		// Toggle disable function - disables this node (its input is ignored by downstream)
+		const toggleDisable = () => {
+			node._isDisabled = !node._isDisabled;
+			// Save state to properties for persistence
+			if (!node.properties) node.properties = {};
+			node.properties.isDisabled = node._isDisabled;
+			app.graph.setDirtyCanvas(true);
+		};
+
 		// Initialize lock state
 		node._isLocked = node.properties?.isLocked || false;
 
@@ -516,8 +528,17 @@ app.registerExtension({
 			serializeValue: () => node.properties?.cachedOutput || "",
 			computeSize: () => [0, 0],
 		};
+		const disabledWidget = {
+			name: "disabled",
+			type: "hidden",
+			value: false,
+			options: { serialize: true },
+			serializeValue: () => node._isDisabled,
+			computeSize: () => [0, 0],
+		};
 		node.widgets.push(lockedWidget);
 		node.widgets.push(cachedOutputWidget);
+		node.widgets.push(disabledWidget);
 
 		// Helper to cache output on all downstream PromptChain nodes
 		const cacheDownstreamNodes = (startNode) => {
@@ -642,6 +663,18 @@ app.registerExtension({
 				ctx.font = node._isLocked ? "bold 12px Arial" : "12px Arial";
 				ctx.fillText("Lock", lockX + 16, lockY);
 
+				// Disable icon and label (after Lock)
+				const disableX = lockX + 52;
+				ctx.fillStyle = node._isDisabled ? "#ff4444" : "rgba(255, 255, 255, 0.35)";
+				ctx.font = "11px Arial";
+				ctx.textAlign = "left";
+				ctx.fillText("⛔", disableX, lockY);
+
+				// "Disable" label - red bold when disabled
+				ctx.fillStyle = node._isDisabled ? "#ff6666" : "rgba(255, 255, 255, 0.35)";
+				ctx.font = node._isDisabled ? "bold 12px Arial" : "12px Arial";
+				ctx.fillText("Disable", disableX + 16, lockY);
+
 				const checkboxSize = 10;
 				const checkboxY = y + topOffset + (H - checkboxSize) / 2 - 1;
 
@@ -688,8 +721,15 @@ app.registerExtension({
 			mouse: function(event, pos, node) {
 				if (event.type === "pointerdown") {
 					// Check if click is on lock area (left side)
-					if (pos[0] >= 8 && pos[0] <= 60) {
+					if (pos[0] >= 8 && pos[0] <= 55) {
 						toggleLock();
+						return true;
+					}
+
+					// Check if click is on disable area (after lock)
+					const disableX = 12 + 52; // lockX + 52
+					if (pos[0] >= disableX - 4 && pos[0] <= disableX + 60) {
+						toggleDisable();
 						return true;
 					}
 
@@ -1005,6 +1045,11 @@ app.registerExtension({
 			}
 			if (info.properties?.cachedOutput !== undefined) {
 				node.properties.cachedOutput = info.properties.cachedOutput;
+			}
+
+			// Restore disabled state from saved properties
+			if (info.properties?.isDisabled !== undefined) {
+				node._isDisabled = info.properties.isDisabled;
 			}
 
 			// Restore switch index from saved properties

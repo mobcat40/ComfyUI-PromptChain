@@ -34,9 +34,11 @@ Each node shows exactly what it output. Chain them together, see the whole promp
 - **Live preview** — See what fired, when it fired, in real-time
 - **Lock system** — Freeze part or all of your nodes for fast testing
 - **Import/Export** — Easily import/export with common DynamicPrompt syntax
-- **Two modes:**
+- **Prompt toggle** — Hide the text field when you only need input routing
+- **Three modes:**
   - `🎲 Randomize Inputs` — Pick one path from connected inputs
   - `➕ Combine Inputs` — Merge all paths together
+  - `🔛 Switch Input` — Manually select which input to pass through
 
 ## Installation
 
@@ -61,9 +63,10 @@ Multiline works too — lines ending with `|` continue the OR group, lines endin
 ## The Node
 
 **PromptChain** is the single node type. It has:
-- **Mode selector** — `🎲 Randomize Inputs` or `➕ Combine Inputs`
-- **Text field** — Wildcard processing with `|` and `,` syntax
+- **Mode selector** — `🎲 Randomize Inputs`, `➕ Combine Inputs`, or `🔛 Switch Input`
+- **Text field** — Wildcard processing with `|` and `,` syntax (toggleable via Prompt checkbox)
 - **Dynamic inputs** — Connect as many inputs as you need, slots auto-expand
+- **Menubar** — Lock, Prompt toggle, and Preview controls
 
 ### Modes
 
@@ -76,6 +79,13 @@ Multiline works too — lines ending with `|` continue the OR group, lines endin
 - Merges ALL inputs using breadth-first interleaving
 - Tags round-robin across branches so no single branch dominates the token budget
 - Example: `["a,b,c,d", "X,Y"]` → `"a, X, b, Y, c, d"` (not `"a, b, c, d, X, Y"`)
+
+**🔛 Switch Input**
+- Manually select which connected input to pass through
+- A secondary dropdown appears showing all connected inputs by their source node names
+- Click the dropdown or use arrows to cycle through inputs
+- Prepends the text field to the selected input
+- Use for A/B testing, manual control, or debugging specific paths
 
 ## Example: RPG Character Generator
 
@@ -118,6 +128,38 @@ Click the **lock icon** (🔒/🔓) to freeze the current output.
 **Upstream propagation:** Locking a node also locks all its input nodes (the entire upstream chain). This ensures your complete prompt path stays frozen — from source nodes all the way to the locked node.
 
 **Persistence:** Lock state and cached output save with your workflow.
+
+## Disable
+
+Click **⛔ Disable** in the menubar to temporarily exclude a node from the prompt chain.
+
+**When disabled:**
+- Node outputs an empty string
+- Downstream nodes ignore this input entirely
+- The entire upstream branch is effectively muted
+- Visual indicator: Red ⛔ icon + **bold red "Disable" text**
+
+**Use cases:**
+- A/B testing different branches without rewiring
+- Temporarily muting parts of complex prompt trees
+- Quick toggling of optional modifiers or style nodes
+
+**Persistence:** Disabled state saves with your workflow.
+
+## Prompt Toggle
+
+Click the **Prompt** checkbox in the menubar to show/hide the text field.
+
+**When to hide the prompt:**
+- Using the node purely as an input router (Switch mode)
+- Building selector/hub nodes that only pass through connections
+- Reducing visual clutter when you don't need the text field
+
+**When visible (default):**
+- The text field appears for wildcard entry
+- Text is prepended to the selected/combined inputs
+
+The toggle state persists with your workflow.
 
 ## Import & Export
 

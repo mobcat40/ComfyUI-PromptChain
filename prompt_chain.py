@@ -31,6 +31,7 @@ class PromptChain:
                 "locked": ("BOOLEAN", {"default": False}),
                 "cached_output": ("STRING", {"default": ""}),
                 "switch_index": ("INT", {"default": 1}),
+                "disabled": ("BOOLEAN", {"default": False}),
             }
         }
 
@@ -44,10 +45,14 @@ class PromptChain:
     def IS_CHANGED(cls, **kwargs):
         return float("nan")
 
-    def process(self, mode, text, locked=False, cached_output="", switch_index=1, **kwargs):
+    def process(self, mode, text, locked=False, cached_output="", switch_index=1, disabled=False, **kwargs):
         # Debug logging
         text_preview = text[:50] if text else ''
-        debug_log(f"[PromptChain] mode={mode!r}, text={text_preview!r}, locked={locked}, kwargs={kwargs}")
+        debug_log(f"[PromptChain] mode={mode!r}, text={text_preview!r}, locked={locked}, disabled={disabled}, kwargs={kwargs}")
+
+        # If disabled, return empty string (this node's output is ignored)
+        if disabled:
+            return {"ui": {"text": ["(disabled)"]}, "result": ("",)}
 
         # If locked and we have cached output, return it without re-processing
         if locked and cached_output:
