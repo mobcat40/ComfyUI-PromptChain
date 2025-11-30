@@ -1,5 +1,11 @@
 import { app } from "../../../scripts/app.js";
 import { ComfyWidgets } from "../../../scripts/widgets.js";
+import { api } from "../../../scripts/api.js";
+
+// Track workflow execution start time for timing measurements
+api.addEventListener("execution_start", () => {
+	window._promptChainExecutionStart = Date.now();
+});
 
 // Dynamic input management for PromptChainDynamic
 app.registerExtension({
@@ -26,7 +32,7 @@ app.registerExtension({
 				textWidget.inputEl.style.lineHeight = "1.3";
 				textWidget.inputEl.style.borderRadius = "4px";
 				textWidget.inputEl.style.border = "none";
-				textWidget.inputEl.placeholder = "enter text...";
+				textWidget.inputEl.placeholder = "prompt text...";
 				// Style placeholder text and scrollbars
 				const styleId = "promptchain-prompt-placeholder-style";
 				if (!document.getElementById(styleId)) {
@@ -519,10 +525,15 @@ app.registerExtension({
 					this._outputText = textValue;
 					this._outputTimestamp = Date.now();
 					this._cachedTimeAgo = "Just Now"; // Immediate update
+					// Calculate execution time from workflow start
+					if (window._promptChainExecutionStart) {
+						this._executionTime = Date.now() - window._promptChainExecutionStart;
+					}
 					// Persist to properties for workflow save/load
 					if (!this.properties) this.properties = {};
 					this.properties.outputText = textValue;
 					this.properties.outputTimestamp = this._outputTimestamp;
+					this.properties.executionTime = this._executionTime;
 				}
 				// Handle negative output
 				if (message?.neg_text) {
@@ -595,7 +606,7 @@ app.registerExtension({
 				negTextWidget.inputEl.style.border = "none";
 				negTextWidget.inputEl.style.backgroundColor = "rgba(40, 0, 0, 0.5)";  // Subtle red tint
 				negTextWidget.inputEl.style.color = "";  // Default white text like positive
-				negTextWidget.inputEl.placeholder = "enter text...";
+				negTextWidget.inputEl.placeholder = "negative prompt text...";
 				negTextWidget.inputEl.classList.add("promptchain-prompt-neg");
 
 				// Save value to properties
@@ -690,11 +701,11 @@ app.registerExtension({
 					options: { serialize: false },
 					serializeValue: () => undefined,
 					computeSize: function(width) {
-						const marginTop = 0;
+						const marginTop = 5;
 						return [width, 18 + marginTop];
 					},
 					draw: function(ctx, n, width, y, height) {
-						const marginTop = 0;
+						const marginTop = 5;
 						const labelHeight = 18;
 
 						// Draw "Last run" timestamp label
@@ -703,7 +714,16 @@ app.registerExtension({
 						ctx.textAlign = "left";
 						ctx.textBaseline = "top";
 						const timeAgo = node._cachedTimeAgo || "Awaiting first run...";
-						ctx.fillText(`Last run: ${timeAgo}`, 13, y + marginTop + 3);
+						const execTime = node._executionTime ? `  •  ${node._executionTime}ms` : "";
+						// Count words in output
+						const countWords = (text) => {
+							if (!text) return 0;
+							return text.split(/[\s,]+/).filter(w => w.trim()).length;
+						};
+						const posWords = countWords(node._outputText);
+						const negWords = countWords(node._negOutputText);
+						const wordLabel = posWords > 0 ? `  •  ${posWords} words` + (negWords > 0 ? ` / ${negWords} neg` : "") : "";
+						ctx.fillText(`Last run: ${timeAgo}${execTime}${wordLabel}`, 13, y + marginTop + 3);
 
 						return labelHeight + marginTop;
 					},
@@ -1641,6 +1661,9 @@ app.registerExtension({
 			}
 			if (info.properties?.outputTimestamp !== undefined) {
 				node._outputTimestamp = info.properties.outputTimestamp;
+			}
+			if (info.properties?.executionTime !== undefined) {
+				node._executionTime = info.properties.executionTime;
 			}
 
 			// Restore negative output text from saved properties
