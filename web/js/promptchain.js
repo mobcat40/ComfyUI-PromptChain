@@ -9,16 +9,8 @@ app.registerExtension({
 			return;
 		}
 
-		// Force default size for new nodes after widgets are set up
 		// Mark as new node - onConfigure will clear this flag for loaded nodes
 		node._isNewlyCreated = true;
-		requestAnimationFrame(() => {
-			// Only apply default size if still marked as new (not loaded from workflow)
-			if (node._isNewlyCreated) {
-				node.size = [210, 180];
-				node.setDirtyCanvas(true);
-			}
-		});
 
 		// Style the text widget
 		// Use setTimeout to wait for widget DOM element to be created
@@ -418,6 +410,12 @@ app.registerExtension({
 		const setupNegTextWidget = () => {
 			const negTextWidget = node.widgets?.find(w => w.name === "neg_text");
 			if (negTextWidget?.inputEl) {
+				// Override computeSize to return 0 height when hidden
+				const originalComputeSize = negTextWidget.computeSize?.bind(negTextWidget);
+				negTextWidget.computeSize = function(width) {
+					if (!node._showNegative) return [0, -4]; // Negative to counteract widget spacing
+					return originalComputeSize ? originalComputeSize(width) : [width, 60];
+				};
 				// Style the neg_text widget
 				negTextWidget.inputEl.style.marginTop = "0px"; // No gap - cap connects directly
 				negTextWidget.inputEl.style.fontFamily = "Arial, sans-serif";
@@ -720,6 +718,8 @@ app.registerExtension({
 					if (textWidget.inputEl) textWidget.inputEl.style.display = "none";
 				}
 			}
+			// Recalculate node size after toggling
+			node.setSize(node.computeSize());
 			app.graph.setDirtyCanvas(true);
 		};
 
@@ -739,6 +739,8 @@ app.registerExtension({
 					if (negTextWidget.inputEl) negTextWidget.inputEl.style.display = "none";
 				}
 			}
+			// Recalculate node size after toggling
+			node.setSize(node.computeSize());
 			app.graph.setDirtyCanvas(true);
 		};
 
@@ -772,14 +774,14 @@ app.registerExtension({
 		};
 
 		// Add hidden widgets to pass lock state to Python
+		// Use -4 height to counteract LiteGraph's inter-widget spacing
 		const lockedWidget = {
 			name: "locked",
 			type: "hidden",
 			value: false,
 			options: { serialize: true },
-			// Return true only if this node itself is locked
 			serializeValue: () => node._isLocked,
-			computeSize: () => [0, 0],
+			computeSize: () => [0, -4],
 		};
 		const cachedOutputWidget = {
 			name: "cached_output",
@@ -787,7 +789,7 @@ app.registerExtension({
 			value: "",
 			options: { serialize: true },
 			serializeValue: () => node.properties?.cachedOutput || "",
-			computeSize: () => [0, 0],
+			computeSize: () => [0, -4],
 		};
 		const cachedNegOutputWidget = {
 			name: "cached_neg_output",
@@ -795,7 +797,7 @@ app.registerExtension({
 			value: "",
 			options: { serialize: true },
 			serializeValue: () => node.properties?.cachedNegOutput || "",
-			computeSize: () => [0, 0],
+			computeSize: () => [0, -4],
 		};
 		const disabledWidget = {
 			name: "disabled",
@@ -803,17 +805,16 @@ app.registerExtension({
 			value: false,
 			options: { serialize: true },
 			serializeValue: () => node._isDisabled,
-			computeSize: () => [0, 0],
+			computeSize: () => [0, -4],
 		};
 		// Hidden widgets to pass positive/negative visibility state to Python
-		// When hidden (false), the corresponding output should be empty
 		const showPositiveWidget = {
 			name: "show_positive",
 			type: "hidden",
 			value: true,
 			options: { serialize: true },
 			serializeValue: () => node._showPositive,
-			computeSize: () => [0, 0],
+			computeSize: () => [0, -4],
 		};
 		const showNegativeWidget = {
 			name: "show_negative",
@@ -821,7 +822,7 @@ app.registerExtension({
 			value: false,
 			options: { serialize: true },
 			serializeValue: () => node._showNegative,
-			computeSize: () => [0, 0],
+			computeSize: () => [0, -4],
 		};
 		node.widgets.push(lockedWidget);
 		node.widgets.push(cachedOutputWidget);
@@ -1389,7 +1390,7 @@ app.registerExtension({
 			value: 1,
 			options: { serialize: true },
 			serializeValue: () => node._switchIndex || 1,
-			computeSize: () => [0, 0],
+			computeSize: () => [0, -4],
 		};
 		node.widgets.push(switchIndexWidget);
 
@@ -1479,11 +1480,11 @@ app.registerExtension({
 			serializeValue: () => undefined,
 			computeSize: function() {
 				// Only show if negative text is visible
-				if (!node._showNegative) return [0, 0];
+				if (!node._showNegative) return [0, -4]; // Negative to counteract widget spacing
 				return [node.size[0], 4]; // Height tuned for seamless connection
 			},
 			draw: function(ctx, _, width, y) {
-				if (!node._showNegative) return 0;
+				if (!node._showNegative) return -4;
 
 				const H = 18; // Draw taller than computeSize to overlap gap
 				// Get the actual textbox element position
@@ -1654,6 +1655,13 @@ app.registerExtension({
 						const idx = node.outputs.indexOf(negOutput);
 						if (idx > -1) node.removeOutput(idx);
 					}
+				}
+
+				// Recalculate node size to fit content properly after all widgets are set up
+				const minSize = node.computeSize();
+				if (node.size[1] > minSize[1] + 10) {
+					// Node is taller than needed, shrink it
+					node.setSize([node.size[0], minSize[1]]);
 				}
 			}, 100);
 		};
