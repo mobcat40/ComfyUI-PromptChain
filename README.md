@@ -225,6 +225,8 @@ Lock state and cached output save with your workflow.
 
 Click **⛔ Disable** in the menubar to temporarily exclude a node from the prompt chain.
 
+![Disabled Node](screenshots/Disabled.png)
+
 ### When Disabled
 
 - Node outputs an empty string
