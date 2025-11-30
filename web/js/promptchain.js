@@ -258,12 +258,62 @@ app.registerExtension({
 				}
 			};
 
+			// Helper function to get switch options from a child node
+			const getChildSwitchOptions = (sourceNode) => {
+				if (!sourceNode.inputs) return [];
+				const options = [];
+				for (const input of sourceNode.inputs) {
+					if (input.name.startsWith("input_") && input.link !== null) {
+						const linkInfo = app.graph.links[input.link];
+						if (linkInfo) {
+							const grandchildNode = app.graph.getNodeById(linkInfo.origin_id);
+							if (grandchildNode) {
+								const hasCustomTitle = grandchildNode.title && grandchildNode.title !== "PromptChain";
+								const label = hasCustomTitle ? grandchildNode.title : input.name;
+								const index = parseInt(input.name.split("_")[1]);
+								options.push({ label, index, inputName: input.name });
+							}
+						}
+					}
+				}
+				return options;
+			};
+
+			// Get the current mode of a child node
+			const getChildMode = (sourceNode) => {
+				const modeWidget = sourceNode.widgets?.find(w => w.name === "mode");
+				return modeWidget?.value || "Combine";
+			};
+
+			// Get the currently selected switch label from a child node
+			const getChildSwitchLabel = (sourceNode) => {
+				const options = getChildSwitchOptions(sourceNode);
+				if (options.length === 0) return null;
+				const switchIndex = sourceNode._switchIndex || sourceNode.properties?.switchIndex || 1;
+				const selected = options.find(o => o.index === switchIndex);
+				return selected ? selected.label : options[0].label;
+			};
+
+			// Get display label based on mode
+			const getChildModeLabel = (sourceNode) => {
+				const mode = getChildMode(sourceNode);
+				if (mode === "Randomize") return "🎲 Roll";
+				if (mode === "Combine") return "➕ Combo";
+				// Switch mode - show selected option
+				const selectedLabel = getChildSwitchLabel(sourceNode);
+				return selectedLabel || "Switch";
+			};
+
 			// Draw our custom input labels (default labels hidden via input.label = " " in nodeCreated)
 			const originalOnDrawForeground = nodeType.prototype.onDrawForeground;
 			nodeType.prototype.onDrawForeground = function(ctx) {
 				originalOnDrawForeground?.apply(this, arguments);
 
 				if (this.flags?.collapsed || !this.inputs) return;
+
+				// Initialize click areas for switch dropdowns
+				if (!this._switchClickAreas) this._switchClickAreas = [];
+				this._switchClickAreas = [];
 
 				// Draw custom input labels
 				for (let i = 0; i < this.inputs.length; i++) {
@@ -277,30 +327,51 @@ app.registerExtension({
 
 						// Dynamic label: show connected node's name, or "chain in" if connected to default PromptChain, or empty if no connection
 						let labelText = "";
+						let hasDropdown = false;
+						let sourceNode = null;
+
 						if (input.link !== null) {
 							const linkInfo = app.graph.links[input.link];
 							if (linkInfo) {
-								const sourceNode = app.graph.getNodeById(linkInfo.origin_id);
+								sourceNode = app.graph.getNodeById(linkInfo.origin_id);
 								if (sourceNode) {
 									const isPromptChain = sourceNode.constructor?.comfyClass === "PromptChain";
 									const hasCustomTitle = sourceNode.title && sourceNode.title !== "PromptChain";
-									if (hasCustomTitle) {
-										// Show the custom title
-										labelText = sourceNode.title;
+									const baseLabel = hasCustomTitle ? sourceNode.title : "chain in";
+
+									// Check if child has connected inputs (making dropdown useful)
+									const childOptions = getChildSwitchOptions(sourceNode);
+									hasDropdown = isPromptChain && childOptions.length > 0;
+
+									if (hasDropdown) {
+										const modeLabel = getChildModeLabel(sourceNode);
+										labelText = `${baseLabel} - ${modeLabel} ▼`;
 									} else {
-										// Default PromptChain or other node type
-										labelText = "chain in";
+										labelText = baseLabel;
 									}
 								}
 							}
 						}
 						// If no connection, labelText stays empty
 
-						// Draw label
-						ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+						// Draw label - green if has dropdown
+						ctx.fillStyle = hasDropdown ? "rgba(144, 238, 144, 0.9)" : "rgba(255, 255, 255, 0.7)";
 						ctx.font = "12px Arial";
 						ctx.textAlign = "left";
+						const textWidth = ctx.measureText(labelText).width;
 						ctx.fillText(labelText, x, y + 4);
+
+						// Store click area for dropdowns
+						if (hasDropdown && sourceNode) {
+							this._switchClickAreas.push({
+								x: x,
+								y: y - 8,
+								width: textWidth,
+								height: 16,
+								sourceNode: sourceNode,
+								inputIndex: i
+							});
+						}
 					}
 				}
 
@@ -323,6 +394,85 @@ app.registerExtension({
 						}
 					}
 				}
+			};
+
+			// Handle mouse clicks on switch dropdown labels
+			const originalOnMouseDown = nodeType.prototype.onMouseDown;
+			nodeType.prototype.onMouseDown = function(e, localPos, graphCanvas) {
+				// Check if clicking on any switch dropdown area
+				if (this._switchClickAreas && this._switchClickAreas.length > 0) {
+					for (const area of this._switchClickAreas) {
+						if (localPos[0] >= area.x && localPos[0] <= area.x + area.width &&
+							localPos[1] >= area.y && localPos[1] <= area.y + area.height) {
+
+							const sourceNode = area.sourceNode;
+							const options = getChildSwitchOptions(sourceNode);
+							const currentMode = getChildMode(sourceNode);
+							const currentSwitchIndex = sourceNode._switchIndex || sourceNode.properties?.switchIndex || 1;
+
+							// Helper to set mode on child node
+							const setChildMode = (mode) => {
+								const modeWidget = sourceNode.widgets?.find(w => w.name === "mode");
+								if (modeWidget) {
+									modeWidget.value = mode;
+									if (modeWidget.callback) {
+										modeWidget.callback(mode);
+									}
+								}
+								app.graph.setDirtyCanvas(true);
+							};
+
+							// Build menu items - modes first, then separator, then options
+							const menuOptions = [];
+
+							// Add mode options at top
+							menuOptions.push({
+								content: currentMode === "Randomize" ? "🎲 Roll  ✓" : "🎲 Roll",
+								callback: () => setChildMode("Randomize")
+							});
+							menuOptions.push({
+								content: currentMode === "Combine" ? "➕ Combo  ✓" : "➕ Combo",
+								callback: () => setChildMode("Combine")
+							});
+
+							// Add separator if there are options
+							if (options.length > 0) {
+								menuOptions.push(null); // null = separator in LiteGraph
+
+								// Add switch options
+								for (const opt of options) {
+									const isSelected = currentMode === "Switch" && opt.index === currentSwitchIndex;
+									menuOptions.push({
+										content: isSelected ? `🟢 ${opt.label}  ✓` : `🟢 ${opt.label}`,
+										callback: () => {
+											// Set to Switch mode and select this option
+											setChildMode("Switch");
+											sourceNode._switchIndex = opt.index;
+											if (!sourceNode.properties) sourceNode.properties = {};
+											sourceNode.properties.switchIndex = opt.index;
+											app.graph.setDirtyCanvas(true);
+										}
+									});
+								}
+							}
+
+							// Show context menu
+							new LiteGraph.ContextMenu(menuOptions, {
+								event: e,
+								callback: null,
+								scale: graphCanvas.ds.scale
+							}, graphCanvas.getCanvasWindow());
+
+							return true; // Consume the event
+						}
+					}
+				}
+
+				// Call original handler if exists
+				if (originalOnMouseDown) {
+					return originalOnMouseDown.apply(this, arguments);
+				}
+				return false;
 			};
 
 			// When the node is executed, store the output text
