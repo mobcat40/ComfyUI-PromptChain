@@ -254,11 +254,30 @@ app.registerExtension({
 						const x = (pos[0] - this.pos[0] + 14 + 14) / 2;  // Split the difference
 						const y = pos[1] - this.pos[1];
 
+						// Determine label text based on connection
+						const inputIndex = input.name.split("_")[1];
+						let labelText = `input: ${inputIndex}`;
+
+						if (input.link !== null) {
+							const linkInfo = app.graph.links[input.link];
+							if (linkInfo) {
+								const sourceNode = app.graph.getNodeById(linkInfo.origin_id);
+								if (sourceNode) {
+									// Use source node's title if it's not a PromptChain or has a custom title
+									const isPromptChain = sourceNode.constructor?.comfyClass === "PromptChain";
+									const hasCustomTitle = sourceNode.title && sourceNode.title !== "PromptChain";
+									if (!isPromptChain || hasCustomTitle) {
+										labelText = `input: ${sourceNode.title || sourceNode.type}`;
+									}
+								}
+							}
+						}
+
 						// Draw label with custom color (same as active Preview label)
 						ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
 						ctx.font = "12px Arial";
 						ctx.textAlign = "left";
-						ctx.fillText(input.name, x, y + 4);
+						ctx.fillText(labelText, x, y + 4);
 					}
 				}
 
