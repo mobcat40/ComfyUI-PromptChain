@@ -20,34 +20,13 @@ app.registerExtension({
 				// Apply consistent styling - no fading based on content
 				textWidget.inputEl.style.opacity = 1;
 				textWidget.inputEl.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-				textWidget.inputEl.style.marginTop = "0px";
 				textWidget.inputEl.style.fontFamily = "Arial, sans-serif";
-				textWidget.inputEl.style.fontSize = "11px";
-				textWidget.inputEl.style.padding = "22px 6px 4px 6px"; // Extra top padding for fake cap
+				textWidget.inputEl.style.fontSize = "12px";
+				textWidget.inputEl.style.padding = "8px";
 				textWidget.inputEl.style.lineHeight = "1.3";
-				textWidget.inputEl.style.borderRadius = "4px"; // All corners rounded now
+				textWidget.inputEl.style.borderRadius = "4px";
+				textWidget.inputEl.style.border = "none";
 				textWidget.inputEl.placeholder = "enter text...";
-
-				// Create fake cap label inside the textbox
-				const wrapper = textWidget.inputEl.parentElement;
-				if (wrapper && !wrapper.querySelector(".promptchain-fake-cap")) {
-					wrapper.style.position = "relative";
-					const fakeCapLabel = document.createElement("div");
-					fakeCapLabel.className = "promptchain-fake-cap";
-					fakeCapLabel.textContent = "Prompt";
-					fakeCapLabel.style.cssText = `
-						position: absolute;
-						top: 5px;
-						left: 6px;
-						font-family: Arial, sans-serif;
-						font-size: 10px;
-						font-weight: bold;
-						color: rgba(74, 158, 255, 0.9);
-						pointer-events: none;
-						z-index: 1;
-					`;
-					wrapper.appendChild(fakeCapLabel);
-				}
 				// Style placeholder text and scrollbars
 				const styleId = "promptchain-prompt-placeholder-style";
 				if (!document.getElementById(styleId)) {
@@ -610,34 +589,14 @@ app.registerExtension({
 				negTextWidget.inputEl.style.marginTop = "0px";
 				negTextWidget.inputEl.style.fontFamily = "Arial, sans-serif";
 				negTextWidget.inputEl.style.fontSize = "11px";
-				negTextWidget.inputEl.style.padding = "22px 6px 4px 6px"; // Extra top padding for fake cap
+				negTextWidget.inputEl.style.padding = "8px";
 				negTextWidget.inputEl.style.lineHeight = "1.3";
 				negTextWidget.inputEl.style.borderRadius = "4px"; // All corners rounded now
+				negTextWidget.inputEl.style.border = "none";
 				negTextWidget.inputEl.style.backgroundColor = "rgba(40, 0, 0, 0.5)";  // Subtle red tint
 				negTextWidget.inputEl.style.color = "";  // Default white text like positive
 				negTextWidget.inputEl.placeholder = "enter text...";
 				negTextWidget.inputEl.classList.add("promptchain-prompt-neg");
-
-				// Create fake cap label inside the textbox
-				const negWrapper = negTextWidget.inputEl.parentElement;
-				if (negWrapper && !negWrapper.querySelector(".promptchain-fake-cap-neg")) {
-					negWrapper.style.position = "relative";
-					const fakeCapLabel = document.createElement("div");
-					fakeCapLabel.className = "promptchain-fake-cap-neg";
-					fakeCapLabel.textContent = "Negative Prompt";
-					fakeCapLabel.style.cssText = `
-						position: absolute;
-						top: 5px;
-						left: 6px;
-						font-family: Arial, sans-serif;
-						font-size: 10px;
-						font-weight: bold;
-						color: rgba(255, 107, 107, 0.9);
-						pointer-events: none;
-						z-index: 1;
-					`;
-					negWrapper.appendChild(fakeCapLabel);
-				}
 
 				// Save value to properties
 				negTextWidget.inputEl.addEventListener("input", () => {
@@ -731,10 +690,12 @@ app.registerExtension({
 					options: { serialize: false },
 					serializeValue: () => undefined,
 					computeSize: function(width) {
-						return [width, 18];
+						const marginTop = 0;
+						return [width, 18 + marginTop];
 					},
 					draw: function(ctx, n, width, y, height) {
-						const margin = 15;
+						const marginTop = 0;
+						const labelHeight = 18;
 
 						// Draw "Last run" timestamp label
 						ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
@@ -742,9 +703,9 @@ app.registerExtension({
 						ctx.textAlign = "left";
 						ctx.textBaseline = "top";
 						const timeAgo = node._cachedTimeAgo || "Awaiting first run...";
-						ctx.fillText(`Last run: ${timeAgo}`, margin, y + 9);
+						ctx.fillText(`Last run: ${timeAgo}`, 13, y + marginTop + 3);
 
-						return 18;
+						return labelHeight + marginTop;
 					},
 					onRemoved: function() {
 						clearInterval(timeAgoInterval);
@@ -754,25 +715,35 @@ app.registerExtension({
 				// Create textarea preview widget using ComfyWidgets
 				const previewWidget = ComfyWidgets["STRING"](node, "output_preview", ["STRING", { multiline: true }], app).widget;
 				previewWidget.inputEl.readOnly = true;
-				previewWidget.inputEl.style.backgroundColor = "rgb(0 0 0 / 20%)";
+				previewWidget.inputEl.style.backgroundColor = "transparent";
+				previewWidget.inputEl.style.fontWeight = "bold";
 				previewWidget.inputEl.style.color = "rgb(255 255 255 / 88%)";
 				previewWidget.inputEl.style.fontFamily = "Arial, sans-serif";
-				previewWidget.inputEl.style.fontSize = "11px";
-				previewWidget.inputEl.style.padding = "8px";
+				previewWidget.inputEl.style.fontSize = "12px";
+				previewWidget.inputEl.style.padding = "0 6px 0 6px";
 				previewWidget.inputEl.style.lineHeight = "1.4";
 				previewWidget.inputEl.style.borderRadius = "4px";
 				previewWidget.inputEl.style.border = "none";
 				previewWidget.inputEl.style.resize = "none";
 				previewWidget.inputEl.style.cursor = "text";
 				previewWidget.inputEl.classList.add("promptchain-preview");
-				previewWidget.options = { serialize: false };
+				previewWidget.inputEl.placeholder = "awaiting results...";
+				previewWidget.options = { serialize: false, margin: 10 };
 				previewWidget.serializeValue = () => undefined;
 
 				// Update content helper
 				previewWidget.updateContent = function() {
 					const posText = node._outputText || "";
 					const negText = node._negOutputText || "";
-					let content = "Prompt result:\n" + (posText || "(empty)");
+
+					const hasOutput = posText.trim() || negText.trim();
+					if (!hasOutput) {
+						this.inputEl.value = "";
+						this.value = "";
+						return;
+					}
+
+					let content = "Prompt result:\n" + posText;
 					if (negText && negText.trim()) {
 						content += "\n\nNegative prompt:\n" + negText;
 					}
@@ -816,8 +787,6 @@ app.registerExtension({
 					if (textWidget.inputEl) textWidget.inputEl.style.display = "none";
 				}
 			}
-			// Recalculate node size after toggling
-			node.setSize(node.computeSize());
 			app.graph.setDirtyCanvas(true);
 		};
 
@@ -837,8 +806,6 @@ app.registerExtension({
 					if (negTextWidget.inputEl) negTextWidget.inputEl.style.display = "none";
 				}
 			}
-			// Recalculate node size after toggling
-			node.setSize(node.computeSize());
 			app.graph.setDirtyCanvas(true);
 		};
 
@@ -1028,16 +995,41 @@ app.registerExtension({
 			// Get all input nodes (nodes feeding into this one)
 			const inputNodes = getInputNodes(node);
 
+			// Helper to clear stale "(disabled)" cache when re-enabling
+			const clearDisabledCache = (n) => {
+				if (n._outputText === "(disabled)") {
+					n._outputText = "";
+					if (n.properties) n.properties.outputText = "";
+				}
+				if (n._negOutputText === "(disabled)") {
+					n._negOutputText = "";
+					if (n.properties) n.properties.negOutputText = "";
+				}
+				// Update preview widget if it exists
+				if (n._previewWidget?.updateContent) {
+					n._previewWidget.updateContent();
+				}
+			};
+
 			// Disable/enable this node
 			node._isDisabled = newDisabledState;
 			if (!node.properties) node.properties = {};
 			node.properties.isDisabled = newDisabledState;
+
+			// Clear stale cache when re-enabling
+			if (!newDisabledState) {
+				clearDisabledCache(node);
+			}
 
 			// Disable/enable all input nodes too
 			for (const inputNode of inputNodes) {
 				inputNode._isDisabled = newDisabledState;
 				if (!inputNode.properties) inputNode.properties = {};
 				inputNode.properties.isDisabled = newDisabledState;
+				// Clear stale cache when re-enabling
+				if (!newDisabledState) {
+					clearDisabledCache(inputNode);
+				}
 				// Update their hidden widgets
 				const inputDisabledWidget = inputNode.widgets?.find(w => w.name === "disabled");
 				if (inputDisabledWidget) inputDisabledWidget.value = newDisabledState;
@@ -1060,12 +1052,12 @@ app.registerExtension({
 			options: { serialize: false },
 			serializeValue: () => undefined, // Skip serialization
 			computeSize: function() {
-				return [node.size[0], 26];  // 16 content + 10 bottom margin
+				return [node.size[0], 26];
 			},
 			draw: function(ctx, node, width, y, height) {
 				const H = 16;
-				const totalH = 26;  // Includes bottom margin
-				const topOffset = 4; // Push content down to add space after mode dropdown
+				const totalH = 26;
+				const topOffset = 5;
 
 				// Collapse labels when node is narrow
 				const showLabels = width >= 260;
@@ -1154,7 +1146,8 @@ app.registerExtension({
 				}
 
 				const checkboxSize = 10;
-				const checkboxY = y + topOffset + (H - checkboxSize) / 2 - 1;
+				const rightSideOffset = 4;  // Independent offset for +/- controls
+				const checkboxY = y + rightSideOffset + (H - checkboxSize) / 2 + 1;
 
 				// Negative checkbox -[_] on the right
 				const negX = width - 13 - checkboxSize;
@@ -1164,7 +1157,7 @@ app.registerExtension({
 
 				// Draw - label
 				ctx.fillStyle = node._showNegative ? "#ff6b6b" : "rgba(255, 107, 107, 0.4)";
-				ctx.fillText("-", negX - 4, y + topOffset + H / 2);
+				ctx.fillText("-", negX - 4, y + rightSideOffset + H / 2);
 
 				// Draw negative checkbox
 				ctx.strokeStyle = node._showNegative ? "#ff6b6b" : "rgba(255, 107, 107, 0.4)";
@@ -1180,7 +1173,7 @@ app.registerExtension({
 
 				// Draw + label
 				ctx.fillStyle = node._showPositive ? "#4a9eff" : "rgba(74, 158, 255, 0.4)";
-				ctx.fillText("+", posX - 4, y + topOffset + H / 2);
+				ctx.fillText("+", posX - 4, y + rightSideOffset + H / 2 + 2);
 
 				// Draw positive checkbox
 				ctx.strokeStyle = node._showPositive ? "#4a9eff" : "rgba(74, 158, 255, 0.4)";
@@ -1314,6 +1307,11 @@ app.registerExtension({
 		// Style the mode widget with custom background color
 		const modeWidget = node.widgets.find(w => w.name === "mode");
 		if (modeWidget) {
+			// Reduce mode widget height to pull text box closer
+			modeWidget.computeSize = function(width) {
+				return [width, 26 - 4];  // 26 is totalH, -4 cancels default gap
+			};
+
 			const originalDraw = modeWidget.draw;
 			modeWidget.draw = function(ctx, node, width, y, height) {
 				const totalH = 26;  // Total widget height
@@ -1648,6 +1646,18 @@ app.registerExtension({
 			// Restore negative output text from saved properties
 			if (info.properties?.negOutputText !== undefined) {
 				node._negOutputText = info.properties.negOutputText;
+			}
+
+			// Clear stale "(disabled)" cache if node is actually enabled
+			if (!node._isDisabled) {
+				if (node._outputText === "(disabled)") {
+					node._outputText = "";
+					if (node.properties) node.properties.outputText = "";
+				}
+				if (node._negOutputText === "(disabled)") {
+					node._negOutputText = "";
+					if (node.properties) node.properties.negOutputText = "";
+				}
 			}
 			if (info.properties?.negTextValue !== undefined) {
 				const negTextWidget = node.widgets.find(w => w.name === "neg_text");

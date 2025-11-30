@@ -497,6 +497,82 @@ const relativeY = inputPos[1] - node.pos[1];
 
 ---
 
+## Widget Margin Spacing
+
+### Recommendation: Work With the System
+
+**Leave ComfyUI's default margins alone unless you're adding to them.** The default 4px spacing between canvas widgets and 10px margin for DOM widgets exist for good reasons. Negative margins to reduce spacing will inevitably collide with other elements that have complex paint/render logic.
+
+Instead of fighting the layout system:
+- Use positive margins (extra spacing) when needed
+- Accept the default gaps - they look natural
+- Only use hidden widgets with `-4` for truly invisible data-only widgets
+
+### Default Margins
+
+| Widget Type | Default Margin |
+|-------------|----------------|
+| Canvas widgets | 4px between widgets |
+| DOM widgets (textareas) | 10px uniform margin |
+
+### Adding Extra Spacing (Positive Margin)
+
+To add more spacing above a widget, return a larger height from `computeSize` and draw your content at the bottom of the allocated space:
+
+```javascript
+const myWidget = {
+    name: "my_label",
+    type: "custom",
+    computeSize: function(width) {
+        const marginTop = 16;  // Extra 16px above
+        return [width, 18 + marginTop];  // Returns 34px total
+    },
+    draw: function(ctx, n, width, y, height) {
+        const marginTop = 16;
+        const labelHeight = 18;
+
+        // Draw content at bottom of widget area (leaving top empty)
+        ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+        ctx.font = "12px Arial";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        ctx.fillText("My Label", 8, y + marginTop + 3);
+
+        return labelHeight + marginTop;
+    }
+};
+```
+
+### Hidden Widgets (Data-Only)
+
+For widgets that should serialize data but take no visual space, use `-4` to counteract the default inter-widget spacing. This is the **only** recommended use of negative margins:
+
+```javascript
+const hiddenWidget = {
+    name: "cached_value",
+    type: "hidden",
+    value: "",
+    options: { serialize: true },
+    serializeValue: () => node.properties?.cachedValue || "",
+    computeSize: () => [0, -4],  // Cancels 4px gap, takes no space
+};
+```
+
+### DOM Widget Margin (Textareas)
+
+DOM widgets use `widget.options.margin` for uniform spacing (all sides). The default is 10px.
+
+```javascript
+const textWidget = node.widgets?.find(w => w.name === "text");
+if (textWidget?.inputEl && textWidget.options) {
+    textWidget.options.margin = 10;  // Default, leave it alone
+}
+```
+
+**Note:** Asymmetric margins (different top/bottom/left/right) are not supported for DOM widgets - ComfyUI calculates their position programmatically and CSS margin overrides will break node resizing.
+
+---
+
 ## File Structure
 
 ```
