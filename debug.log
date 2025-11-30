@@ -8921,3 +8921,90 @@
 [PromptChain] pos_text_combined='', neg_text_combined=''
 [PromptChain] pos_inputs=['shallow depth of field on 50mm f/1.2 lens, 16k resolution, hyperrealistic textures, flawless anatomy and material physics'], neg_inputs=[]
 [PromptChain] FINAL pos_result='', neg_result=''
+[PromptChain] mode='Randomize', text='dragon slayer | demon slayer | undead slayer', neg_text='dragon slayer | demon slayer | undead slayer', locked=True, disabled=False, show_positive=True, show_negative=False
+[PromptChain] mode='Randomize', text='fire enchantment | ice enchantment | lightning enc', neg_text='fire enchantment | ice enchantment | lightning enc', locked=True, disabled=False, show_positive=True, show_negative=False
+[PromptChain] mode='Randomize', text='Iron Sword | Steel Sword | Mythril Sword', neg_text='Iron Sword | Steel Sword | Mythril Sword', locked=True, disabled=False, show_positive=True, show_negative=False
+[PromptChain] mode='Randomize', text='warrior | rogue | mage', neg_text='warrior | rogue | mage', locked=True, disabled=False, show_positive=True, show_negative=False
+[PromptChain] mode='Combine', text='RPG Hero Character, 16 bit', neg_text='RPG Hero Character, 16 bit', locked=True, disabled=False, show_positive=True, show_negative=False
+[PromptChain] mode='Randomize', text='dragon slayer | demon slayer | undead slayer', neg_text='dragon slayer | demon slayer | undead slayer', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='demon slayer', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='demon slayer', neg_result=''
+[PromptChain] mode='Randomize', text='fire enchantment | ice enchantment | lightning enc', neg_text='fire enchantment | ice enchantment | lightning enc', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='fire enchantment', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='fire enchantment', neg_result=''
+[PromptChain] mode='Randomize', text='Iron Sword | Steel Sword | Mythril Sword', neg_text='Iron Sword | Steel Sword | Mythril Sword', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='Iron Sword', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='Iron Sword', neg_result=''
+[PromptChain] mode='Randomize', text='warrior | rogue | mage', neg_text='warrior | rogue | mage', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='warrior', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='warrior', neg_result=''
+[PromptChain] mode='Combine', text='RPG Hero Character, 16 bit', neg_text='RPG Hero Character, 16 bit', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='RPG Hero Character, 16 bit', neg_text_combined=''
+[PromptChain] pos_inputs=['warrior', 'Iron Sword', 'fire enchantment', 'demon slayer'], neg_inputs=[]
+[PromptChain] FINAL pos_result='RPG Hero Character, warrior, Iron Sword, fire enchantment, demon slayer, 16 bit', neg_result=''
+[PromptChain] mode='Randomize', text='dragon slayer | demon slayer | undead slayer', neg_text='dragon slayer | demon slayer | undead slayer', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='demon slayer', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='demon slayer', neg_result=''
+[PromptChain] mode='Randomize', text='fire enchantment | ice enchantment | lightning enc', neg_text='fire enchantment | ice enchantment | lightning enc', locked=True, disabled=False, show_positive=True, show_negative=False
+[PromptChain] mode='Randomize', text='Iron Sword | Steel Sword | Mythril Sword', neg_text='Iron Sword | Steel Sword | Mythril Sword', locked=True, disabled=False, show_positive=True, show_negative=False
+[PromptChain] mode='Randomize', text='warrior | rogue | mage', neg_text='warrior | rogue | mage', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='warrior', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='warrior', neg_result=''
+[PromptChain] mode='Combine', text='RPG Hero Character, 16 bit', neg_text='RPG Hero Character, 16 bit', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='RPG Hero Character, 16 bit', neg_text_combined=''
+[PromptChain] pos_inputs=['warrior', '{"pos": "Iron Sword", "neg": ""}', '{"pos": "fire enchantment", "neg": ""}', 'demon slayer'], neg_inputs=[]
+[PromptChain] FINAL pos_result='RPG Hero Character, warrior, {"pos": "Iron Sword", {"pos": "fire enchantment", demon slayer, 16 bit, "neg": ""}', neg_result=''
+[PromptChain] mode='Randomize', text='dragon slayer | demon slayer | undead slayer', neg_text='dragon slayer | demon slayer | undead slayer', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='demon slayer', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='demon slayer', neg_result=''
+[PromptChain] mode='Randomize', text='fire enchantment | ice enchantment | lightning enc', neg_text='fire enchantment | ice enchantment | lightning enc', locked=True, disabled=False, show_positive=True, show_negative=False
+[PromptChain] mode='Randomize', text='Iron Sword | Steel Sword | Mythril Sword', neg_text='Iron Sword | Steel Sword | Mythril Sword', locked=True, disabled=False, show_positive=True, show_negative=False
+[PromptChain] mode='Randomize', text='warrior | rogue | mage', neg_text='warrior | rogue | mage', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='mage', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='mage', neg_result=''
+[PromptChain] mode='Combine', text='RPG Hero Character, 16 bit', neg_text='RPG Hero Character, 16 bit', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='RPG Hero Character, 16 bit', neg_text_combined=''
+[PromptChain] pos_inputs=['mage', '{"pos": "Iron Sword", "neg": ""}', '{"pos": "fire enchantment", "neg": ""}', 'demon slayer'], neg_inputs=[]
+[PromptChain] FINAL pos_result='RPG Hero Character, mage, {"pos": "Iron Sword", {"pos": "fire enchantment", demon slayer, 16 bit, "neg": ""}', neg_result=''
+[PromptChain] mode='Randomize', text='dragon slayer | demon slayer | undead slayer', neg_text='dragon slayer | demon slayer | undead slayer', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='dragon slayer', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='dragon slayer', neg_result=''
+[PromptChain] mode='Randomize', text='fire enchantment | ice enchantment | lightning enc', neg_text='fire enchantment | ice enchantment | lightning enc', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='ice enchantment', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='ice enchantment', neg_result=''
+[PromptChain] mode='Randomize', text='Iron Sword | Steel Sword | Mythril Sword', neg_text='Iron Sword | Steel Sword | Mythril Sword', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='Mythril Sword', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='Mythril Sword', neg_result=''
+[PromptChain] mode='Randomize', text='warrior | rogue | mage', neg_text='warrior | rogue | mage', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='rogue', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='rogue', neg_result=''
+[PromptChain] mode='Combine', text='RPG Hero Character, 16 bit', neg_text='RPG Hero Character, 16 bit', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='RPG Hero Character, 16 bit', neg_text_combined=''
+[PromptChain] pos_inputs=['rogue', 'Mythril Sword', 'ice enchantment', 'dragon slayer'], neg_inputs=[]
+[PromptChain] FINAL pos_result='RPG Hero Character, rogue, Mythril Sword, ice enchantment, dragon slayer, 16 bit', neg_result=''
+[PromptChain] mode='Randomize', text='dragon slayer | demon slayer | undead slayer', neg_text='dragon slayer | demon slayer | undead slayer', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='undead slayer', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='undead slayer', neg_result=''
+[PromptChain] mode='Randomize', text='fire enchantment | ice enchantment | lightning enc', neg_text='fire enchantment | ice enchantment | lightning enc', locked=True, disabled=False, show_positive=True, show_negative=False
+[PromptChain] mode='Randomize', text='Iron Sword | Steel Sword | Mythril Sword', neg_text='Iron Sword | Steel Sword | Mythril Sword', locked=True, disabled=False, show_positive=True, show_negative=False
+[PromptChain] mode='Randomize', text='warrior | rogue | mage', neg_text='warrior | rogue | mage', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='rogue', neg_text_combined=''
+[PromptChain] pos_inputs=[], neg_inputs=[]
+[PromptChain] FINAL pos_result='rogue', neg_result=''
+[PromptChain] mode='Combine', text='RPG Hero Character, 16 bit', neg_text='RPG Hero Character, 16 bit', locked=False, disabled=False, show_positive=True, show_negative=False
+[PromptChain] pos_text_combined='RPG Hero Character, 16 bit', neg_text_combined=''
+[PromptChain] pos_inputs=['rogue', 'Mythril Sword', 'ice enchantment', 'undead slayer'], neg_inputs=[]
+[PromptChain] FINAL pos_result='RPG Hero Character, rogue, Mythril Sword, ice enchantment, undead slayer, 16 bit', neg_result=''

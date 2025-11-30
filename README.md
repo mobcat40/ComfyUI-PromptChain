@@ -198,6 +198,8 @@ This picks one from each group and combines them: `"blue, small, fluffy"`
 
 Click the **lock icon** (🔒/🔓) to freeze the current output.
 
+![Locked Nodes](screenshots/Locked.png)
+
 ### When Locked
 
 - Node returns cached output instead of re-processing
