@@ -113,10 +113,44 @@ app.registerExtension({
 			}
 		};
 
+		// Check if this is a root node (no parent inputs connected)
+		const isRootNode = () => {
+			// Check if any input_N slots have connections
+			const hasParentInputs = node.inputs?.some(i =>
+				i.name.startsWith("input_") &&
+				i.link !== null
+			);
+			return !hasParentInputs;
+		};
+
+		// Update neg_output slot visibility based on root status
+		const updateNegOutputVisibility = () => {
+			const shouldShowNegOutput = isRootNode();
+			const negOutputIndex = node.outputs?.findIndex(o => o.name === "neg_output");
+			const hasNegOutput = negOutputIndex !== -1;
+
+			if (shouldShowNegOutput && !hasNegOutput) {
+				// Add neg_output slot
+				node.addOutput("neg_output", "STRING");
+				// Hide default label
+				const newOutput = node.outputs[node.outputs.length - 1];
+				if (newOutput) newOutput.label = " ";
+			} else if (!shouldShowNegOutput && hasNegOutput) {
+				// Remove neg_output slot (only if not connected)
+				const negOutput = node.outputs[negOutputIndex];
+				if (!negOutput.links || negOutput.links.length === 0) {
+					node.removeOutput(negOutputIndex);
+				}
+			}
+		};
+		// Store on node so other extensions can call it
+		node._updateNegOutputVisibility = updateNegOutputVisibility;
+
 		const originalOnConnectionsChange = node.onConnectionsChange;
 		node.onConnectionsChange = function(type, index, connected, link_info) {
 			originalOnConnectionsChange?.apply(this, arguments);
 			updateInputs();
+			updateNegOutputVisibility();
 			// Update text styling when connections change (link to text widget)
 			if (node._updateTextStyle) {
 				node._updateTextStyle();
@@ -125,6 +159,7 @@ app.registerExtension({
 
 		// Initial setup
 		updateInputs();
+		updateNegOutputVisibility();
 
 		// Set empty labels on inputs and outputs to hide default text
 		const hideDefaultLabels = () => {
@@ -248,6 +283,7 @@ app.registerExtension({
 				// Draw custom input labels
 				for (let i = 0; i < this.inputs.length; i++) {
 					const input = this.inputs[i];
+
 					if (input?.name?.startsWith("input_")) {
 						// Get actual slot position using LiteGraph method
 						const pos = this.getConnectionPos?.(true, i) || [0, 0];
@@ -255,7 +291,7 @@ app.registerExtension({
 						const y = pos[1] - this.pos[1];
 
 						// Determine label text based on connection
-						const inputIndex = input.name.split("_")[1];
+						const inputIndex = input.name.split("_").pop();
 						let labelText = `input: ${inputIndex}`;
 
 						if (input.link !== null) {
@@ -273,7 +309,7 @@ app.registerExtension({
 							}
 						}
 
-						// Draw label with custom color (same as active Preview label)
+						// Draw label
 						ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
 						ctx.font = "12px Arial";
 						ctx.textAlign = "left";
@@ -327,6 +363,24 @@ app.registerExtension({
 						}
 					}
 				}
+				// Handle negative output
+				if (message?.neg_text) {
+					let negValue = message.neg_text;
+					if (Array.isArray(negValue)) {
+						negValue = negValue.flat().join("");
+					}
+					this._negOutputText = negValue;
+					if (!this.properties) this.properties = {};
+					this.properties.negOutputText = negValue;
+					// Update neg preview widget if visible
+					const negPreviewWidget = this.widgets?.find(w => w.name === "neg_output_preview");
+					if (negPreviewWidget) {
+						negPreviewWidget.value = negValue;
+						if (negPreviewWidget.inputEl) {
+							negPreviewWidget.inputEl.value = negValue;
+						}
+					}
+				}
 				onExecuted?.apply(this, arguments);
 			};
 		}
@@ -362,6 +416,37 @@ app.registerExtension({
 			}
 		};
 		requestAnimationFrame(setupTextPersistence);
+
+		// Setup neg_text widget styling and persistence
+		const setupNegTextWidget = () => {
+			const negTextWidget = node.widgets?.find(w => w.name === "neg_text");
+			if (negTextWidget?.inputEl) {
+				// Style the neg_text widget
+				negTextWidget.inputEl.style.marginTop = "-6px";
+				negTextWidget.inputEl.style.fontFamily = "Arial, sans-serif";
+				negTextWidget.inputEl.style.fontSize = "11px";
+				negTextWidget.inputEl.style.padding = "4px";
+				negTextWidget.inputEl.style.lineHeight = "1.3";
+				negTextWidget.inputEl.style.borderRadius = "4px";
+				negTextWidget.inputEl.style.backgroundColor = "rgba(80, 0, 0, 0.3)";
+				negTextWidget.inputEl.style.color = "rgba(255, 200, 200, 0.9)";
+				negTextWidget.inputEl.placeholder = "negative prompt...";
+				negTextWidget.inputEl.classList.add("promptchain-prompt");
+
+				// Save value to properties
+				negTextWidget.inputEl.addEventListener("input", () => {
+					if (!node.properties) node.properties = {};
+					node.properties.negTextValue = negTextWidget.inputEl.value;
+				});
+				negTextWidget.inputEl.addEventListener("change", () => {
+					if (!node.properties) node.properties = {};
+					node.properties.negTextValue = negTextWidget.inputEl.value;
+				});
+			} else {
+				requestAnimationFrame(setupNegTextWidget);
+			}
+		};
+		requestAnimationFrame(setupNegTextWidget);
 
 		// Toggle preview function
 		// skipResize: when restoring from saved workflow, don't reset node size
@@ -510,18 +595,34 @@ app.registerExtension({
 			node.properties.showPrompt = node._showPrompt;
 
 			const textWidget = node.widgets?.find(w => w.name === "text");
-			if (textWidget) {
-				if (node._showPrompt) {
-					// Show the text widget
+			const negTextWidget = node.widgets?.find(w => w.name === "neg_text");
+
+			if (node._showPrompt) {
+				// Show the text widgets
+				if (textWidget) {
 					textWidget.type = "customtext";
 					if (textWidget.inputEl) {
 						textWidget.inputEl.style.display = "";
 					}
-				} else {
-					// Hide the text widget
+				}
+				if (negTextWidget) {
+					negTextWidget.type = "customtext";
+					if (negTextWidget.inputEl) {
+						negTextWidget.inputEl.style.display = "";
+					}
+				}
+			} else {
+				// Hide the text widgets
+				if (textWidget) {
 					textWidget.type = "hidden";
 					if (textWidget.inputEl) {
 						textWidget.inputEl.style.display = "none";
+					}
+				}
+				if (negTextWidget) {
+					negTextWidget.type = "hidden";
+					if (negTextWidget.inputEl) {
+						negTextWidget.inputEl.style.display = "none";
 					}
 				}
 			}
@@ -575,6 +676,14 @@ app.registerExtension({
 			serializeValue: () => node.properties?.cachedOutput || "",
 			computeSize: () => [0, 0],
 		};
+		const cachedNegOutputWidget = {
+			name: "cached_neg_output",
+			type: "hidden",
+			value: "",
+			options: { serialize: true },
+			serializeValue: () => node.properties?.cachedNegOutput || "",
+			computeSize: () => [0, 0],
+		};
 		const disabledWidget = {
 			name: "disabled",
 			type: "hidden",
@@ -585,6 +694,7 @@ app.registerExtension({
 		};
 		node.widgets.push(lockedWidget);
 		node.widgets.push(cachedOutputWidget);
+		node.widgets.push(cachedNegOutputWidget);
 		node.widgets.push(disabledWidget);
 
 		// Helper to cache output on all downstream PromptChain nodes
@@ -1108,6 +1218,20 @@ app.registerExtension({
 				node._outputTimestamp = info.properties.outputTimestamp;
 			}
 
+			// Restore negative output text from saved properties
+			if (info.properties?.negOutputText !== undefined) {
+				node._negOutputText = info.properties.negOutputText;
+			}
+			if (info.properties?.negTextValue !== undefined) {
+				const negTextWidget = node.widgets.find(w => w.name === "neg_text");
+				if (negTextWidget) {
+					negTextWidget.value = info.properties.negTextValue;
+					if (negTextWidget.inputEl) {
+						negTextWidget.inputEl.value = info.properties.negTextValue;
+					}
+				}
+			}
+
 			// Restore preview state from saved properties
 			if (info.properties?.showPreview && !node._showPreview) {
 				node._showPreview = false;
@@ -1120,6 +1244,9 @@ app.registerExtension({
 			}
 			if (info.properties?.cachedOutput !== undefined) {
 				node.properties.cachedOutput = info.properties.cachedOutput;
+			}
+			if (info.properties?.cachedNegOutput !== undefined) {
+				node.properties.cachedNegOutput = info.properties.cachedNegOutput;
 			}
 
 			// Restore disabled state from saved properties
@@ -1140,6 +1267,11 @@ app.registerExtension({
 
 			// Update switch selector visibility based on restored mode
 			updateSwitchSelectorVisibility();
+
+			// Update neg_output visibility based on restored connections
+			if (node._updateNegOutputVisibility) {
+				node._updateNegOutputVisibility();
+			}
 		};
 
 		// Helper to set text on a node
