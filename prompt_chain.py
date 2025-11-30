@@ -182,21 +182,15 @@ class PromptChain:
 
         # If disabled, return empty bundle
         if disabled:
-            empty_bundle = json.dumps({"pos": "", "neg": ""})
-            return {"ui": {"text": ["(disabled)"], "neg_text": ["(disabled)"]}, "result": (empty_bundle, "")}
+            empty_bundle = make_bundle("", "")
+            return {"ui": {"text": ["(disabled)"], "neg_text": ["(disabled)"]}, "result": (empty_bundle, "", "")}
 
         # If locked and we have cached output, return it without re-processing
         if locked and cached_output:
-            # Try to parse cached output as JSON bundle
-            try:
-                data = json.loads(cached_output)
-                pos = data.get("pos", cached_output)
-                neg = data.get("neg", cached_neg_output)
-            except:
-                pos = cached_output
-                neg = cached_neg_output
-            bundle = json.dumps({"pos": pos, "neg": neg})
-            return {"ui": {"text": [pos], "neg_text": [neg]}, "result": (bundle, neg)}
+            pos = cached_output
+            neg = cached_neg_output or ""
+            bundle = make_bundle(pos, neg)
+            return {"ui": {"text": [pos], "neg_text": [neg]}, "result": (bundle, pos, neg)}
 
         # Seed random generator with current time for true randomness
         random.seed(time.time())
