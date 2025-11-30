@@ -735,15 +735,15 @@ app.registerExtension({
 				// Create textarea preview widget using ComfyWidgets
 				const previewWidget = ComfyWidgets["STRING"](node, "output_preview", ["STRING", { multiline: true }], app).widget;
 				previewWidget.inputEl.readOnly = true;
-				previewWidget.inputEl.style.backgroundColor = "transparent";
+				previewWidget.inputEl.style.backgroundColor = "#15151533";
+				previewWidget.inputEl.style.border = "1px solid #00000021";
 				previewWidget.inputEl.style.fontWeight = "bold";
 				previewWidget.inputEl.style.color = "rgb(255 255 255 / 88%)";
 				previewWidget.inputEl.style.fontFamily = "Arial, sans-serif";
 				previewWidget.inputEl.style.fontSize = "12px";
-				previewWidget.inputEl.style.padding = "0 6px 0 6px";
+				previewWidget.inputEl.style.padding = "4px 6px";
 				previewWidget.inputEl.style.lineHeight = "1.4";
 				previewWidget.inputEl.style.borderRadius = "4px";
-				previewWidget.inputEl.style.border = "none";
 				previewWidget.inputEl.style.resize = "none";
 				previewWidget.inputEl.style.cursor = "text";
 				previewWidget.inputEl.classList.add("promptchain-preview");
