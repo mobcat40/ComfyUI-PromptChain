@@ -684,8 +684,8 @@ app.registerExtension({
 					}
 					if (this.inputEl) this.inputEl.style.display = "";
 					// Always return a reasonable height - use scrollHeight for actual content size
-					const height = this.inputEl?.scrollHeight || 60;
-					return [width, Math.max(40, height)];
+					const height = this.inputEl?.scrollHeight || 120;
+					return [width, Math.max(120, height)];
 				};
 				negPreview.inputEl.readOnly = true;
 				negPreview.inputEl.style.opacity = 1;
