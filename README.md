@@ -19,7 +19,7 @@ PromptChain makes the hierarchy *spatial*. Instead of parsing nested braces in y
 
 ![PromptChain Workflow](screenshots/Intro.png)
 
-Each node shows exactly what it output. Chain them together, see the whole prompt path at a glance.
+Each node shows exactly what it can output. Chain them together, see the whole prompt path at a glance.
 
 ## Installation
 
@@ -456,3 +456,4 @@ Build a library of prompt fragments right in your workflow. Zero config, just no
 ## License
 
 MIT License — free to use forever!
+
