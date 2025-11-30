@@ -31,10 +31,10 @@ app.registerExtension({
 				textWidget.inputEl.style.marginTop = "0px"; // No gap - cap connects directly
 				textWidget.inputEl.style.fontFamily = "Arial, sans-serif";
 				textWidget.inputEl.style.fontSize = "11px";
-				textWidget.inputEl.style.padding = "4px";
+				textWidget.inputEl.style.padding = "4px 6px";
 				textWidget.inputEl.style.lineHeight = "1.3";
 				textWidget.inputEl.style.borderRadius = "0 0 4px 4px"; // Only bottom corners rounded
-				textWidget.inputEl.placeholder = "prompt text...";
+				textWidget.inputEl.placeholder = "enter text...";
 				// Style placeholder text and scrollbars
 				const styleId = "promptchain-prompt-placeholder-style";
 				if (!document.getElementById(styleId)) {
@@ -49,6 +49,14 @@ app.registerExtension({
 						.promptchain-prompt::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.35); border-radius: 4px; }
 						.promptchain-prompt::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
 						.promptchain-prompt::-webkit-scrollbar-corner { background: transparent; }
+						.promptchain-prompt-neg::placeholder { color: rgba(255, 180, 180, 0.5); opacity: 1; }
+						.promptchain-prompt-neg:hover { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4) !important; }
+						.promptchain-prompt-neg:focus { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8) !important; outline: none !important; }
+						.promptchain-prompt-neg::-webkit-scrollbar { width: 8px; height: 8px; }
+						.promptchain-prompt-neg::-webkit-scrollbar-track { background: transparent; }
+						.promptchain-prompt-neg::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.35); border-radius: 4px; }
+						.promptchain-prompt-neg::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
+						.promptchain-prompt-neg::-webkit-scrollbar-corner { background: transparent; }
 					`;
 					document.head.appendChild(style);
 				}
@@ -355,13 +363,13 @@ app.registerExtension({
 				negTextWidget.inputEl.style.marginTop = "0px"; // No gap - cap connects directly
 				negTextWidget.inputEl.style.fontFamily = "Arial, sans-serif";
 				negTextWidget.inputEl.style.fontSize = "11px";
-				negTextWidget.inputEl.style.padding = "4px";
+				negTextWidget.inputEl.style.padding = "4px 6px";
 				negTextWidget.inputEl.style.lineHeight = "1.3";
 				negTextWidget.inputEl.style.borderRadius = "0 0 4px 4px"; // Only bottom corners rounded
-				negTextWidget.inputEl.style.backgroundColor = "rgba(80, 0, 0, 0.3)";
-				negTextWidget.inputEl.style.color = "rgba(255, 200, 200, 0.9)";
-				negTextWidget.inputEl.placeholder = "negative prompt...";
-				negTextWidget.inputEl.classList.add("promptchain-prompt");
+				negTextWidget.inputEl.style.backgroundColor = "rgba(40, 0, 0, 0.5)";  // Subtle red tint
+				negTextWidget.inputEl.style.color = "";  // Default white text like positive
+				negTextWidget.inputEl.placeholder = "enter text...";
+				negTextWidget.inputEl.classList.add("promptchain-prompt-neg");
 
 				// Save value to properties
 				negTextWidget.inputEl.addEventListener("input", () => {
@@ -404,25 +412,25 @@ app.registerExtension({
 			node.properties.showPreview = node._showPreview;
 
 			if (!node._showPreview) {
-				// Remove output label widget
-				const labelIndex = node.widgets.findIndex(w => w.name === "output_label");
-				if (labelIndex > -1) {
-					node.widgets.splice(labelIndex, 1);
-				}
-
-				// Remove preview widget
-				const previewWidget = node.widgets.find(w => w.name === "output_preview");
-				if (previewWidget) {
-					const index = node.widgets.indexOf(previewWidget);
-					if (index > -1) {
-						const inputEl = previewWidget.inputEl;
-						const parentEl = inputEl?.parentElement;
-						if (previewWidget.onRemoved) previewWidget.onRemoved();
-						if (parentEl) parentEl.remove();
-						else if (inputEl) inputEl.remove();
-						node.widgets.splice(index, 1);
+				// Remove all preview-related widgets
+				const widgetsToRemove = ["output_label", "preview_pos_cap", "output_preview", "preview_neg_cap", "neg_output_preview"];
+				widgetsToRemove.forEach(name => {
+					const widget = node.widgets.find(w => w.name === name);
+					if (widget) {
+						const index = node.widgets.indexOf(widget);
+						if (index > -1) {
+							if (widget.inputEl) {
+								const parentEl = widget.inputEl.parentElement;
+								if (widget.onRemoved) widget.onRemoved();
+								if (parentEl) parentEl.remove();
+								else widget.inputEl.remove();
+							} else if (widget.onRemoved) {
+								widget.onRemoved();
+							}
+							node.widgets.splice(index, 1);
+						}
 					}
-				}
+				});
 			} else {
 				// Helper to format time ago
 				const formatTimeAgo = (timestamp) => {
@@ -448,15 +456,15 @@ app.registerExtension({
 				updateTimeAgoCache(); // Initial calculation
 				const timeAgoInterval = setInterval(updateTimeAgoCache, 10000);
 
-				// Add "Output" label widget
+				// Add "Last run" label widget
 				const outputLabel = {
 					name: "output_label",
 					type: "custom",
 					value: null,
 					options: { serialize: false },
-					serializeValue: () => undefined, // Skip serialization
+					serializeValue: () => undefined,
 					computeSize: function() {
-						return [node.size[0], 20]; // Actual height for the label
+						return [node.size[0], 20];
 					},
 					draw: function(ctx, _, width, y) {
 						const H = 20;
@@ -464,8 +472,6 @@ app.registerExtension({
 						ctx.font = "12px Arial";
 						ctx.textAlign = "left";
 						ctx.textBaseline = "middle";
-
-						// Build label with cached time ago (empty if never run)
 						if (node._cachedTimeAgo) {
 							ctx.fillText(`Last run: ${node._cachedTimeAgo}`, 12, y + H / 2);
 						}
@@ -476,22 +482,56 @@ app.registerExtension({
 					}
 				};
 
-				// Add preview widget after text widget
-				const w = ComfyWidgets["STRING"](node, "output_preview", ["STRING", { multiline: true }], app).widget;
-				w.options = w.options || {};
-				w.options.serialize = false;
-				w.serializeValue = () => undefined; // Skip serialization
-				w.inputEl.readOnly = true;
-				w.inputEl.style.opacity = 1;
-				w.inputEl.style.fontStyle = "italic";
-				w.inputEl.style.fontFamily = "Arial, sans-serif";
-				w.inputEl.style.fontSize = "11px";
-				w.inputEl.style.padding = "4px";
-				w.inputEl.style.lineHeight = "1.3";
-				w.inputEl.style.borderRadius = "4px";
-				w.inputEl.style.backgroundColor = "#00000033";
-				w.inputEl.style.color = "rgba(255, 255, 255, 0.85)";
-				w.inputEl.placeholder = "awaiting generation...";
+				// Create "Prompt" cap for positive preview (same style as positive_cap)
+				const previewPosCap = {
+					name: "preview_pos_cap",
+					type: "custom",
+					value: null,
+					options: { serialize: false },
+					serializeValue: () => undefined,
+					computeSize: function() {
+						return [node.size[0], 4];
+					},
+					draw: function(ctx, _, width, y) {
+						const H = 18;
+						const previewWidget = node.widgets?.find(w => w.name === "output_preview");
+						let margin = 15;
+						let w = width - margin * 2;
+						if (previewWidget?.inputEl) {
+							const boxWidth = previewWidget.inputEl.offsetWidth;
+							margin = (width - boxWidth) / 2;
+							w = boxWidth;
+						}
+						ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+						ctx.beginPath();
+						ctx.roundRect(margin, y, w, H, [4, 4, 0, 0]);
+						ctx.fill();
+						ctx.fillStyle = "rgba(74, 158, 255, 0.9)";
+						ctx.font = "bold 10px Arial";
+						ctx.textAlign = "left";
+						ctx.textBaseline = "middle";
+						ctx.fillText("+ Output", margin + 6, y + H / 2 + 1);
+						return 4;
+					}
+				};
+
+				// Add positive preview widget
+				const posPreview = ComfyWidgets["STRING"](node, "output_preview", ["STRING", { multiline: true }], app).widget;
+				posPreview.options = posPreview.options || {};
+				posPreview.options.serialize = false;
+				posPreview.serializeValue = () => undefined;
+				posPreview.inputEl.readOnly = true;
+				posPreview.inputEl.style.opacity = 1;
+				posPreview.inputEl.style.fontStyle = "italic";
+				posPreview.inputEl.style.fontFamily = "Arial, sans-serif";
+				posPreview.inputEl.style.fontSize = "11px";
+				posPreview.inputEl.style.padding = "4px 6px";
+				posPreview.inputEl.style.lineHeight = "1.3";
+				posPreview.inputEl.style.borderRadius = "0 0 4px 4px";
+				posPreview.inputEl.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+				posPreview.inputEl.style.color = "rgba(255, 255, 255, 0.85)";
+				posPreview.inputEl.style.marginTop = "0px";
+				posPreview.inputEl.placeholder = "awaiting generation...";
 				// Style placeholder text
 				const styleId = "promptchain-placeholder-style";
 				if (!document.getElementById(styleId)) {
@@ -506,29 +546,92 @@ app.registerExtension({
 						.promptchain-preview::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.35); border-radius: 4px; }
 						.promptchain-preview::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
 						.promptchain-preview::-webkit-scrollbar-corner { background: transparent; }
+						.promptchain-preview-neg::placeholder { color: rgba(255, 180, 180, 0.5); opacity: 1; }
+						.promptchain-preview-neg:hover { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4) !important; }
+						.promptchain-preview-neg:focus { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8) !important; outline: none !important; }
+						.promptchain-preview-neg::-webkit-scrollbar { width: 8px; height: 8px; }
+						.promptchain-preview-neg::-webkit-scrollbar-track { background: transparent; }
+						.promptchain-preview-neg::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.35); border-radius: 4px; }
+						.promptchain-preview-neg::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
+						.promptchain-preview-neg::-webkit-scrollbar-corner { background: transparent; }
 					`;
 					document.head.appendChild(style);
 				}
-				w.inputEl.classList.add("promptchain-preview");
-				w.value = node._outputText || "";
-				w.inputEl.value = node._outputText || "";
+				posPreview.inputEl.classList.add("promptchain-preview");
+				posPreview.value = node._outputText || "";
+				posPreview.inputEl.value = node._outputText || "";
 
-				// Move output label and preview widget to be right after neg_text widget
+				// Create "Negative Prompt" cap for negative preview (same style as negative_cap)
+				const previewNegCap = {
+					name: "preview_neg_cap",
+					type: "custom",
+					value: null,
+					options: { serialize: false },
+					serializeValue: () => undefined,
+					computeSize: function() {
+						return [node.size[0], 4];
+					},
+					draw: function(ctx, _, width, y) {
+						const H = 18;
+						const negPreviewWidget = node.widgets?.find(w => w.name === "neg_output_preview");
+						let margin = 15;
+						let w = width - margin * 2;
+						if (negPreviewWidget?.inputEl) {
+							const boxWidth = negPreviewWidget.inputEl.offsetWidth;
+							margin = (width - boxWidth) / 2;
+							w = boxWidth;
+						}
+						ctx.fillStyle = "rgba(40, 0, 0, 0.3)";  // Subtle red tint
+						ctx.beginPath();
+						ctx.roundRect(margin, y, w, H, [4, 4, 0, 0]);
+						ctx.fill();
+						ctx.fillStyle = "rgba(255, 107, 107, 0.9)";
+						ctx.font = "bold 10px Arial";
+						ctx.textAlign = "left";
+						ctx.textBaseline = "middle";
+						ctx.fillText("- Output", margin + 6, y + H / 2 + 1);
+						return 4;
+					}
+				};
+
+				// Add negative preview widget
+				const negPreview = ComfyWidgets["STRING"](node, "neg_output_preview", ["STRING", { multiline: true }], app).widget;
+				negPreview.options = negPreview.options || {};
+				negPreview.options.serialize = false;
+				negPreview.serializeValue = () => undefined;
+				negPreview.inputEl.readOnly = true;
+				negPreview.inputEl.style.opacity = 1;
+				negPreview.inputEl.style.fontStyle = "italic";
+				negPreview.inputEl.style.fontFamily = "Arial, sans-serif";
+				negPreview.inputEl.style.fontSize = "11px";
+				negPreview.inputEl.style.padding = "4px 6px";
+				negPreview.inputEl.style.lineHeight = "1.3";
+				negPreview.inputEl.style.borderRadius = "0 0 4px 4px";
+				negPreview.inputEl.style.backgroundColor = "rgba(40, 0, 0, 0.5)";  // Subtle red tint
+				negPreview.inputEl.style.color = "rgba(255, 255, 255, 0.85)";
+				negPreview.inputEl.style.marginTop = "0px";
+				negPreview.inputEl.placeholder = "awaiting generation...";
+				negPreview.inputEl.classList.add("promptchain-preview-neg");
+				negPreview.value = node._negOutputText || "";
+				negPreview.inputEl.value = node._negOutputText || "";
+
+				// Reorder widgets: move all preview widgets after neg_text
 				const negTextIndex = node.widgets.findIndex(w => w.name === "neg_text");
-				const labelIndex = node.widgets.findIndex(w => w.name === "output_label");
-				const previewWidget = node.widgets.find(w => w.name === "output_preview");
-				const previewIndex = node.widgets.indexOf(previewWidget);
-
-				// Insert label after neg_text, then preview after label
 				if (negTextIndex > -1) {
-					// Remove widgets from current positions
-					if (previewIndex > -1) node.widgets.splice(previewIndex, 1);
-					if (labelIndex > -1) node.widgets.splice(node.widgets.findIndex(w => w.name === "output_label"), 1);
+					// Remove preview widgets from current positions
+					const widgetsToMove = ["output_label", "preview_pos_cap", "output_preview", "preview_neg_cap", "neg_output_preview"];
+					widgetsToMove.forEach(name => {
+						const idx = node.widgets.findIndex(w => w.name === name);
+						if (idx > -1) node.widgets.splice(idx, 1);
+					});
 
 					// Insert in correct order after neg_text widget
 					const newNegTextIndex = node.widgets.findIndex(w => w.name === "neg_text");
 					node.widgets.splice(newNegTextIndex + 1, 0, outputLabel);
-					node.widgets.splice(newNegTextIndex + 2, 0, previewWidget);
+					node.widgets.splice(newNegTextIndex + 2, 0, previewPosCap);
+					node.widgets.splice(newNegTextIndex + 3, 0, posPreview);
+					node.widgets.splice(newNegTextIndex + 4, 0, previewNegCap);
+					node.widgets.splice(newNegTextIndex + 5, 0, negPreview);
 				}
 			}
 			app.graph.setDirtyCanvas(true);
@@ -760,6 +863,9 @@ app.registerExtension({
 			app.graph.setDirtyCanvas(true);
 		};
 
+		// Tooltip state for menubar
+		node._menubarTooltip = null;
+
 		// Create custom menubar widget
 		const menubar = {
 			name: "menubar",
@@ -853,9 +959,62 @@ app.registerExtension({
 					ctx.fillRect(posX + 2, checkboxY + 2, checkboxSize - 4, checkboxSize - 4);
 				}
 
+				// Draw tooltip if hovering
+				if (node._menubarTooltip) {
+					const tooltip = node._menubarTooltip;
+					ctx.font = "11px Arial";
+					const textWidth = ctx.measureText(tooltip.text).width;
+					const padding = 6;
+					const tipH = 18;
+					const tipW = textWidth + padding * 2;
+					const tipX = Math.min(tooltip.x, width - tipW - 5);
+					const tipY = y + totalH + 2;
+
+					// Draw tooltip background
+					ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+					ctx.beginPath();
+					ctx.roundRect(tipX, tipY, tipW, tipH, 4);
+					ctx.fill();
+
+					// Draw tooltip border
+					ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+					ctx.lineWidth = 1;
+					ctx.stroke();
+
+					// Draw tooltip text
+					ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+					ctx.textAlign = "left";
+					ctx.textBaseline = "middle";
+					ctx.fillText(tooltip.text, tipX + padding, tipY + tipH / 2);
+				}
+
 				return totalH;
 			},
 			mouse: function(event, pos, node) {
+				const checkboxSize = 10;
+				const negX = node.size[0] - 13 - checkboxSize;
+				const posX = negX - 30;
+
+				// Handle hover for tooltips
+				if (event.type === "pointermove" || event.type === "mousemove") {
+					let tooltip = null;
+
+					// Check positive checkbox hover
+					if (pos[0] >= posX - 15 && pos[0] < posX + checkboxSize + 5) {
+						tooltip = { text: "Show/hide positive prompt", x: posX - 15 };
+					}
+					// Check negative checkbox hover
+					else if (pos[0] >= negX - 15 && pos[0] < negX + checkboxSize + 5) {
+						tooltip = { text: "Show/hide negative prompt", x: negX - 15 };
+					}
+
+					if (node._menubarTooltip?.text !== tooltip?.text) {
+						node._menubarTooltip = tooltip;
+						app.graph.setDirtyCanvas(true);
+					}
+					return false;
+				}
+
 				if (event.type === "pointerdown") {
 					// Check if click is on lock area (left side)
 					if (pos[0] >= 8 && pos[0] <= 55) {
@@ -877,14 +1036,6 @@ app.registerExtension({
 						return true;
 					}
 
-					const checkboxSize = 10;
-
-					// Negative checkbox -[_] on the right
-					const negX = node.size[0] - 13 - checkboxSize;
-
-					// Positive checkbox +[_] (before negative)
-					const posX = negX - 30;
-
 					// Check if click is on negative checkbox area
 					if (pos[0] >= negX - 15 && pos[0] < negX + checkboxSize + 5) {
 						toggleNegative();
@@ -898,6 +1049,16 @@ app.registerExtension({
 					}
 				}
 				return false;
+			}
+		};
+
+		// Clear tooltip when mouse leaves the node
+		const originalOnMouseLeave = node.onMouseLeave;
+		node.onMouseLeave = function() {
+			originalOnMouseLeave?.apply(this, arguments);
+			if (node._menubarTooltip) {
+				node._menubarTooltip = null;
+				app.graph.setDirtyCanvas(true);
 			}
 		};
 
@@ -1183,8 +1344,8 @@ app.registerExtension({
 					w = boxWidth;
 				}
 
-				// Draw cap background with top rounded corners
-				ctx.fillStyle = "rgba(74, 158, 255, 0.25)";
+				// Draw cap background with transparent black
+				ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
 				ctx.beginPath();
 				ctx.roundRect(margin, y, w, H, [4, 4, 0, 0]);
 				ctx.fill();
@@ -1194,7 +1355,7 @@ app.registerExtension({
 				ctx.font = "bold 10px Arial";
 				ctx.textAlign = "left";
 				ctx.textBaseline = "middle";
-				ctx.fillText("POSITIVE", margin + 6, y + H / 2);
+				ctx.fillText("Prompt", margin + 6, y + H / 2 + 1);
 
 				return 4; // Return smaller size to pull textbox up
 			}
@@ -1229,8 +1390,8 @@ app.registerExtension({
 					w = boxWidth;
 				}
 
-				// Draw cap background with top rounded corners
-				ctx.fillStyle = "rgba(255, 107, 107, 0.25)";
+				// Draw cap background with subtle red tint
+				ctx.fillStyle = "rgba(40, 0, 0, 0.3)";
 				ctx.beginPath();
 				ctx.roundRect(margin, y, w, H, [4, 4, 0, 0]);
 				ctx.fill();
@@ -1240,7 +1401,7 @@ app.registerExtension({
 				ctx.font = "bold 10px Arial";
 				ctx.textAlign = "left";
 				ctx.textBaseline = "middle";
-				ctx.fillText("NEGATIVE", margin + 6, y + H / 2);
+				ctx.fillText("Negative Prompt", margin + 6, y + H / 2 + 1);
 
 				return 4; // Return smaller size to pull textbox up
 			}
