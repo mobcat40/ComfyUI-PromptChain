@@ -1,6 +1,6 @@
 # ComfyUI-PromptChain
 
-A visual node-based tool for advanced prompt randomization and combination inside ComfyUI workflows. Transform complex nested prompt syntax into an intuitive spatial node hierarchy.
+A visual prompt management system for ComfyUI. Build, randomize, route, and debug your prompts using connected nodes instead of nested syntax.
 
 ## The Problem
 
