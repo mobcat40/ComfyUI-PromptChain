@@ -345,23 +345,45 @@ app.registerExtension({
 
 									if (hasDropdown) {
 										const modeLabel = getChildModeLabel(sourceNode);
-										labelText = `${baseLabel} - ${modeLabel} ▼`;
+										labelText = `${baseLabel}: `;
+										this._modeLabelToDraw = modeLabel;
+										this._hasDropdownArrow = true;
 									} else {
 										labelText = baseLabel;
+										this._modeLabelToDraw = null;
+										this._hasDropdownArrow = false;
 									}
 								}
 							}
 						} else {
 							// No connection - show default label
 							labelText = "in";
+							this._hasDropdownArrow = false;
+							this._modeLabelToDraw = null;
 						}
 
-						// Draw label - green if has dropdown
-						ctx.fillStyle = hasDropdown ? "rgba(144, 238, 144, 0.9)" : "rgba(255, 255, 255, 0.7)";
+						// Draw label
+						ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
 						ctx.font = "12px Arial";
 						ctx.textAlign = "left";
-						const textWidth = ctx.measureText(labelText).width;
+						let textWidth = ctx.measureText(labelText).width;
 						ctx.fillText(labelText, x, y + 4);
+
+						// Draw bold mode label if present
+						if (this._modeLabelToDraw) {
+							ctx.font = "bold 12px Arial";
+							const modeWidth = ctx.measureText(this._modeLabelToDraw).width;
+							ctx.fillText(this._modeLabelToDraw, x + textWidth, y + 4);
+							textWidth += modeWidth;
+
+							// Draw triangle at half opacity
+							if (this._hasDropdownArrow) {
+								ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+								const arrow = " ⏷";
+								ctx.fillText(arrow, x + textWidth, y + 4);
+								textWidth += ctx.measureText(arrow).width;
+							}
+						}
 
 						// Store click area for dropdowns
 						if (hasDropdown && sourceNode) {
