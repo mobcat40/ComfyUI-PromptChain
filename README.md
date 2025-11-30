@@ -1,6 +1,6 @@
 # ComfyUI-PromptChain
 
-A visual tool for prompt randomization and advanced combinations inside of your ComfyUI workflows.
+A visual node-based tool for advanced prompt randomization and combination inside ComfyUI workflows. Transform complex nested prompt syntax into an intuitive spatial node hierarchy.
 
 ## The Problem
 
@@ -26,20 +26,6 @@ warrior|mage     iron|steel        fire|ice|         dragon|demon
 
 Each node shows exactly what it output. Chain them together, see the whole prompt path at a glance.
 
-## Features
-
-- **Inline wildcards** — Write `red | blue | green` directly in nodes. No external files required.
-- **Visual chaining** — Connect nodes easily to build rich meaningful structures
-- **Dynamic inputs** — Inputs auto-expand as you connect more nodes
-- **Live preview** — See what fired, when it fired, in real-time
-- **Lock system** — Freeze part or all of your nodes for fast testing
-- **Import/Export** — Easily import/export with common DynamicPrompt syntax
-- **Prompt toggle** — Hide the text field when you only need input routing
-- **Three modes:**
-  - `🎲 Randomize Inputs` — Pick one path from connected inputs
-  - `➕ Combine Inputs` — Merge all paths together
-  - `🔛 Switch Input` — Manually select which input to pass through
-
 ## Installation
 
 ```bash
@@ -47,139 +33,259 @@ cd ComfyUI/custom_nodes
 git clone https://github.com/mobcat40/ComfyUI-PromptChain.git
 ```
 
-## Syntax
+Restart ComfyUI. No external dependencies required.
+
+## Features at a Glance
+
+- **Dual prompt support** — Handle both positive and negative prompts in a single chain
+- **Inline wildcards** — Write `red | blue | green` directly in nodes. No external files required.
+- **Visual chaining** — Connect nodes to build rich, meaningful structures
+- **Dynamic inputs** — Inputs auto-expand as you connect more nodes
+- **Live preview** — See what fired, when it fired, in real-time
+- **Lock system** — Freeze outputs with upstream propagation
+- **Disable system** — Mute entire branches with one click
+- **Import/Export** — Convert to/from Dynamic Prompt syntax
+- **Tag deduplication** — Automatic duplicate removal
+- **Three modes:**
+  - `🎲 Randomize Inputs` — Pick one random path from connected inputs
+  - `➕ Combine Inputs` — Merge all paths with intelligent interleaving
+  - `🔛 Switch Input` — Manually select which input to pass through
+
+---
+
+## Nodes
+
+### PromptChain (Main Node)
+
+The core node for all prompt processing, combining, and randomization.
+
+#### Outputs
+
+| Output | Description |
+|--------|-------------|
+| `chain` | Bundle containing both positive and negative prompts (for chaining to other PromptChain nodes) |
+| `positive` | Plain positive prompt text (connect to CLIP positive) |
+| `negative` | Plain negative prompt text (connect to CLIP negative) |
+
+#### Menubar Controls
+
+The menubar at the top of each node provides quick access to all controls:
+
+| Control | Description |
+|---------|-------------|
+| 🔒/🔓 Lock | Freeze output (orange when active) |
+| ⛔ Disable | Mute node (red when active) |
+| ℹ️ Preview | Show live output preview (blue when active) |
+| `+` checkbox | Show/hide positive prompt text field |
+| `-` checkbox | Show/hide negative prompt text field |
+| Mode dropdown | Select between Randomize/Combine/Switch modes |
+
+---
+
+### PromptChain Debug (Utility Node)
+
+Inspector node for debugging text flowing through your prompt chain.
+
+**Purpose:** Logs the text reaching your CLIP/KSampler nodes to help debug complex chains.
+
+**Inputs:**
+- `text` — Text to inspect
+- `label` — Optional label for the debug output (default: "positive")
+
+**Output:**
+- `text` — Passes through input unchanged
+
+**Usage:** Insert between any connection to see what's actually being passed. Check `debug.log` for output.
+
+---
+
+## Dual Prompt Support
+
+PromptChain handles both **positive and negative prompts** in a single unified chain.
+
+### How It Works
+
+Each PromptChain node has two text fields:
+- **Positive prompt** (blue-tinted header) — Your main prompt content
+- **Negative prompt** (red-tinted header) — Things to avoid
+
+Both prompts flow through the chain together via the `chain` output. At the end of your chain, use the separate `positive` and `negative` outputs to connect to your CLIP nodes.
+
+### Visibility Toggles
+
+Use the `+` and `-` checkboxes in the menubar to show/hide each prompt field:
+- `+` — Toggle positive prompt visibility
+- `-` — Toggle negative prompt visibility
+
+This helps reduce clutter when you only need one prompt type in a particular node.
+
+### Example Setup
+
+```
+[Style Node]                    [Subject Node]                    [Final Node]
+┌──────────────────┐           ┌──────────────────┐              ┌──────────────────┐
+│ + cinematic |    │           │ + warrior | mage │              │                  │──→ positive → CLIP
+│   dramatic       │──chain──→ │                  │──chain──→    │                  │
+│ - blurry | ugly  │           │ - deformed       │              │                  │──→ negative → CLIP
+└──────────────────┘           └──────────────────┘              └──────────────────┘
+```
+
+---
+
+## Modes
+
+### 🎲 Randomize Inputs
+
+Picks **ONE random input** from all connected inputs.
+
+- The node's text field is prepended to the selected input
+- Use for branching logic where you want one path chosen randomly
+- Each execution may select a different input
+
+### ➕ Combine Inputs
+
+Merges **ALL inputs** using breadth-first interleaving.
+
+Tags round-robin across branches so no single branch dominates the token budget:
+
+```
+Input branches: ["a, b, c, d", "X, Y"]
+Output:         "a, X, b, Y, c, d"
+```
+
+Not `"a, b, c, d, X, Y"` — the interleaving ensures balanced representation.
+
+### 🔛 Switch Input
+
+**Manually select** which connected input to pass through.
+
+- A dropdown appears showing all connected inputs by their source node names
+- Click the dropdown or use arrow keys to cycle through inputs
+- The node's text field is prepended to the selected input
+- Perfect for A/B testing or debugging specific paths
+
+---
+
+## Wildcard Syntax
+
+Write wildcards directly in text fields — no external files needed.
 
 | Symbol | Meaning | Example | Result |
 |--------|---------|---------|--------|
-| `\|` | OR (pick one) | `red\|blue\|green` | `blue` |
-| `,` | AND (include both) | `red\|blue, dress\|skirt` | `blue, dress` |
+| `\|` | OR (pick one) | `red \| blue \| green` | `blue` |
+| `,` | AND (include both groups) | `red \| blue, dress \| skirt` | `blue, dress` |
 
-Multiline works too — lines ending with `|` continue the OR group, lines ending with `,` create AND boundaries.
+### Multiline Wildcards
 
-## The Node
-
-**PromptChain** is the single node type. It has:
-- **Mode selector** — `🎲 Randomize Inputs`, `➕ Combine Inputs`, or `🔛 Switch Input`
-- **Text field** — Wildcard processing with `|` and `,` syntax (toggleable via Prompt checkbox)
-- **Dynamic inputs** — Connect as many inputs as you need, slots auto-expand
-- **Menubar** — Lock, Prompt toggle, and Preview controls
-
-### Modes
-
-**🎲 Randomize Inputs**
-- Picks ONE random input from connected inputs
-- Prepends the text field to the selected input
-- Use for branching logic (pick one path)
-
-**➕ Combine Inputs**
-- Merges ALL inputs using breadth-first interleaving
-- Tags round-robin across branches so no single branch dominates the token budget
-- Example: `["a,b,c,d", "X,Y"]` → `"a, X, b, Y, c, d"` (not `"a, b, c, d, X, Y"`)
-
-**🔛 Switch Input**
-- Manually select which connected input to pass through
-- A secondary dropdown appears showing all connected inputs by their source node names
-- Click the dropdown or use arrows to cycle through inputs
-- Prepends the text field to the selected input
-- Use for A/B testing, manual control, or debugging specific paths
-
-## Example: RPG Character Generator
+Lines ending with `|` continue the OR group:
 
 ```
-Node 1:                    Node 2 (Randomize):        Node 3 (Combine):
-┌─────────────────┐       ┌─────────────────┐        ┌─────────────────┐
-│ warrior|mage|   │──────→│ steel|mythril   │───────→│ fire enchant,   │
-│ rogue           │       │ sword|staff     │        │ dragon slayer   │
-└─────────────────┘       │ input_1: ●      │        │ input_1: ●      │
-                          └─────────────────┘        └─────────────────┘
-
-Output: "warrior, mythril sword, fire enchant, dragon slayer"
+warrior |
+mage |
+rogue
 ```
 
-## Live Preview
+Equivalent to `warrior | mage | rogue` — picks one randomly.
 
-Toggle the **Preview** checkbox in the node's menubar. When enabled:
+### Multiple Groups
 
-- **Last run timestamp** — Shows elapsed time since execution, updates in real-time (e.g., "Last run: 20 mins ago")
-- **Selected options** — See exactly which wildcards fired
-- **Full output string** — The complete processed result
-- **Updates on every execution**
+Comma separates independent wildcard groups:
+
+```
+red | blue | green, large | small, fluffy | smooth
+```
+
+This picks one from each group and combines them: `"blue, small, fluffy"`
+
+---
 
 ## Lock System
 
 Click the **lock icon** (🔒/🔓) to freeze the current output.
 
-**When locked:**
+### When Locked
+
 - Node returns cached output instead of re-processing
 - Randomization results preserved across executions
 - Perfect for keeping a roll you like
 
-**Visual indicators:**
+### Visual Indicators
 
 | State | Appearance |
 |-------|------------|
-| Locked | 🔒 Orange icon + **bold yellow "Lock" text** + gold background overlay |
+| Locked | 🔒 Orange icon + **bold yellow "Lock" text** + gold background with diagonal stripes |
 | Unlocked | 🔓 Dim gray icon and text |
 
-**Upstream propagation:** Locking a node also locks all its input nodes (the entire upstream chain). This ensures your complete prompt path stays frozen — from source nodes all the way to the locked node.
+### Upstream Propagation
 
-**Persistence:** Lock state and cached output save with your workflow.
+**Locking a node also locks all its input nodes** (the entire upstream chain). This ensures your complete prompt path stays frozen — from source nodes all the way to the locked node.
 
-## Disable
+### Persistence
+
+Lock state and cached output save with your workflow.
+
+---
+
+## Disable System
 
 Click **⛔ Disable** in the menubar to temporarily exclude a node from the prompt chain.
 
-**When disabled:**
+### When Disabled
+
 - Node outputs an empty string
 - Downstream nodes ignore this input entirely
-- Visual indicator: Red ⛔ icon + **bold red "Disable" text** + dark red background overlay with diagonal stripes
+- The node and its upstream chain are visually marked
 
-**Visual indicators:**
+### Visual Indicators
 
 | State | Appearance |
 |-------|------------|
-| Disabled | ⛔ Red icon + **bold red "Disable" text** + dark red background overlay |
+| Disabled | ⛔ Red icon + **bold red "Disable" text** + dark red background with diagonal stripes |
 | Enabled | ⛔ Dim gray icon and text |
 
-**Upstream propagation:** Disabling a node also disables all its input nodes (the entire upstream chain). This lets you mute an entire branch with one click — from source nodes all the way to the disabled node.
+### Upstream Propagation
 
-**Use cases:**
+**Disabling a node also disables all its input nodes** (the entire upstream chain). This lets you mute an entire branch with one click.
+
+### Use Cases
+
 - A/B testing different branches without rewiring
 - Temporarily muting parts of complex prompt trees
-- Quick toggling of optional modifiers or style nodes
+- Quick toggling of optional modifiers
 
-**Persistence:** Disabled state saves with your workflow.
+### Persistence
 
-## Prompt Toggle
+Disabled state saves with your workflow.
 
-Click the **Prompt** checkbox in the menubar to show/hide the text field.
+---
 
-**When to hide the prompt:**
-- Using the node purely as an input router (Switch mode)
-- Building selector/hub nodes that only pass through connections
-- Reducing visual clutter when you don't need the text field
+## Live Preview
 
-**When visible (default):**
-- The text field appears for wildcard entry
-- Text is prepended to the selected/combined inputs
+Toggle the **Preview** button (ℹ️) in the menubar to see real-time output.
 
-The toggle state persists with your workflow.
+### Preview Shows
+
+- **Last run timestamp** — Shows elapsed time since execution (e.g., "20 mins ago"), updates in real-time
+- **Selected wildcards** — See exactly which options fired
+- **Full output** — The complete processed result for both positive and negative prompts
+- **"Awaiting first run..."** — Shown until node executes for the first time
+
+---
 
 ## Import & Export
 
 Right-click any PromptChain node → **Import** or **Export**
 
-### Import: Escape Dynamic Prompts Hell
+### Import
 
-Paste your existing prompts and auto-generate clean node structures:
+Paste existing prompts and auto-generate clean node structures:
 
 | Format | Example | Result |
 |--------|---------|--------|
 | Plain tags | `red, blue, green` | Converts to `red \| blue \| green` |
 | Dynamic Prompts | `{warrior\|mage}, {sword\|staff}` | Creates connected node tree |
+| Nested braces | `{a\|{b\|c}}` | Recursively expanded into node hierarchy |
 | Top-level OR | `option A \| option B` | Creates separate input nodes |
-
-**Nested braces like `{a|{b|c}}` are recursively expanded into node hierarchies.**
 
 ### Export
 
@@ -188,58 +294,100 @@ Convert your node tree back to Dynamic Prompt format:
 - Traverses all connected upstream nodes
 - Converts wildcards to brace syntax
 - Respects modes: Randomize → `{a|b}`, Combine → comma-joined
-- Dialog with exported string ready to copy
+- Opens dialog with exportable string ready to copy
+
+---
 
 ## Tag Deduplication
 
-Duplicates automatically removed, **first occurrence wins**:
+Duplicates are automatically removed. **First occurrence wins:**
 
 ```
-Input:  "red, blue, RED, green"
+Input:  "red, blue, RED, green, Blue"
 Output: "red, blue, green"
 ```
 
-Early nodes = intentional placement. Later duplicates from downstream merges get removed.
-
 - Case-insensitive matching
-- Special tags like `[BREAK]` always preserved
+- Special tags like `[BREAK]` are always preserved
+- Early nodes = intentional placement; later duplicates from merges get removed
 
-## Multiline Wildcards
+---
 
-Lines ending with `|` form a unified OR group:
+## Dynamic Inputs
+
+Input slots automatically expand as you connect more nodes:
+
+- Connect a node → new empty slot appears
+- Disconnect → empty slots are cleaned up (keeps at least one)
+- Input labels show connected node titles for easy identification
+- No manual slot management needed
+
+---
+
+## Example Workflows
+
+### RPG Character Generator
 
 ```
-warrior |
-mage |
-rogue
+Node 1 (Randomize):            Node 2 (Randomize):           Node 3 (Combine):
+┌─────────────────┐           ┌─────────────────┐           ┌─────────────────┐
+│ warrior |       │           │ steel | mythril │           │ fire enchant,   │
+│ mage | rogue    │──────────→│ sword | staff   │──────────→│ dragon slayer   │
+└─────────────────┘           └─────────────────┘           └─────────────────┘
+
+Possible output: "warrior, mythril staff, fire enchant, dragon slayer"
 ```
 
-Equivalent to `warrior | mage | rogue` — pick one randomly.
+### Style + Subject with Negative Prompts
 
-## Why PromptChain?
+```
+[Style]                        [Subject]                      [Output]
+┌────────────────┐            ┌────────────────┐            ┌────────────────┐
+│ + cinematic |  │            │ + portrait of  │            │                │→ positive
+│   moody | soft │──chain────→│   a warrior    │──chain────→│                │
+│ - cartoon      │            │ - bad anatomy  │            │                │→ negative
+└────────────────┘            └────────────────┘            └────────────────┘
 
-| Pain Point | Dynamic Prompts | PromptChain |
-|------------|-----------------|-------------|
-| Nested syntax | `{a\|{b\|{c\|d}}}` | Visual node tree |
-| Debugging | Read the string | See what lit up |
-| External files | Required | None |
-| Migration | — | One-click import |
+positive: "cinematic, portrait of a warrior"
+negative: "cartoon, bad anatomy"
+```
+
+### A/B Testing with Switch Mode
+
+```
+[Option A]─────┐
+               │
+[Option B]─────┼──→ [Switch Node] ──→ Output
+               │    (manually select)
+[Option C]─────┘
+```
+
+Use the dropdown to instantly swap between options without rewiring.
+
+---
 
 ## Trait Mixing Networks
 
-Wire Randomize nodes in a **mesh** instead of a tree to create combinatorial trait mixing:
+Wire Randomize nodes in a **mesh** instead of a tree for combinatorial trait mixing:
 
 ```
 [Fur Type]──┐     ┌──[Randomize]──┐
-            ├──→──┤               ├──→──[Combine]──→ Final Prompt
+            ├────→┤               ├────→[Combine]──→ Final
 [Fur Color]─┤     └──[Randomize]──┤
             │                     │
 [Creature]──┴─────[Randomize]─────┘
 ```
 
-Each Randomize node acts as selection pressure. Cross-wire your trait pools and every run produces a unique combination - like breeding. A mesh of `Shiny Fur | Matted Fur`, `Silver | Black | Red`, and `Werewolf | Bear` naturally generates creatures like "Red Fur, Shiny Fur, Werewolf" without explicit combinatorics.
+Each Randomize node acts as selection pressure. Cross-wire your trait pools and every run produces a unique combination — like breeding.
 
-Emergent behavior from simple primitives.
+Example pools:
+- `Shiny Fur | Matted Fur`
+- `Silver | Black | Red`
+- `Werewolf | Bear`
+
+Natural output: "Red, Shiny Fur, Werewolf" — emergent behavior from simple primitives.
+
+---
 
 ## Prompt Library Mode
 
@@ -248,10 +396,40 @@ Disconnected PromptChain nodes act as prompt storage:
 - Drop a node, paste your prompt, leave it unwired
 - Sits on your canvas as a visual "sticky note"
 - Saves with your workflow
-- Connect it when you want to use it, disconnect to deactivate
+- Connect when you want to use it, disconnect to deactivate
 
 Build a library of prompt fragments right in your workflow. Zero config, just nodes.
 
+---
+
+## Why PromptChain?
+
+| Pain Point | Dynamic Prompts | PromptChain |
+|------------|-----------------|-------------|
+| Nested syntax | `{a\|{b\|{c\|d}}}` | Visual node tree |
+| Debugging | Read the string | See what lit up |
+| Positive + negative | Separate handling | Unified chain |
+| External files | Required | None |
+| Migration | — | One-click import |
+
+---
+
+## Tips & Tricks
+
+1. **Use Lock for iteration** — Find a random combination you like? Lock it before further experiments.
+
+2. **Disable for comparison** — Instead of deleting nodes, disable them to quickly compare with/without.
+
+3. **Hide unused prompts** — Use `+`/`-` toggles to hide prompt fields you're not using in a node.
+
+4. **Preview everything** — Enable preview on your final node to see the complete output.
+
+5. **Chain outputs** — Use `chain` output when connecting to other PromptChain nodes; use `positive`/`negative` only at the end for CLIP.
+
+6. **Debug complex chains** — Insert a PromptChain Debug node to log what's actually flowing through a connection.
+
+---
+
 ## License
 
-MIT License: free to use forever!
+MIT License — free to use forever!
