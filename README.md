@@ -196,7 +196,7 @@ This picks one from each group and combines them: `"blue, small, fluffy"`
 
 ## Lock System
 
-Click the **lock icon** (🔒/🔓) to freeze the current output. (For when you need to lock that sweet Mythril Ice Enchanted Sword!)
+Click the **lock icon** (🔒/🔓) to freeze the current output. (For when you need to lock in that sweet Mythril Ice Enchanted Sword!)
 
 ![Locked Nodes](screenshots/Locked.png)
 
@@ -456,4 +456,5 @@ Build a library of prompt fragments right in your workflow. Zero config, just no
 ## License
 
 MIT License — free to use forever!
+
 
