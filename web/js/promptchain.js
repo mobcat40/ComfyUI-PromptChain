@@ -389,9 +389,17 @@ app.registerExtension({
 		node._isDisabled = node.properties?.isDisabled || false;
 
 		// Save text value to properties whenever it changes (for reliable persistence)
+		// Also override computeSize to return negative height when hidden
 		const setupTextPersistence = () => {
 			const textWidget = node.widgets?.find(w => w.name === "text");
 			if (textWidget?.inputEl) {
+				// Override computeSize to return negative height when hidden
+				const originalTextComputeSize = textWidget.computeSize?.bind(textWidget);
+				textWidget.computeSize = function(width) {
+					if (!node._showPositive) return [0, -4]; // Negative to counteract widget spacing
+					return originalTextComputeSize ? originalTextComputeSize(width) : [width, 60];
+				};
+
 				textWidget.inputEl.addEventListener("input", () => {
 					if (!node.properties) node.properties = {};
 					node.properties.textValue = textWidget.inputEl.value;
@@ -1458,11 +1466,11 @@ app.registerExtension({
 			serializeValue: () => undefined,
 			computeSize: function() {
 				// Only show if positive text is visible
-				if (!node._showPositive) return [0, 0];
+				if (!node._showPositive) return [0, -4]; // Negative to counteract widget spacing
 				return [node.size[0], 4]; // Height tuned for seamless connection
 			},
 			draw: function(ctx, _, width, y) {
-				if (!node._showPositive) return 0;
+				if (!node._showPositive) return -4;
 
 				const H = 18; // Draw taller than computeSize to overlap gap
 				// Get the actual textbox element position
@@ -1650,13 +1658,22 @@ app.registerExtension({
 			}
 
 			// Restore positive/negative visibility from saved properties
-			if (info.properties?.showPositive === false && node._showPositive) {
-				node._showPositive = true;
-				togglePositive(); // Will toggle to hide positive
+			// Directly set state without triggering size recalculation
+			if (info.properties?.showPositive === false) {
+				node._showPositive = false;
+				const textWidget = node.widgets?.find(w => w.name === "text");
+				if (textWidget) {
+					textWidget.type = "hidden";
+					if (textWidget.inputEl) textWidget.inputEl.style.display = "none";
+				}
 			}
-			if (info.properties?.showNegative === true && !node._showNegative) {
-				node._showNegative = false;
-				toggleNegative(); // Will toggle to show negative
+			if (info.properties?.showNegative === true) {
+				node._showNegative = true;
+				const negTextWidget = node.widgets?.find(w => w.name === "neg_text");
+				if (negTextWidget) {
+					negTextWidget.type = "customtext";
+					if (negTextWidget.inputEl) negTextWidget.inputEl.style.display = "";
+				}
 			}
 
 			// Update switch selector visibility based on restored mode
