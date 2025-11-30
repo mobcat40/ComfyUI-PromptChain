@@ -624,6 +624,7 @@ app.registerExtension({
 				posPreview.inputEl.value = node._outputText || "";
 
 				// Create "Negative Prompt" cap for negative preview (same style as negative_cap)
+				// Only shows if there's negative output content
 				const previewNegCap = {
 					name: "preview_neg_cap",
 					type: "custom",
@@ -631,9 +632,13 @@ app.registerExtension({
 					options: { serialize: false },
 					serializeValue: () => undefined,
 					computeSize: function() {
+						// Hide if no negative output
+						if (!node._negOutputText) return [0, -4];
 						return [node.size[0], 4];
 					},
 					draw: function(ctx, _, width, y) {
+						// Hide if no negative output
+						if (!node._negOutputText) return -4;
 						const H = 18;
 						const negPreviewWidget = node.widgets?.find(w => w.name === "neg_output_preview");
 						let margin = 15;
@@ -664,6 +669,17 @@ app.registerExtension({
 				negPreview.options = negPreview.options || {};
 				negPreview.options.serialize = false;
 				negPreview.serializeValue = () => undefined;
+				// Override computeSize to hide when no negative output
+				const originalNegPreviewComputeSize = negPreview.computeSize?.bind(negPreview);
+				negPreview.computeSize = function(width) {
+					if (!node._negOutputText) {
+						if (this.inputEl) this.inputEl.style.display = "none";
+						return [0, -4];
+					}
+					if (this.inputEl) this.inputEl.style.display = "";
+					if (originalNegPreviewComputeSize) return originalNegPreviewComputeSize(width);
+					return [width, this.inputEl?.clientHeight || 60];
+				};
 				negPreview.inputEl.readOnly = true;
 				negPreview.inputEl.style.opacity = 1;
 				negPreview.inputEl.style.fontStyle = "italic";
