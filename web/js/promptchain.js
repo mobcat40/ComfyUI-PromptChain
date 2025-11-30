@@ -70,6 +70,13 @@ app.registerExtension({
 						.promptchain-prompt-neg::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.35); border-radius: 4px; }
 						.promptchain-prompt-neg::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
 						.promptchain-prompt-neg::-webkit-scrollbar-corner { background: transparent; }
+						.promptchain-preview:hover { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4) !important; }
+						.promptchain-preview:focus { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8) !important; outline: none !important; }
+						.promptchain-preview::-webkit-scrollbar { width: 8px; height: 8px; }
+						.promptchain-preview::-webkit-scrollbar-track { background: transparent; }
+						.promptchain-preview::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.35); border-radius: 4px; }
+						.promptchain-preview::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
+						.promptchain-preview::-webkit-scrollbar-corner { background: transparent; }
 					`;
 					document.head.appendChild(style);
 				}
@@ -537,14 +544,6 @@ app.registerExtension({
 					if (!this.properties) this.properties = {};
 					this.properties.outputText = textValue;
 					this.properties.outputTimestamp = this._outputTimestamp;
-					// Update preview widget if visible
-					const previewWidget = this.widgets?.find(w => w.name === "output_preview");
-					if (previewWidget) {
-						previewWidget.value = textValue;
-						if (previewWidget.inputEl) {
-							previewWidget.inputEl.value = textValue;
-						}
-					}
 				}
 				// Handle negative output
 				if (message?.neg_text) {
@@ -555,14 +554,10 @@ app.registerExtension({
 					this._negOutputText = negValue;
 					if (!this.properties) this.properties = {};
 					this.properties.negOutputText = negValue;
-					// Update neg preview widget if visible
-					const negPreviewWidget = this.widgets?.find(w => w.name === "neg_output_preview");
-					if (negPreviewWidget) {
-						negPreviewWidget.value = negValue;
-						if (negPreviewWidget.inputEl) {
-							negPreviewWidget.inputEl.value = negValue;
-						}
-					}
+				}
+				// Update preview widget if visible
+				if (this._previewWidget?.updateContent) {
+					this._previewWidget.updateContent();
 				}
 				onExecuted?.apply(this, arguments);
 			};
@@ -685,25 +680,24 @@ app.registerExtension({
 			node.properties.showPreview = node._showPreview;
 
 			if (!node._showPreview) {
-				// Remove all preview-related widgets
-				const widgetsToRemove = ["output_label", "preview_pos_cap", "output_preview", "preview_neg_cap", "neg_output_preview"];
-				widgetsToRemove.forEach(name => {
+				// Remove both label and preview widgets
+				const removeWidget = (name) => {
 					const widget = node.widgets.find(w => w.name === name);
 					if (widget) {
 						const index = node.widgets.indexOf(widget);
 						if (index > -1) {
+							// Clean up DOM element for textarea widgets
 							if (widget.inputEl) {
-								const parentEl = widget.inputEl.parentElement;
-								if (widget.onRemoved) widget.onRemoved();
-								if (parentEl) parentEl.remove();
-								else widget.inputEl.remove();
-							} else if (widget.onRemoved) {
-								widget.onRemoved();
+								const wrapper = widget.inputEl.parentElement;
+								if (wrapper) wrapper.remove();
 							}
+							if (widget.onRemoved) widget.onRemoved();
 							node.widgets.splice(index, 1);
 						}
 					}
-				});
+				};
+				removeWidget("output_label");
+				removeWidget("output_preview");
 			} else {
 				// Helper to format time ago
 				const formatTimeAgo = (timestamp) => {
@@ -729,214 +723,107 @@ app.registerExtension({
 				updateTimeAgoCache(); // Initial calculation
 				const timeAgoInterval = setInterval(updateTimeAgoCache, 10000);
 
-				// Add "Last run" label widget
-				const outputLabel = {
+				// Create "Last run" label widget (above the preview box)
+				const outputLabelWidget = {
 					name: "output_label",
 					type: "custom",
 					value: null,
 					options: { serialize: false },
 					serializeValue: () => undefined,
-					computeSize: function() {
-						return [node.size[0], 20];
+					computeSize: function(width) {
+						return [width, 18];
 					},
-					draw: function(ctx, _, width, y) {
-						const H = 20;
-						ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+					draw: function(ctx, n, width, y, height) {
+						const margin = 15;
+
+						// Draw "Last run" timestamp label
+						ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
 						ctx.font = "12px Arial";
 						ctx.textAlign = "left";
-						ctx.textBaseline = "middle";
-						if (node._cachedTimeAgo) {
-							ctx.fillText(`Last run: ${node._cachedTimeAgo}`, 12, y + H / 2);
-						} else {
-							ctx.fillText("Awaiting first run...", 12, y + H / 2);
-						}
-						return H;
+						ctx.textBaseline = "top";
+						const timeAgo = node._cachedTimeAgo || "Awaiting first run...";
+						ctx.fillText(`Last run: ${timeAgo}`, margin, y + 9);
+
+						return 18;
 					},
 					onRemoved: function() {
 						clearInterval(timeAgoInterval);
 					}
 				};
 
-				// Create "Prompt" cap for positive preview (same style as positive_cap)
-				const previewPosCap = {
-					name: "preview_pos_cap",
-					type: "custom",
-					value: null,
-					options: { serialize: false },
-					serializeValue: () => undefined,
-					computeSize: function() {
-						return [node.size[0], 4];
-					},
-					draw: function(ctx, _, width, y) {
-						const H = 18;
-						const previewWidget = node.widgets?.find(w => w.name === "output_preview");
-						let margin = 15;
-						let w = width - margin * 2;
-						if (previewWidget?.inputEl) {
-							const boxWidth = previewWidget.inputEl.offsetWidth;
-							// Only use textbox width if it's valid (between reasonable bounds)
-							if (boxWidth > 50 && boxWidth < width) {
-								margin = (width - boxWidth) / 2;
-								w = boxWidth;
-							}
-						}
-						ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
-						ctx.beginPath();
-						ctx.roundRect(margin, y, w, H, [4, 4, 0, 0]);
-						ctx.fill();
-						ctx.fillStyle = "rgba(74, 158, 255, 0.9)";
-						ctx.font = "bold 10px Arial";
-						ctx.textAlign = "left";
-						ctx.textBaseline = "middle";
-						ctx.fillText("+ Output", margin + 6, y + H / 2 + 1);
-						return 4;
+				// Create textarea preview widget using ComfyWidgets
+				const previewWidget = ComfyWidgets["STRING"](node, "output_preview", ["STRING", { multiline: true }], app).widget;
+				previewWidget.inputEl.readOnly = true;
+				previewWidget.inputEl.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+				previewWidget.inputEl.style.color = "rgba(255, 255, 255, 0.85)";
+				previewWidget.inputEl.style.fontFamily = "Arial, sans-serif";
+				previewWidget.inputEl.style.fontSize = "11px";
+				previewWidget.inputEl.style.padding = "22px 8px 8px 8px"; // Extra top padding for fake cap
+				previewWidget.inputEl.style.lineHeight = "1.4";
+				previewWidget.inputEl.style.borderRadius = "4px";
+				previewWidget.inputEl.style.border = "none";
+				previewWidget.inputEl.style.resize = "none";
+				previewWidget.inputEl.style.cursor = "text";
+				previewWidget.inputEl.classList.add("promptchain-preview");
+				previewWidget.options = { serialize: false };
+				previewWidget.serializeValue = () => undefined;
+
+				// Add fake cap label "Resulting prompt" with retry pattern
+				const setupPreviewCap = () => {
+					const textarea = previewWidget.inputEl;
+					if (textarea && !textarea.parentElement?.querySelector(".promptchain-fake-cap-preview")) {
+						// Make textarea wrapper positioned
+						const wrapper = textarea.parentElement;
+						wrapper.style.position = "relative";
+
+						const fakeCapLabel = document.createElement("div");
+						fakeCapLabel.className = "promptchain-fake-cap-preview";
+						fakeCapLabel.textContent = "Resulting prompt";
+						fakeCapLabel.style.cssText = `
+							position: absolute;
+							top: 6px;
+							left: 7px;
+							font-family: Arial, sans-serif;
+							font-size: 10px;
+							font-weight: bold;
+							color: rgba(255, 255, 255, 0.5);
+							pointer-events: none;
+							z-index: 10;
+						`;
+						wrapper.appendChild(fakeCapLabel);
+					} else if (!textarea) {
+						requestAnimationFrame(setupPreviewCap);
 					}
 				};
+				requestAnimationFrame(setupPreviewCap);
 
-				// Add positive preview widget
-				const posPreview = ComfyWidgets["STRING"](node, "output_preview", ["STRING", { multiline: true }], app).widget;
-				posPreview.options = posPreview.options || {};
-				posPreview.options.serialize = false;
-				posPreview.serializeValue = () => undefined;
-				posPreview.inputEl.readOnly = true;
-				posPreview.inputEl.style.opacity = 1;
-				posPreview.inputEl.style.fontStyle = "italic";
-				posPreview.inputEl.style.fontFamily = "Arial, sans-serif";
-				posPreview.inputEl.style.fontSize = "11px";
-				posPreview.inputEl.style.padding = "4px 6px";
-				posPreview.inputEl.style.lineHeight = "1.3";
-				posPreview.inputEl.style.borderRadius = "0 0 4px 4px";
-				posPreview.inputEl.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-				posPreview.inputEl.style.color = "rgba(255, 255, 255, 0.85)";
-				posPreview.inputEl.style.marginTop = "0px";
-				posPreview.inputEl.placeholder = "(empty)";
-				// Style placeholder text
-				const styleId = "promptchain-placeholder-style";
-				if (!document.getElementById(styleId)) {
-					const style = document.createElement("style");
-					style.id = styleId;
-					style.textContent = `
-						.promptchain-preview::placeholder { color: rgba(255, 255, 255, 0.5); opacity: 1; }
-						.promptchain-preview:hover { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4) !important; }
-						.promptchain-preview:focus { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8) !important; outline: none !important; }
-						.promptchain-preview::-webkit-scrollbar { width: 8px; height: 8px; }
-						.promptchain-preview::-webkit-scrollbar-track { background: transparent; }
-						.promptchain-preview::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.35); border-radius: 4px; }
-						.promptchain-preview::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
-						.promptchain-preview::-webkit-scrollbar-corner { background: transparent; }
-						.promptchain-preview-neg::placeholder { color: rgba(255, 180, 180, 0.5); opacity: 1; }
-						.promptchain-preview-neg:hover { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4) !important; }
-						.promptchain-preview-neg:focus { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8) !important; outline: none !important; }
-						.promptchain-preview-neg::-webkit-scrollbar { width: 8px; height: 8px; }
-						.promptchain-preview-neg::-webkit-scrollbar-track { background: transparent; }
-						.promptchain-preview-neg::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.35); border-radius: 4px; }
-						.promptchain-preview-neg::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
-						.promptchain-preview-neg::-webkit-scrollbar-corner { background: transparent; }
-					`;
-					document.head.appendChild(style);
+				// Update content helper
+				previewWidget.updateContent = function() {
+					const posText = node._outputText || "";
+					const negText = node._negOutputText || "";
+					let content = posText || "(empty)";
+					if (negText && negText.trim()) {
+						content += "\n\nNegative: " + negText;
+					}
+					this.inputEl.value = content;
+					this.value = content;
+				};
+				previewWidget.updateContent();
+
+				// Store reference for updates
+				node._previewWidget = previewWidget;
+				node._outputLabelWidget = outputLabelWidget;
+
+				// Move preview widget after neg_text (it was auto-added at end)
+				const previewIndex = node.widgets.indexOf(previewWidget);
+				if (previewIndex > -1) {
+					node.widgets.splice(previewIndex, 1);
 				}
-				posPreview.inputEl.classList.add("promptchain-preview");
-				posPreview.value = node._outputText || "";
-				posPreview.inputEl.value = node._outputText || "";
-
-				// Create "Negative Prompt" cap for negative preview (same style as negative_cap)
-				// Only shows if there's negative output content
-				const previewNegCap = {
-					name: "preview_neg_cap",
-					type: "custom",
-					value: null,
-					options: { serialize: false },
-					serializeValue: () => undefined,
-					computeSize: function() {
-						// Hide if no negative output - check both state and properties
-						const negText = node._negOutputText || node.properties?.negOutputText || "";
-						const hasNegContent = negText && negText.trim();
-						if (!hasNegContent) return [0, -4];
-						return [node.size[0], 4];
-					},
-					draw: function(ctx, _, width, y) {
-						// Hide if no negative output - check both state and properties
-						const negText = node._negOutputText || node.properties?.negOutputText || "";
-						const hasNegContent = negText && negText.trim();
-						if (!hasNegContent) return -4;
-						const H = 18;
-						const negPreviewWidget = node.widgets?.find(w => w.name === "neg_output_preview");
-						let margin = 15;
-						let w = width - margin * 2;
-						if (negPreviewWidget?.inputEl) {
-							const boxWidth = negPreviewWidget.inputEl.offsetWidth;
-							// Only use textbox width if it's valid (between reasonable bounds)
-							if (boxWidth > 50 && boxWidth < width) {
-								margin = (width - boxWidth) / 2;
-								w = boxWidth;
-							}
-						}
-						ctx.fillStyle = "rgba(40, 0, 0, 0.3)";  // Subtle red tint
-						ctx.beginPath();
-						ctx.roundRect(margin, y, w, H, [4, 4, 0, 0]);
-						ctx.fill();
-						ctx.fillStyle = "rgba(255, 107, 107, 0.9)";
-						ctx.font = "bold 10px Arial";
-						ctx.textAlign = "left";
-						ctx.textBaseline = "middle";
-						ctx.fillText("- Output", margin + 6, y + H / 2 + 1);
-						return 4;
-					}
-				};
-
-				// Add negative preview widget
-				const negPreview = ComfyWidgets["STRING"](node, "neg_output_preview", ["STRING", { multiline: true }], app).widget;
-				negPreview.options = negPreview.options || {};
-				negPreview.options.serialize = false;
-				negPreview.serializeValue = () => undefined;
-				// Override computeSize to hide when no negative output
-				negPreview.computeSize = function(width) {
-					// Check both the state variable and properties for neg content
-					const negText = node._negOutputText || node.properties?.negOutputText || "";
-					const hasNegContent = negText && negText.trim();
-					if (!hasNegContent) {
-						if (this.inputEl) this.inputEl.style.display = "none";
-						return [0, -4];
-					}
-					if (this.inputEl) this.inputEl.style.display = "";
-					// Always return a reasonable height - use scrollHeight for actual content size
-					const height = this.inputEl?.scrollHeight || 120;
-					return [width, Math.max(120, height)];
-				};
-				negPreview.inputEl.readOnly = true;
-				negPreview.inputEl.style.opacity = 1;
-				negPreview.inputEl.style.fontStyle = "italic";
-				negPreview.inputEl.style.fontFamily = "Arial, sans-serif";
-				negPreview.inputEl.style.fontSize = "11px";
-				negPreview.inputEl.style.padding = "4px 6px";
-				negPreview.inputEl.style.lineHeight = "1.3";
-				negPreview.inputEl.style.borderRadius = "0 0 4px 4px";
-				negPreview.inputEl.style.backgroundColor = "rgba(40, 0, 0, 0.5)";  // Subtle red tint
-				negPreview.inputEl.style.color = "rgba(255, 255, 255, 0.85)";
-				negPreview.inputEl.style.marginTop = "0px";
-				negPreview.inputEl.placeholder = "(empty)";
-				negPreview.inputEl.classList.add("promptchain-preview-neg");
-				const negInitialValue = node._negOutputText || node.properties?.negOutputText || "";
-				negPreview.value = negInitialValue;
-				negPreview.inputEl.value = negInitialValue;
-
-				// Reorder widgets: move all preview widgets after neg_text
 				const negTextIndex = node.widgets.findIndex(w => w.name === "neg_text");
 				if (negTextIndex > -1) {
-					// Remove preview widgets from current positions
-					const widgetsToMove = ["output_label", "preview_pos_cap", "output_preview", "preview_neg_cap", "neg_output_preview"];
-					widgetsToMove.forEach(name => {
-						const idx = node.widgets.findIndex(w => w.name === name);
-						if (idx > -1) node.widgets.splice(idx, 1);
-					});
-
-					// Insert in correct order after neg_text widget
-					const newNegTextIndex = node.widgets.findIndex(w => w.name === "neg_text");
-					node.widgets.splice(newNegTextIndex + 1, 0, outputLabel);
-					node.widgets.splice(newNegTextIndex + 2, 0, previewPosCap);
-					node.widgets.splice(newNegTextIndex + 3, 0, posPreview);
-					node.widgets.splice(newNegTextIndex + 4, 0, previewNegCap);
-					node.widgets.splice(newNegTextIndex + 5, 0, negPreview);
+					node.widgets.splice(negTextIndex + 1, 0, outputLabelWidget, previewWidget);
+				} else {
+					node.widgets.push(outputLabelWidget, previewWidget);
 				}
 			}
 			app.graph.setDirtyCanvas(true);
