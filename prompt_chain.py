@@ -197,18 +197,21 @@ class PromptChain:
 
         # Collect inputs from kwargs (dynamic input_N slots)
         # Each input may be a JSON bundle containing both pos and neg
-        pos_inputs = []
-        neg_inputs = []
+        # Store as list of tuples (pos, neg) to keep them aligned by input slot
+        input_bundles = []
         i = 1
         while f"input_{i}" in kwargs:
             value = kwargs[f"input_{i}"]
             if value and value.strip():
                 pos_part, neg_part = self._parse_input(value)
-                if pos_part:
-                    pos_inputs.append(pos_part)
-                if neg_part:
-                    neg_inputs.append(neg_part)
+                input_bundles.append((pos_part, neg_part))
+            else:
+                input_bundles.append(("", ""))  # Empty slot placeholder
             i += 1
+
+        # Build pos_inputs and neg_inputs for Combine/Randomize modes (skip empty)
+        pos_inputs = [b[0] for b in input_bundles if b[0]]
+        neg_inputs = [b[1] for b in input_bundles if b[1]]
 
         # Process this node's text fields (only if that section is enabled)
         pos_text_combined = self._process_text(text) if show_positive else ""
@@ -216,13 +219,36 @@ class PromptChain:
 
         debug_log(f"[PromptChain] pos_text_combined={pos_text_combined!r}, neg_text_combined={neg_text_combined!r}")
         debug_log(f"[PromptChain] pos_inputs={pos_inputs}, neg_inputs={neg_inputs}")
+        debug_log(f"[PromptChain] input_bundles={input_bundles}, switch_index={switch_index}")
 
-        # Combine with mode for positive
-        pos_result = self._combine_with_mode(mode, pos_text_combined, pos_inputs, switch_index)
+        # For Switch mode, use aligned bundles to ensure pos/neg come from same input
+        if mode == "Switch":
+            # Get the selected bundle (1-indexed switch_index)
+            if switch_index <= len(input_bundles) and switch_index > 0:
+                selected_pos, selected_neg = input_bundles[switch_index - 1]
+            else:
+                selected_pos, selected_neg = "", ""
+
+            # Combine node's text with selected input
+            if pos_text_combined and selected_pos:
+                pos_result = pos_text_combined + ", " + selected_pos
+            elif selected_pos:
+                pos_result = selected_pos
+            else:
+                pos_result = pos_text_combined
+
+            if neg_text_combined and selected_neg:
+                neg_result = neg_text_combined + ", " + selected_neg
+            elif selected_neg:
+                neg_result = selected_neg
+            else:
+                neg_result = neg_text_combined
+        else:
+            # Combine/Randomize modes use the filtered lists
+            pos_result = self._combine_with_mode(mode, pos_text_combined, pos_inputs, switch_index)
+            neg_result = self._combine_with_mode(mode, neg_text_combined, neg_inputs, switch_index)
+
         pos_result = self._deduplicate(pos_result)
-
-        # Combine with mode for negative (same logic)
-        neg_result = self._combine_with_mode(mode, neg_text_combined, neg_inputs, switch_index)
         neg_result = self._deduplicate(neg_result)
 
         debug_log(f"[PromptChain] FINAL pos_result={pos_result!r}, neg_result={neg_result!r}")
