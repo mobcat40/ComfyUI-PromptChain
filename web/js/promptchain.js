@@ -632,13 +632,17 @@ app.registerExtension({
 					options: { serialize: false },
 					serializeValue: () => undefined,
 					computeSize: function() {
-						// Hide if no negative output
-						if (!node._negOutputText) return [0, -4];
+						// Hide if no negative output - check both state and properties
+						const negText = node._negOutputText || node.properties?.negOutputText || "";
+						const hasNegContent = negText && negText.trim();
+						if (!hasNegContent) return [0, -4];
 						return [node.size[0], 4];
 					},
 					draw: function(ctx, _, width, y) {
-						// Hide if no negative output
-						if (!node._negOutputText) return -4;
+						// Hide if no negative output - check both state and properties
+						const negText = node._negOutputText || node.properties?.negOutputText || "";
+						const hasNegContent = negText && negText.trim();
+						if (!hasNegContent) return -4;
 						const H = 18;
 						const negPreviewWidget = node.widgets?.find(w => w.name === "neg_output_preview");
 						let margin = 15;
@@ -670,15 +674,18 @@ app.registerExtension({
 				negPreview.options.serialize = false;
 				negPreview.serializeValue = () => undefined;
 				// Override computeSize to hide when no negative output
-				const originalNegPreviewComputeSize = negPreview.computeSize?.bind(negPreview);
 				negPreview.computeSize = function(width) {
-					if (!node._negOutputText) {
+					// Check both the state variable and properties for neg content
+					const negText = node._negOutputText || node.properties?.negOutputText || "";
+					const hasNegContent = negText && negText.trim();
+					if (!hasNegContent) {
 						if (this.inputEl) this.inputEl.style.display = "none";
 						return [0, -4];
 					}
 					if (this.inputEl) this.inputEl.style.display = "";
-					if (originalNegPreviewComputeSize) return originalNegPreviewComputeSize(width);
-					return [width, this.inputEl?.clientHeight || 60];
+					// Always return a reasonable height - use scrollHeight for actual content size
+					const height = this.inputEl?.scrollHeight || 60;
+					return [width, Math.max(40, height)];
 				};
 				negPreview.inputEl.readOnly = true;
 				negPreview.inputEl.style.opacity = 1;
@@ -693,8 +700,9 @@ app.registerExtension({
 				negPreview.inputEl.style.marginTop = "0px";
 				negPreview.inputEl.placeholder = "(empty)";
 				negPreview.inputEl.classList.add("promptchain-preview-neg");
-				negPreview.value = node._negOutputText || "";
-				negPreview.inputEl.value = node._negOutputText || "";
+				const negInitialValue = node._negOutputText || node.properties?.negOutputText || "";
+				negPreview.value = negInitialValue;
+				negPreview.inputEl.value = negInitialValue;
 
 				// Reorder widgets: move all preview widgets after neg_text
 				const negTextIndex = node.widgets.findIndex(w => w.name === "neg_text");
