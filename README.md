@@ -35,6 +35,7 @@ Restart ComfyUI. No external dependencies required.
 - **Dual prompt support** — Handle both positive and negative prompts in a single chain
 - **Inline wildcards** — Write `red | blue | green` directly in nodes. No external files required.
 - **Comments** — Use `//` or `/* */` to annotate your prompts without affecting output
+- **Syntax highlighting** — Operators and comments are color-coded for easy reading
 - **Visual chaining** — Connect nodes to build rich, meaningful structures
 - **Dynamic inputs** — Inputs auto-expand as you connect more nodes
 - **Live preview** — See what fired, when it fired, in real-time
@@ -243,6 +244,26 @@ Output: `cinematic lighting, soft shadows`
 - **Quick disable** — Comment out tags instead of deleting them
 - **Notes to self** — Leave reminders for future editing
 - **Version history** — Keep old variations as comments
+
+---
+
+## Syntax Highlighting
+
+All text fields feature live syntax highlighting with a Monokai-inspired color scheme:
+
+| Element | Color | Example |
+|---------|-------|---------|
+| Operators (`\|`, `,`) | Pink, bold | `red \| blue` |
+| Comments (`//`, `/* */`) | Gray, italic | `// note` |
+| Regular text | Light gray | `portrait of a warrior` |
+
+The highlighting updates in real-time as you type, making it easy to:
+
+- **Spot structure** — Instantly see where your wildcards and groups are
+- **Find comments** — Gray italic text stands out from active prompts
+- **Identify operators** — Bold pink pipes and commas show decision points
+
+The preview panel also uses syntax highlighting, with the "Prompt result:" label displayed in gray bold to distinguish metadata from actual prompt content.
 
 ---
 
