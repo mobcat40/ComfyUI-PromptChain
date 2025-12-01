@@ -19,6 +19,12 @@ const highlightSyntax = (text) => {
 	let result = "";
 	let i = 0;
 
+	// Check for "Prompt result:" label at the start
+	if (text.startsWith("Prompt result:")) {
+		result += `<span class="syntax-label">${escapeHtml("Prompt result:")}</span>`;
+		i = 14; // Length of "Prompt result:"
+	}
+
 	while (i < text.length) {
 		// Check for block comment
 		if (text.slice(i, i + 2) === "/*") {
@@ -136,6 +142,10 @@ const addSyntaxHighlightingCSS = () => {
 			color: #F92672 !important;
 			font-weight: bold;
 		}
+		.syntax-label {
+			color: #AAAAAA !important;
+			font-weight: bold;
+		}
 	`;
 	document.head.appendChild(style);
 };
@@ -175,7 +185,7 @@ app.registerExtension({
 				addSyntaxHighlightingCSS();
 
 				// Apply syntax highlighting overlay
-				const syntaxResult = applySyntaxHighlighting(textWidget.inputEl, "rgba(0, 0, 0, 0.5)");
+				const syntaxResult = applySyntaxHighlighting(textWidget.inputEl, "rgba(0, 0, 0, 0.47)");
 				if (syntaxResult) {
 					node._textSyntaxHighlight = syntaxResult;
 				}
@@ -1025,11 +1035,8 @@ app.registerExtension({
 				// Create textarea preview widget using ComfyWidgets
 				const previewWidget = ComfyWidgets["STRING"](node, "output_preview", ["STRING", { multiline: true }], app).widget;
 				previewWidget.inputEl.readOnly = true;
-				previewWidget.inputEl.style.backgroundColor = "#15151533";
 				previewWidget.inputEl.style.border = "1px solid #00000021";
-				previewWidget.inputEl.style.fontWeight = "bold";
-				previewWidget.inputEl.style.color = "rgb(255 255 255 / 88%)";
-				previewWidget.inputEl.style.fontFamily = "Arial, sans-serif";
+				previewWidget.inputEl.style.fontFamily = "monospace";
 				previewWidget.inputEl.style.fontSize = "12px";
 				previewWidget.inputEl.style.padding = "4px 6px";
 				previewWidget.inputEl.style.lineHeight = "1.4";
@@ -1041,6 +1048,20 @@ app.registerExtension({
 				previewWidget.options = { serialize: false, margin: 10 };
 				previewWidget.serializeValue = () => undefined;
 
+				// Apply syntax highlighting to preview (retry until parent ready)
+				const setupPreviewHighlight = () => {
+					if (previewWidget.inputEl?.parentElement) {
+						const previewSyntaxResult = applySyntaxHighlighting(previewWidget.inputEl, "rgba(0, 0, 0, 0.3)");
+						node._previewSyntaxHighlight = previewSyntaxResult;
+						if (previewSyntaxResult?.syncHighlight) {
+							previewSyntaxResult.syncHighlight();
+						}
+					} else {
+						requestAnimationFrame(setupPreviewHighlight);
+					}
+				};
+				setupPreviewHighlight();
+
 				// Update content helper
 				previewWidget.updateContent = function() {
 					const posText = node._outputText || "";
@@ -1050,6 +1071,10 @@ app.registerExtension({
 					if (!hasOutput) {
 						this.inputEl.value = "";
 						this.value = "";
+						// Sync highlight
+						if (node._previewSyntaxHighlight?.syncHighlight) {
+							node._previewSyntaxHighlight.syncHighlight();
+						}
 						return;
 					}
 
@@ -1059,6 +1084,10 @@ app.registerExtension({
 					}
 					this.inputEl.value = content;
 					this.value = content;
+					// Sync highlight after content update
+					if (node._previewSyntaxHighlight?.syncHighlight) {
+						node._previewSyntaxHighlight.syncHighlight();
+					}
 				};
 				previewWidget.updateContent();
 
