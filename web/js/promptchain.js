@@ -309,6 +309,13 @@ app.registerExtension({
 
 			// Get display label based on mode
 			const getChildModeLabel = (sourceNode) => {
+				const options = getChildSwitchOptions(sourceNode);
+
+				// If only 1 grandchild, always show as Switch to that option (mode is meaningless)
+				if (options.length === 1) {
+					return options[0].label;
+				}
+
 				const mode = getChildMode(sourceNode);
 				if (mode === "Randomize") {
 					// Show winning node's title if available
@@ -480,15 +487,18 @@ app.registerExtension({
 
 							// Build menu items - modes first, then separator, then options
 							const menuOptions = [];
+							const hasMultipleOptions = options.length > 1;
 
-							// Add mode options at top
+							// Add mode options at top (disabled if only 1 grandchild)
 							menuOptions.push({
 								content: currentMode === "Randomize" ? "🎲 Roll  ✓" : "🎲 Roll",
-								callback: () => setChildMode("Randomize")
+								disabled: !hasMultipleOptions,
+								callback: hasMultipleOptions ? () => setChildMode("Randomize") : null
 							});
 							menuOptions.push({
 								content: currentMode === "Combine" ? "➕ Combine  ✓" : "➕ Combine",
-								callback: () => setChildMode("Combine")
+								disabled: !hasMultipleOptions,
+								callback: hasMultipleOptions ? () => setChildMode("Combine") : null
 							});
 
 							// Add separator if there are options
@@ -499,7 +509,7 @@ app.registerExtension({
 								for (const opt of options) {
 									const isSelected = currentMode === "Switch" && opt.index === currentSwitchIndex;
 									menuOptions.push({
-										content: isSelected ? `🟢 ${opt.label}  ✓` : `🟢 ${opt.label}`,
+										content: isSelected ? `${opt.label}  ✓` : opt.label,
 										callback: () => {
 											// Set to Switch mode and select this option
 											setChildMode("Switch");
@@ -1432,7 +1442,7 @@ app.registerExtension({
 					} else if (this.value === "Switch") {
 						const labels = getConnectedInputLabels();
 						const selected = labels.find(l => l.index === node._switchIndex);
-						displayText = selected ? `🟢 ${selected.label}` : (labels[0] ? `🟢 ${labels[0].label}` : "🟢 Switch");
+						displayText = selected ? selected.label : (labels[0] ? labels[0].label : "Switch");
 					} else {
 						const displayMap = { "Randomize": "🎲 Roll", "Combine": "➕ Combine" };
 						displayText = displayMap[this.value] || this.value || "";
@@ -1487,7 +1497,7 @@ app.registerExtension({
 						for (const l of labels) {
 							const isSelected = currentMode === "Switch" && l.index === node._switchIndex;
 							menuOptions.push({
-								content: isSelected ? `🟢 ${l.label}  ✓` : `🟢 ${l.label}`,
+								content: isSelected ? `${l.label}  ✓` : l.label,
 								callback: () => {
 									this.value = "Switch";
 									node._switchIndex = l.index;
