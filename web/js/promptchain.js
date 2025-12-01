@@ -1460,21 +1460,24 @@ app.registerExtension({
 					const menuOptions = [];
 					const currentMode = this.value;
 					const labels = getConnectedInputLabels();
+					const hasMultipleInputs = labels.length > 1;
 
-					// Add mode options at top
+					// Add mode options at top (disabled if only 1 input)
 					menuOptions.push({
 						content: currentMode === "Randomize" ? "🎲 Roll  ✓" : "🎲 Roll",
-						callback: () => {
+						disabled: !hasMultipleInputs,
+						callback: hasMultipleInputs ? () => {
 							this.value = "Randomize";
 							app.graph.setDirtyCanvas(true);
-						}
+						} : null
 					});
 					menuOptions.push({
 						content: currentMode === "Combine" ? "➕ Combine  ✓" : "➕ Combine",
-						callback: () => {
+						disabled: !hasMultipleInputs,
+						callback: hasMultipleInputs ? () => {
 							this.value = "Combine";
 							app.graph.setDirtyCanvas(true);
-						}
+						} : null
 					});
 
 					// Add separator and switch options if there are connected inputs
@@ -1533,9 +1536,18 @@ app.registerExtension({
 		const existingOnConnectionsChange = node.onConnectionsChange;
 		node.onConnectionsChange = function() {
 			existingOnConnectionsChange?.apply(this, arguments);
-			// Validate switch index is still valid
 			const labels = getConnectedInputLabels();
-			if (labels.length > 0 && !labels.find(l => l.index === node._switchIndex)) {
+			const modeWidget = node.widgets?.find(w => w.name === "mode");
+
+			// When first input is connected, auto-set to Switch mode with that input selected
+			if (labels.length === 1 && modeWidget) {
+				modeWidget.value = "Switch";
+				node._switchIndex = labels[0].index;
+				if (!node.properties) node.properties = {};
+				node.properties.switchIndex = node._switchIndex;
+			}
+			// Validate switch index is still valid
+			else if (labels.length > 0 && !labels.find(l => l.index === node._switchIndex)) {
 				node._switchIndex = labels[0].index;
 				if (!node.properties) node.properties = {};
 				node.properties.switchIndex = node._switchIndex;
