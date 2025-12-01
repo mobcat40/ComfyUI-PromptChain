@@ -401,23 +401,31 @@ app.registerExtension({
 							this._modeLabelToDraw = null;
 						}
 
-						// Draw label
-						ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+						// Check if this input is dimmed (not selected in Switch mode)
+						const modeWidget = this.widgets?.find(w => w.name === "mode");
+						const isInSwitchMode = modeWidget?.value === "Switch";
+						const inputIndex = parseInt(input.name.split("_")[1]);
+						const selectedSwitchIndex = this._switchIndex || this.properties?.switchIndex || 1;
+						const isDimmed = isInSwitchMode && input.link !== null && inputIndex !== selectedSwitchIndex;
+
+						// Draw label (dimmed if not selected in Switch mode)
+						ctx.fillStyle = isDimmed ? "rgba(255, 255, 255, 0.25)" : "rgba(255, 255, 255, 0.7)";
 						ctx.font = "12px Arial";
 						ctx.textAlign = "left";
 						let textWidth = ctx.measureText(labelText).width;
 						ctx.fillText(labelText, x, y + 4);
 
-						// Draw bold mode label if present
+						// Draw bold mode label if present (also dimmed if not selected)
 						if (this._modeLabelToDraw) {
-							ctx.font = "bold 12px Arial";
+							ctx.fillStyle = isDimmed ? "rgba(255, 255, 255, 0.25)" : "rgba(255, 255, 255, 0.7)";
+							ctx.font = isDimmed ? "12px Arial" : "bold 12px Arial";
 							const modeWidth = ctx.measureText(this._modeLabelToDraw).width;
 							ctx.fillText(this._modeLabelToDraw, x + textWidth, y + 4);
 							textWidth += modeWidth;
 
-							// Draw triangle at half opacity
+							// Draw triangle (dimmed if not selected)
 							if (this._hasDropdownArrow) {
-								ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+								ctx.fillStyle = isDimmed ? "rgba(255, 255, 255, 0.15)" : "rgba(255, 255, 255, 0.35)";
 								const arrow = " ⏷";
 								ctx.fillText(arrow, x + textWidth, y + 4);
 								textWidth += ctx.measureText(arrow).width;
