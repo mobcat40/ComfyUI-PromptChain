@@ -34,6 +34,7 @@ Restart ComfyUI. No external dependencies required.
 
 - **Dual prompt support** — Handle both positive and negative prompts in a single chain
 - **Inline wildcards** — Write `red | blue | green` directly in nodes. No external files required.
+- **Comments** — Use `//` or `/* */` to annotate your prompts without affecting output
 - **Visual chaining** — Connect nodes to build rich, meaningful structures
 - **Dynamic inputs** — Inputs auto-expand as you connect more nodes
 - **Live preview** — See what fired, when it fired, in real-time
@@ -202,6 +203,46 @@ red | blue | green, large | small, fluffy | smooth
 ```
 
 This picks one from each group and combines them: `"blue, small, fluffy"`
+
+---
+
+## Comments
+
+Add notes to your prompts without affecting the output. Great for documenting complex prompts or temporarily disabling tags.
+
+### Single-Line Comments
+
+Use `//` to comment until end of line:
+
+```
+photorealistic,      // main style
+1girl,               // character
+detailed background  // setting
+```
+
+Output: `photorealistic, 1girl, detailed background`
+
+### Block Comments
+
+Use `/* */` for multi-line comments:
+
+```
+cinematic lighting,
+/* TODO: experiment with these later
+golden hour,
+rim lighting,
+*/
+soft shadows
+```
+
+Output: `cinematic lighting, soft shadows`
+
+### Use Cases
+
+- **Documentation** — Explain why certain tags are included
+- **Quick disable** — Comment out tags instead of deleting them
+- **Notes to self** — Leave reminders for future editing
+- **Version history** — Keep old variations as comments
 
 ---
 
@@ -463,6 +504,8 @@ Build a library of prompt fragments right in your workflow. Zero config, just no
 5. **Chain outputs** — Use `chain` output when connecting to other PromptChain nodes; use `positive`/`negative` only at the end for CLIP.
 
 6. **Debug complex chains** — Insert a PromptChain Debug node to log what's actually flowing through a connection.
+
+7. **Comment out experiments** — Use `//` to disable tags without deleting them: `// golden hour, soft lighting`
 
 ---
 
