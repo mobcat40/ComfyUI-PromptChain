@@ -1122,12 +1122,16 @@ app.registerExtension({
 			options: { serialize: false },
 			serializeValue: () => undefined, // Skip serialization
 			computeSize: function() {
-				return [node.size[0], 26];
+				return [node.size[0], 26 + 5];  // 26 height + 5 margin top
 			},
 			draw: function(ctx, node, width, y, height) {
 				const H = 16;
 				const totalH = 26;
+				const marginTop = 5;
 				const topOffset = 5;
+
+				// Apply margin top
+				y += marginTop;
 
 				// Collapse labels when node is narrow
 				const showLabels = width >= 260;
@@ -1176,7 +1180,7 @@ app.registerExtension({
 				}
 
 				// Orange when locked, gray when unlocked
-				ctx.fillStyle = node._isLocked ? "#ffaa00" : "rgba(255, 255, 255, 0.35)";
+				ctx.fillStyle = node._isLocked ? "#ffaa00" : "rgba(255, 255, 255, 0.7)";
 				ctx.font = "11px Arial";
 				ctx.textAlign = "left";
 				ctx.textBaseline = "middle";
@@ -1184,33 +1188,33 @@ app.registerExtension({
 
 				// "Lock" label after icon - bright yellow bold when locked (only if wide enough)
 				if (showLabels) {
-					ctx.fillStyle = node._isLocked ? "#ffcc00" : "rgba(255, 255, 255, 0.35)";
+					ctx.fillStyle = node._isLocked ? "#ffcc00" : "rgba(255, 255, 255, 0.7)";
 					ctx.font = node._isLocked ? "bold 12px Arial" : "12px Arial";
 					ctx.fillText("Lock", lockX + 16, lockY);
 				}
 
 				// Disable icon and label
-				ctx.fillStyle = node._isDisabled ? "#ff4444" : "rgba(255, 255, 255, 0.35)";
+				ctx.fillStyle = node._isDisabled ? "#ff4444" : "rgba(255, 255, 255, 0.7)";
 				ctx.font = "11px Arial";
 				ctx.textAlign = "left";
 				ctx.fillText("⛔", disableX, lockY);
 
 				// "Disable" label - red bold when disabled (only if wide enough)
 				if (showLabels) {
-					ctx.fillStyle = node._isDisabled ? "#ff6666" : "rgba(255, 255, 255, 0.35)";
+					ctx.fillStyle = node._isDisabled ? "#ff6666" : "rgba(255, 255, 255, 0.7)";
 					ctx.font = node._isDisabled ? "bold 12px Arial" : "12px Arial";
 					ctx.fillText("Disable", disableX + 16, lockY);
 				}
 
 				// Preview icon and label - on the left side
-				ctx.fillStyle = node._showPreview ? "#bcbcbc" : "rgba(255, 255, 255, 0.35)";
+				ctx.fillStyle = node._showPreview ? "#bcbcbc" : "rgba(255, 255, 255, 0.7)";
 				ctx.font = "11px Arial";
 				ctx.textAlign = "left";
 				ctx.fillText("ℹ️", previewLabelX, lockY);
 
 				// "Preview" label - blue bold when active (only if wide enough)
 				if (showLabels) {
-					ctx.fillStyle = node._showPreview ? "#bcbcbc" : "rgba(255, 255, 255, 0.35)";
+					ctx.fillStyle = node._showPreview ? "#bcbcbc" : "rgba(255, 255, 255, 0.7)";
 					ctx.font = node._showPreview ? "bold 12px Arial" : "12px Arial";
 					ctx.fillText("Preview", previewLabelX + 16, lockY);
 				}
@@ -1226,11 +1230,11 @@ app.registerExtension({
 				ctx.textBaseline = "middle";
 
 				// Draw - label
-				ctx.fillStyle = node._showNegative ? "#ff6b6b" : "rgba(255, 107, 107, 0.4)";
+				ctx.fillStyle = node._showNegative ? "#ff6b6b" : "rgba(255, 107, 107, 0.7)";
 				ctx.fillText("-", negX - 4, y + rightSideOffset + H / 2);
 
 				// Draw negative checkbox
-				ctx.strokeStyle = node._showNegative ? "#ff6b6b" : "rgba(255, 107, 107, 0.4)";
+				ctx.strokeStyle = node._showNegative ? "#ff6b6b" : "rgba(255, 107, 107, 0.7)";
 				ctx.lineWidth = 1;
 				ctx.strokeRect(negX, checkboxY, checkboxSize, checkboxSize);
 				if (node._showNegative) {
@@ -1242,11 +1246,11 @@ app.registerExtension({
 				const posX = negX - 30;
 
 				// Draw + label
-				ctx.fillStyle = node._showPositive ? "#4a9eff" : "rgba(74, 158, 255, 0.4)";
+				ctx.fillStyle = node._showPositive ? "#4a9eff" : "rgba(74, 158, 255, 0.7)";
 				ctx.fillText("+", posX - 4, y + rightSideOffset + H / 2 + 2);
 
 				// Draw positive checkbox
-				ctx.strokeStyle = node._showPositive ? "#4a9eff" : "rgba(74, 158, 255, 0.4)";
+				ctx.strokeStyle = node._showPositive ? "#4a9eff" : "rgba(74, 158, 255, 0.7)";
 				ctx.lineWidth = 1;
 				ctx.strokeRect(posX, checkboxY, checkboxSize, checkboxSize);
 				if (node._showPositive) {
@@ -1302,26 +1306,6 @@ app.registerExtension({
 				const lockEndX = showLabels ? lockX + 50 : lockX + 18;
 				const disableEndX = showLabels ? disableX + 64 : disableX + 18;
 				const previewEndX = showLabels ? previewLabelX + 70 : previewLabelX + 18;
-
-				// Handle hover for tooltips
-				if (event.type === "pointermove" || event.type === "mousemove") {
-					let tooltip = null;
-
-					// Check positive checkbox hover
-					if (pos[0] >= posX - 15 && pos[0] < posX + checkboxSize + 5) {
-						tooltip = { text: "Show/hide positive prompt", x: posX - 15 };
-					}
-					// Check negative checkbox hover
-					else if (pos[0] >= negX - 15 && pos[0] < negX + checkboxSize + 5) {
-						tooltip = { text: "Show/hide negative prompt", x: negX - 15 };
-					}
-
-					if (node._menubarTooltip?.text !== tooltip?.text) {
-						node._menubarTooltip = tooltip;
-						app.graph.setDirtyCanvas(true);
-					}
-					return false;
-				}
 
 				if (event.type === "pointerdown") {
 					// Check if click is on lock area
