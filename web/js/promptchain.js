@@ -330,7 +330,7 @@ app.registerExtension({
 					}
 					return "🎲 Roll";
 				}
-				if (mode === "Combine") return "➕ Combo";
+				if (mode === "Combine") return "➕ Combine";
 				// Switch mode - show selected option
 				const selectedLabel = getChildSwitchLabel(sourceNode);
 				return selectedLabel || "Switch";
@@ -487,7 +487,7 @@ app.registerExtension({
 								callback: () => setChildMode("Randomize")
 							});
 							menuOptions.push({
-								content: currentMode === "Combine" ? "➕ Combo  ✓" : "➕ Combo",
+								content: currentMode === "Combine" ? "➕ Combine  ✓" : "➕ Combine",
 								callback: () => setChildMode("Combine")
 							});
 
@@ -1356,123 +1356,7 @@ app.registerExtension({
 			return node.inputs.some(i => i.name.startsWith("input_") && i.link !== null);
 		};
 
-		// Style the mode widget with custom background color
-		const modeWidget = node.widgets.find(w => w.name === "mode");
-		if (modeWidget) {
-			// Reduce mode widget height to pull text box closer
-			modeWidget.computeSize = function(width) {
-				return [width, 26 - 4];  // 26 is totalH, -4 cancels default gap
-			};
-
-			const originalDraw = modeWidget.draw;
-			modeWidget.draw = function(ctx, node, width, y, height) {
-				const totalH = 26;  // Total widget height
-				const marginY = 2;  // Top/bottom margin
-				const H = totalH - marginY * 2;  // Actual drawn height (22px)
-				const margin = 15;
-				const w = width - margin * 2;
-
-				// Check if dropdown should be disabled (no connected inputs)
-				const isDisabled = !hasConnectedInputs();
-
-				// Draw custom background
-				ctx.fillStyle = isDisabled ? "rgba(0, 0, 0, 0.15)" : "rgba(0, 0, 0, 0.3)";
-				ctx.beginPath();
-				ctx.roundRect(margin, y + marginY, w, H, 12);
-				ctx.fill();
-
-				// Draw border
-				ctx.strokeStyle = isDisabled ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0.2)";
-				ctx.lineWidth = 1;
-				ctx.stroke();
-
-				// Draw the text (current value) - centered, with emoji prefix
-				ctx.fillStyle = isDisabled ? "rgba(255, 255, 255, 0.3)" : "rgba(255, 255, 255, 0.7)";
-				ctx.font = "12px Arial";
-				ctx.textAlign = "center";
-				ctx.textBaseline = "middle";
-				let displayText;
-				if (isDisabled) {
-					displayText = "No Inputs";
-				} else {
-					const displayMap = { "Randomize": "🎲 Randomize Inputs", "Combine": "➕ Combine Inputs", "Switch": "🔛 Switch Input" };
-					displayText = displayMap[this.value] || this.value || "";
-				}
-				ctx.fillText(displayText, width / 2, y + marginY + H * 0.5);
-
-				// Draw arrows on each side (hidden when disabled)
-				if (!isDisabled) {
-					ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-					ctx.font = "10px Arial";
-					// Left arrow
-					ctx.textAlign = "left";
-					ctx.fillText("◀", margin + 6, y + marginY + H * 0.5);
-					// Right arrow
-					ctx.textAlign = "right";
-					ctx.fillText("▶", width - margin - 6, y + marginY + H * 0.5);
-				}
-
-				return totalH;
-			};
-
-			// Track mode changes to show/hide switch selector
-			const originalCallback = modeWidget.callback;
-			modeWidget.callback = function(value) {
-				// Block value changes when no inputs are connected
-				if (!hasConnectedInputs()) {
-					return;
-				}
-				originalCallback?.call(this, value);
-				updateSwitchSelectorVisibility();
-			};
-
-			// Update disabled state when connections change
-			const updateModeWidgetDisabled = () => {
-				modeWidget.disabled = !hasConnectedInputs();
-				app.graph.setDirtyCanvas(true);
-			};
-
-			// Hook into connection changes to update disabled state
-			const origOnConnectionsChange = node.onConnectionsChange;
-			node.onConnectionsChange = function() {
-				origOnConnectionsChange?.apply(this, arguments);
-				updateModeWidgetDisabled();
-			};
-
-			// Initial disabled state
-			updateModeWidgetDisabled();
-
-			// Override mouse handler to consume clicks when disabled
-			const originalMouse = modeWidget.mouse;
-			modeWidget.mouse = function(event, pos, node) {
-				// Consume click events when disabled (no inputs connected)
-				if (!hasConnectedInputs()) {
-					return true; // Return true to consume the event and prevent default handling
-				}
-				// Call original handler if it exists
-				if (originalMouse) {
-					return originalMouse.call(this, event, pos, node);
-				}
-				return false;
-			};
-
-			// Use Object.defineProperty to intercept value changes on combo widget
-			let currentValue = modeWidget.value;
-			Object.defineProperty(modeWidget, 'value', {
-				get() { return currentValue; },
-				set(newValue) {
-					// Block value changes when no inputs are connected
-					if (!hasConnectedInputs() && currentValue !== newValue) {
-						return;
-					}
-					currentValue = newValue;
-					// Defer visibility update to next frame
-					requestAnimationFrame(() => updateSwitchSelectorVisibility());
-				}
-			});
-		}
-
-		// Helper to get connected input labels
+		// Helper to get connected input labels (must be defined before mode widget)
 		const getConnectedInputLabels = () => {
 			const labels = [];
 			if (!node.inputs) return labels;
@@ -1495,130 +1379,144 @@ app.registerExtension({
 			return labels;
 		};
 
-		// Create switch selector widget (hidden by default)
-		node._switchIndex = node.properties?.switchIndex || 1;
+		// Remove the default combo widget and replace with our own custom widget
+		const originalModeWidget = node.widgets.find(w => w.name === "mode");
+		if (originalModeWidget) {
+			// Save the current value before removing
+			const savedModeValue = originalModeWidget.value || "Combine";
 
-		const switchSelector = {
-			name: "switch_selector",
-			type: "custom",
-			value: null,
-			options: { serialize: false },
-			hidden: true,
-			serializeValue: () => undefined,
-			computeSize: function() {
-				if (this.hidden) return [0, 0];
-				return [node.size[0], 34];  // 8 top padding + 26 widget
-			},
-			draw: function(ctx, _, width, y, height) {
-				if (this.hidden) return 0;
+			// Remove the original combo widget
+			const modeIndex = node.widgets.indexOf(originalModeWidget);
+			if (modeIndex > -1) {
+				node.widgets.splice(modeIndex, 1);
+			}
 
-				const totalH = 34;
-				const topPadding = 8;  // Breathing room above
-				const marginY = 2;
-				const H = 22;  // Box height
-				const margin = 15;
-				const w = width - margin * 2;
+			// Create our own custom mode widget
+			const modeWidget = {
+				name: "mode",
+				type: "custom",
+				value: savedModeValue,
+				options: { serialize: true },
+				serializeValue: function() { return this.value; },
+				computeSize: function(width) {
+					return [width, 26 - 4];  // 26 is totalH, -4 cancels default gap
+				},
+				draw: function(ctx, n, width, y, height) {
+					const totalH = 26;
+					const marginY = 2;
+					const H = totalH - marginY * 2;
+					const margin = 15;
+					const w = width - margin * 2;
 
-				// Draw background (matching mode widget style)
-				ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
-				ctx.beginPath();
-				ctx.roundRect(margin, y + topPadding + marginY, w, H, 12);
-				ctx.fill();
+					const isDisabled = !hasConnectedInputs();
 
-				// Draw border
-				ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-				ctx.lineWidth = 1;
-				ctx.stroke();
+					// Draw custom background
+					ctx.fillStyle = isDisabled ? "rgba(0, 0, 0, 0.15)" : "rgba(0, 0, 0, 0.3)";
+					ctx.beginPath();
+					ctx.roundRect(margin, y + marginY, w, H, 12);
+					ctx.fill();
 
-				// Get current selection label
-				const labels = getConnectedInputLabels();
-				let displayText = "(no connections)";
-				if (labels.length > 0) {
-					const selected = labels.find(l => l.index === node._switchIndex);
-					displayText = selected ? `🟢 ${selected.label}` : `🟢 ${labels[0].label}`;
-				}
+					// Draw border
+					ctx.strokeStyle = isDisabled ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0.2)";
+					ctx.lineWidth = 1;
+					ctx.stroke();
 
-				// Draw text (matching mode widget style)
-				ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
-				ctx.font = "12px Arial";
-				ctx.textAlign = "center";
-				ctx.textBaseline = "middle";
-				ctx.fillText(displayText, width / 2, y + topPadding + marginY + H * 0.5);
+					// Draw the text (current value) - centered, with emoji prefix
+					ctx.fillStyle = isDisabled ? "rgba(255, 255, 255, 0.3)" : "rgba(255, 255, 255, 0.7)";
+					ctx.font = "12px Arial";
+					ctx.textAlign = "center";
+					ctx.textBaseline = "middle";
+					let displayText;
+					if (isDisabled) {
+						displayText = "No Inputs";
+					} else if (this.value === "Switch") {
+						const labels = getConnectedInputLabels();
+						const selected = labels.find(l => l.index === node._switchIndex);
+						displayText = selected ? `🟢 ${selected.label}` : (labels[0] ? `🟢 ${labels[0].label}` : "🟢 Switch");
+					} else {
+						const displayMap = { "Randomize": "🎲 Roll", "Combine": "➕ Combine" };
+						displayText = displayMap[this.value] || this.value || "";
+					}
+					ctx.fillText(displayText, width / 2 - 5, y + marginY + H * 0.5);
 
-				// Draw arrows (matching mode widget style)
-				ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-				ctx.font = "10px Arial";
-				ctx.textAlign = "left";
-				ctx.fillText("◀", margin + 6, y + topPadding + marginY + H * 0.5);
-				ctx.textAlign = "right";
-				ctx.fillText("▶", width - margin - 6, y + topPadding + marginY + H * 0.5);
+					// Draw dropdown arrow on right side (hidden when disabled)
+					if (!isDisabled) {
+						ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+						ctx.font = "12px Arial";
+						ctx.textAlign = "right";
+						ctx.fillText("⏷", width - margin - 10, y + marginY + H * 0.5);
+					}
 
-				return totalH;
-			},
-			mouse: function(event, pos, node) {
-				if (this.hidden) return false;
-				if (event.type !== "pointerdown") return false;
+					return totalH;
+				},
+				mouse: function(event, pos, nodeRef) {
+					if (event.type !== "pointerdown") return false;
 
-				const labels = getConnectedInputLabels();
-				if (labels.length === 0) return false;
+					if (!hasConnectedInputs()) {
+						return true; // Consume but do nothing
+					}
 
-				const margin = 15;
-				const arrowWidth = 25;
-				const leftArrowEnd = margin + arrowWidth;
-				const rightArrowStart = node.size[0] - margin - arrowWidth;
+					// Build menu options
+					const menuOptions = [];
+					const currentMode = this.value;
+					const labels = getConnectedInputLabels();
 
-				// Check if clicking on arrows (cycle) or center (dropdown)
-				if (pos[0] < leftArrowEnd) {
-					// Left arrow - previous
-					let currentIdx = labels.findIndex(l => l.index === node._switchIndex);
-					if (currentIdx === -1) currentIdx = 0;
-					currentIdx = (currentIdx - 1 + labels.length) % labels.length;
-					node._switchIndex = labels[currentIdx].index;
-					if (!node.properties) node.properties = {};
-					node.properties.switchIndex = node._switchIndex;
-					app.graph.setDirtyCanvas(true);
-					return true;
-				} else if (pos[0] > rightArrowStart) {
-					// Right arrow - next
-					let currentIdx = labels.findIndex(l => l.index === node._switchIndex);
-					if (currentIdx === -1) currentIdx = 0;
-					currentIdx = (currentIdx + 1) % labels.length;
-					node._switchIndex = labels[currentIdx].index;
-					if (!node.properties) node.properties = {};
-					node.properties.switchIndex = node._switchIndex;
-					app.graph.setDirtyCanvas(true);
-					return true;
-				} else {
-					// Center - show dropdown menu
-					const options = labels.map(l => ({
-						content: l.label,
+					// Add mode options at top
+					menuOptions.push({
+						content: currentMode === "Randomize" ? "🎲 Roll  ✓" : "🎲 Roll",
 						callback: () => {
-							node._switchIndex = l.index;
-							if (!node.properties) node.properties = {};
-							node.properties.switchIndex = node._switchIndex;
+							this.value = "Randomize";
 							app.graph.setDirtyCanvas(true);
 						}
-					}));
+					});
+					menuOptions.push({
+						content: currentMode === "Combine" ? "➕ Combine  ✓" : "➕ Combine",
+						callback: () => {
+							this.value = "Combine";
+							app.graph.setDirtyCanvas(true);
+						}
+					});
 
-					// Use LiteGraph's context menu
+					// Add separator and switch options if there are connected inputs
+					if (labels.length > 0) {
+						menuOptions.push(null); // separator
+
+						for (const l of labels) {
+							const isSelected = currentMode === "Switch" && l.index === node._switchIndex;
+							menuOptions.push({
+								content: isSelected ? `🟢 ${l.label}  ✓` : `🟢 ${l.label}`,
+								callback: () => {
+									this.value = "Switch";
+									node._switchIndex = l.index;
+									if (!node.properties) node.properties = {};
+									node.properties.switchIndex = l.index;
+									app.graph.setDirtyCanvas(true);
+								}
+							});
+						}
+					}
+
+					// Show context menu
 					const canvas = app.canvas;
-					new LiteGraph.ContextMenu(options, {
+					new LiteGraph.ContextMenu(menuOptions, {
 						event: event,
 						callback: null,
 						scale: canvas.ds.scale
 					}, canvas.getCanvasWindow());
+
 					return true;
 				}
-			}
-		};
+			};
 
-		// Update switch selector visibility based on mode
-		const updateSwitchSelectorVisibility = () => {
-			const modeWidget = node.widgets.find(w => w.name === "mode");
-			const isSwitch = modeWidget?.value === "Switch";
-			switchSelector.hidden = !isSwitch;
-			app.graph.setDirtyCanvas(true);
-		};
+			// Insert our custom widget at the same position
+			node.widgets.splice(modeIndex, 0, modeWidget);
+
+			// Store reference for other code that needs it
+			node._modeWidget = modeWidget;
+		}
+
+		// Initialize switch index from properties
+		node._switchIndex = node.properties?.switchIndex || 1;
 
 		// Add hidden widget to pass switch_index to Python
 		const switchIndexWidget = {
@@ -1631,13 +1529,7 @@ app.registerExtension({
 		};
 		node.widgets.push(switchIndexWidget);
 
-		// Insert switch selector after mode widget
-		const modeIndex = node.widgets.findIndex(w => w.name === "mode");
-		if (modeIndex > -1) {
-			node.widgets.splice(modeIndex + 1, 0, switchSelector);
-		}
-
-		// Update visibility on connections change
+		// Update switch index validation on connections change
 		const existingOnConnectionsChange = node.onConnectionsChange;
 		node.onConnectionsChange = function() {
 			existingOnConnectionsChange?.apply(this, arguments);
@@ -1651,13 +1543,10 @@ app.registerExtension({
 			app.graph.setDirtyCanvas(true);
 		};
 
-		// Initialize visibility
-		updateSwitchSelectorVisibility();
-
-		// Insert menubar after switch selector (which is after mode widget)
-		const menubarInsertIndex = node.widgets.findIndex(w => w.name === "switch_selector");
-		if (menubarInsertIndex > -1) {
-			node.widgets.splice(menubarInsertIndex + 1, 0, menubar);
+		// Insert menubar after mode widget
+		const modeIndex = node.widgets.findIndex(w => w.name === "mode");
+		if (modeIndex > -1) {
+			node.widgets.splice(modeIndex + 1, 0, menubar);
 		} else {
 			node.widgets.push(menubar);
 		}
@@ -1778,9 +1667,6 @@ app.registerExtension({
 					if (negTextWidget.inputEl) negTextWidget.inputEl.style.display = "";
 				}
 			}
-
-			// Update switch selector visibility based on restored mode
-			updateSwitchSelectorVisibility();
 
 			// Caps are now embedded in textboxes via CSS - no insertion needed
 
