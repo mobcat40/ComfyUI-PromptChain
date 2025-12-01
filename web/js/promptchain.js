@@ -2,6 +2,144 @@ import { app } from "../../../scripts/app.js";
 import { ComfyWidgets } from "../../../scripts/widgets.js";
 import { api } from "../../../scripts/api.js";
 
+// ============================================
+// Syntax Highlighting for PromptChain textareas
+// ============================================
+
+const escapeHtml = (text) => {
+	return text
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;");
+};
+
+const highlightSyntax = (text) => {
+	if (!text) return "";
+
+	let result = "";
+	let i = 0;
+
+	while (i < text.length) {
+		// Check for block comment
+		if (text.slice(i, i + 2) === "/*") {
+			const end = text.indexOf("*/", i + 2);
+			if (end !== -1) {
+				const comment = text.slice(i, end + 2);
+				result += `<span class="syntax-comment">${escapeHtml(comment)}</span>`;
+				i = end + 2;
+				continue;
+			}
+		}
+
+		// Check for line comment
+		if (text.slice(i, i + 2) === "//") {
+			const end = text.indexOf("\n", i);
+			const comment = end !== -1 ? text.slice(i, end) : text.slice(i);
+			result += `<span class="syntax-comment">${escapeHtml(comment)}</span>`;
+			i = end !== -1 ? end : text.length;
+			continue;
+		}
+
+		// Check for pipe or comma (operators)
+		if (text[i] === "|" || text[i] === ",") {
+			result += `<span class="syntax-operator">${text[i]}</span>`;
+			i++;
+			continue;
+		}
+
+		// Regular character
+		result += escapeHtml(text[i]);
+		i++;
+	}
+
+	return result;
+};
+
+// Apply syntax highlighting overlay to a textarea
+const applySyntaxHighlighting = (textarea, bgColor = "rgba(0, 0, 0, 0.5)") => {
+	const wrapper = textarea.parentElement;
+	if (!wrapper) return null;
+
+	// Create highlight overlay
+	const highlight = document.createElement("div");
+	highlight.className = "syntax-highlight-overlay";
+
+	const computedStyle = window.getComputedStyle(textarea);
+	highlight.style.cssText = `
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		pointer-events: none;
+		white-space: pre-wrap;
+		word-wrap: break-word;
+		overflow: hidden;
+		font-family: ${computedStyle.fontFamily};
+		font-size: ${computedStyle.fontSize};
+		line-height: ${computedStyle.lineHeight};
+		padding: ${computedStyle.padding};
+		border: ${computedStyle.border};
+		box-sizing: border-box;
+		color: #F8F8F2;
+		background: ${bgColor};
+		border-radius: 4px;
+	`;
+
+	// Insert highlight BEFORE textarea
+	wrapper.insertBefore(highlight, textarea);
+
+	// Make textarea transparent
+	textarea.style.background = "transparent";
+	textarea.style.color = "transparent";
+	textarea.style.caretColor = "#fff";
+	textarea.style.position = "relative";
+	textarea.style.zIndex = "1";
+
+	// Sync function
+	const syncHighlight = () => {
+		highlight.innerHTML = highlightSyntax(textarea.value);
+		highlight.scrollTop = textarea.scrollTop;
+		highlight.scrollLeft = textarea.scrollLeft;
+	};
+
+	// Event listeners
+	textarea.addEventListener("input", syncHighlight);
+	textarea.addEventListener("scroll", () => {
+		highlight.scrollTop = textarea.scrollTop;
+		highlight.scrollLeft = textarea.scrollLeft;
+	});
+
+	// Initial sync
+	syncHighlight();
+
+	return { highlight, syncHighlight };
+};
+
+// Add syntax highlighting CSS (called once)
+const addSyntaxHighlightingCSS = () => {
+	const styleId = "promptchain-syntax-styles";
+	if (document.getElementById(styleId)) return;
+
+	const style = document.createElement("style");
+	style.id = styleId;
+	style.textContent = `
+		/* Monokai-inspired theme */
+		.syntax-highlight-overlay {
+			color: #F8F8F2;
+		}
+		.syntax-comment {
+			color: #88846F !important;
+			font-style: italic;
+		}
+		.syntax-operator {
+			color: #F92672 !important;
+			font-weight: bold;
+		}
+	`;
+	document.head.appendChild(style);
+};
+
 // Track workflow execution start time for timing measurements
 api.addEventListener("execution_start", () => {
 	window._promptChainExecutionStart = Date.now();
@@ -18,21 +156,29 @@ app.registerExtension({
 		// Mark as new node - onConfigure will clear this flag for loaded nodes
 		node._isNewlyCreated = true;
 
-		// Style the text widget
+		// Style the text widget with syntax highlighting
 		// Use setTimeout to wait for widget DOM element to be created
 		const setupTextStyle = () => {
 			const textWidget = node.widgets?.find(w => w.name === "text");
 			if (textWidget?.inputEl) {
-				// Apply consistent styling - no fading based on content
+				// Apply consistent styling
 				textWidget.inputEl.style.opacity = 1;
-				textWidget.inputEl.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-				textWidget.inputEl.style.fontFamily = "Arial, sans-serif";
+				textWidget.inputEl.style.fontFamily = "monospace";
 				textWidget.inputEl.style.fontSize = "12px";
 				textWidget.inputEl.style.padding = "8px";
 				textWidget.inputEl.style.lineHeight = "1.3";
 				textWidget.inputEl.style.borderRadius = "4px";
 				textWidget.inputEl.style.border = "none";
 				textWidget.inputEl.placeholder = "prompt text...";
+
+				// Add syntax highlighting CSS (once globally)
+				addSyntaxHighlightingCSS();
+
+				// Apply syntax highlighting overlay
+				const syntaxResult = applySyntaxHighlighting(textWidget.inputEl, "rgba(0, 0, 0, 0.5)");
+				if (syntaxResult) {
+					node._textSyntaxHighlight = syntaxResult;
+				}
 				// Style placeholder text and scrollbars
 				const styleId = "promptchain-prompt-placeholder-style";
 				if (!document.getElementById(styleId)) {
@@ -738,16 +884,20 @@ app.registerExtension({
 				};
 				// Style the neg_text widget
 				negTextWidget.inputEl.style.marginTop = "0px";
-				negTextWidget.inputEl.style.fontFamily = "Arial, sans-serif";
+				negTextWidget.inputEl.style.fontFamily = "monospace";
 				negTextWidget.inputEl.style.fontSize = "11px";
 				negTextWidget.inputEl.style.padding = "8px";
 				negTextWidget.inputEl.style.lineHeight = "1.3";
-				negTextWidget.inputEl.style.borderRadius = "4px"; // All corners rounded now
+				negTextWidget.inputEl.style.borderRadius = "4px";
 				negTextWidget.inputEl.style.border = "none";
-				negTextWidget.inputEl.style.backgroundColor = "rgba(40, 0, 0, 0.5)";  // Subtle red tint
-				negTextWidget.inputEl.style.color = "";  // Default white text like positive
 				negTextWidget.inputEl.placeholder = "negative prompt text...";
 				negTextWidget.inputEl.classList.add("promptchain-prompt-neg");
+
+				// Apply syntax highlighting with red-tinted background
+				const negSyntaxResult = applySyntaxHighlighting(negTextWidget.inputEl, "rgba(40, 0, 0, 0.5)");
+				if (negSyntaxResult) {
+					node._negTextSyntaxHighlight = negSyntaxResult;
+				}
 
 				// Save value to properties
 				negTextWidget.inputEl.addEventListener("input", () => {
