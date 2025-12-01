@@ -31,6 +31,51 @@ def parse_bundle(value):
     return value, ""
 
 
+def strip_comments(text):
+    """
+    Strip comments from text.
+    // single line comment (until end of line)
+    /* multi-line comment */ (can span multiple lines)
+    """
+    if not text:
+        return text
+
+    result = []
+    i = 0
+    in_block_comment = False
+
+    while i < len(text):
+        # Check for block comment start
+        if not in_block_comment and i < len(text) - 1 and text[i:i+2] == '/*':
+            in_block_comment = True
+            i += 2
+            continue
+
+        # Check for block comment end
+        if in_block_comment and i < len(text) - 1 and text[i:i+2] == '*/':
+            in_block_comment = False
+            i += 2
+            continue
+
+        # Skip characters inside block comment
+        if in_block_comment:
+            i += 1
+            continue
+
+        # Check for line comment
+        if i < len(text) - 1 and text[i:i+2] == '//':
+            # Skip until end of line
+            while i < len(text) and text[i] != '\n':
+                i += 1
+            continue
+
+        # Regular character
+        result.append(text[i])
+        i += 1
+
+    return ''.join(result)
+
+
 class PromptChain:
     """
     Dynamic input version - accepts unlimited inputs via JS-managed dynamic slots.
@@ -73,7 +118,12 @@ class PromptChain:
         return float("nan")
 
     def _process_text(self, text):
-        """Process text field - handle wildcards, commas and newlines."""
+        """Process text field - handle comments, wildcards, commas and newlines."""
+        if not text or not text.strip():
+            return ""
+
+        # Strip comments first
+        text = strip_comments(text)
         if not text or not text.strip():
             return ""
 
