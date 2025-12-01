@@ -350,9 +350,11 @@ app.registerExtension({
 
 				if (this.flags?.collapsed || !this.inputs) return;
 
-				// Initialize click areas for switch dropdowns
+				// Initialize click areas for switch dropdowns and child labels
 				if (!this._switchClickAreas) this._switchClickAreas = [];
 				this._switchClickAreas = [];
+				if (!this._childClickAreas) this._childClickAreas = [];
+				this._childClickAreas = [];
 
 				// Draw custom input labels
 				for (let i = 0; i < this.inputs.length; i++) {
@@ -384,7 +386,7 @@ app.registerExtension({
 
 									if (hasDropdown) {
 										const modeLabel = getChildModeLabel(sourceNode);
-										labelText = `${baseLabel}: `;
+										labelText = `${baseLabel} ➞ `;
 										this._modeLabelToDraw = modeLabel;
 										this._hasDropdownArrow = true;
 									} else {
@@ -403,45 +405,93 @@ app.registerExtension({
 
 						// Check if this input is dimmed (not selected in Switch mode)
 						const modeWidget = this.widgets?.find(w => w.name === "mode");
-						const isInSwitchMode = modeWidget?.value === "Switch";
+						const currentMode = modeWidget?.value;
+						const isInSwitchMode = currentMode === "Switch";
 						const inputIndex = parseInt(input.name.split("_")[1]);
 						const selectedSwitchIndex = this._switchIndex || this.properties?.switchIndex || 1;
 						const isDimmed = isInSwitchMode && input.link !== null && inputIndex !== selectedSwitchIndex;
+
+						// Determine mode indicator for connected inputs
+						let modeIndicator = "";
+						if (input.link !== null) {
+							if (currentMode === "Randomize") {
+								modeIndicator = "🎲 ";
+							} else if (currentMode === "Combine") {
+								modeIndicator = "➕ ";
+							}
+						}
 
 						// Draw label (dimmed if not selected in Switch mode)
 						ctx.fillStyle = isDimmed ? "rgba(255, 255, 255, 0.25)" : "rgba(255, 255, 255, 0.7)";
 						ctx.font = "12px Arial";
 						ctx.textAlign = "left";
+
+						// Draw mode indicator first if present
+						let currentX = x;
+						if (modeIndicator) {
+							ctx.fillText(modeIndicator, currentX, y + 4);
+							currentX += ctx.measureText(modeIndicator).width;
+						}
+
+						// Track child name position for click detection
+						const childNameStartX = currentX;
+
+						// labelText contains "ChildName ➞ " when hasDropdown, or just "ChildName" otherwise
+						// Extract just the child name part (before the arrow)
+						const childNameOnly = labelText.replace(" ➞ ", "");
+						const childNameWidth = ctx.measureText(childNameOnly).width;
+
 						let textWidth = ctx.measureText(labelText).width;
-						ctx.fillText(labelText, x, y + 4);
+						ctx.fillText(labelText, currentX, y + 4);
+						textWidth += currentX - x;  // Include indicator width in total
+
+						// Store child name click area (for connected inputs with a source node)
+						if (input.link !== null && sourceNode) {
+							const clickArea = {
+								x: childNameStartX,
+								y: y - 8,
+								width: childNameWidth,
+								height: 16,
+								sourceNode: sourceNode,
+								inputIndex: i
+							};
+							this._childClickAreas.push(clickArea);
+						}
 
 						// Draw bold mode label if present (also dimmed if not selected)
+						let subchildStartX = 0;
+						let subchildWidth = 0;
 						if (this._modeLabelToDraw) {
 							ctx.fillStyle = isDimmed ? "rgba(255, 255, 255, 0.25)" : "rgba(255, 255, 255, 0.7)";
 							ctx.font = isDimmed ? "12px Arial" : "bold 12px Arial";
 							const modeWidth = ctx.measureText(this._modeLabelToDraw).width;
-							ctx.fillText(this._modeLabelToDraw, x + textWidth, y + 4);
+							subchildStartX = x + textWidth;  // Track where subchild starts
+							ctx.fillText(this._modeLabelToDraw, subchildStartX, y + 4);
 							textWidth += modeWidth;
+							subchildWidth = modeWidth;
 
 							// Draw triangle (dimmed if not selected)
 							if (this._hasDropdownArrow) {
 								ctx.fillStyle = isDimmed ? "rgba(255, 255, 255, 0.15)" : "rgba(255, 255, 255, 0.35)";
 								const arrow = " ⏷";
 								ctx.fillText(arrow, x + textWidth, y + 4);
-								textWidth += ctx.measureText(arrow).width;
+								const arrowWidth = ctx.measureText(arrow).width;
+								textWidth += arrowWidth;
+								subchildWidth += arrowWidth;  // Include arrow in dropdown area
 							}
 						}
 
-						// Store click area for dropdowns
-						if (hasDropdown && sourceNode) {
-							this._switchClickAreas.push({
-								x: x,
+						// Store click area for dropdowns (only the subchild portion)
+						if (hasDropdown && sourceNode && subchildWidth > 0) {
+							const dropdownArea = {
+								x: subchildStartX,
 								y: y - 8,
-								width: textWidth,
+								width: subchildWidth,
 								height: 16,
 								sourceNode: sourceNode,
 								inputIndex: i
-							});
+							};
+							this._switchClickAreas.push(dropdownArea);
 						}
 					}
 				}
@@ -545,6 +595,46 @@ app.registerExtension({
 				// Call original handler if exists
 				if (originalOnMouseDown) {
 					return originalOnMouseDown.apply(this, arguments);
+				}
+				return false;
+			};
+
+			// Handle double-click on child name to switch to that input
+			const originalOnDblClick = nodeType.prototype.onDblClick;
+			nodeType.prototype.onDblClick = function(e, localPos, graphCanvas) {
+				// Check if double-clicking on any child name area
+				if (this._childClickAreas && this._childClickAreas.length > 0) {
+					for (const area of this._childClickAreas) {
+						if (localPos[0] >= area.x && localPos[0] <= area.x + area.width &&
+							localPos[1] >= area.y && localPos[1] <= area.y + area.height) {
+
+							// Set this node to Switch mode and select this input
+							const modeWidget = this.widgets?.find(w => w.name === "mode");
+							if (modeWidget) {
+								modeWidget.value = "Switch";
+								if (modeWidget.callback) {
+									modeWidget.callback("Switch");
+								}
+							}
+
+							// Set the switch index to this input
+							const inputIndex = area.inputIndex;
+							const input = this.inputs[inputIndex];
+							const switchIndex = parseInt(input.name.split("_")[1]);
+							this._switchIndex = switchIndex;
+							if (!this.properties) this.properties = {};
+							this.properties.switchIndex = switchIndex;
+
+							app.graph.setDirtyCanvas(true);
+
+							return true; // Consume the event
+						}
+					}
+				}
+
+				// Call original handler if exists
+				if (originalOnDblClick) {
+					return originalOnDblClick.apply(this, arguments);
 				}
 				return false;
 			};
