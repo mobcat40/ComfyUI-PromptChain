@@ -114,9 +114,9 @@ app.registerExtension({
 				originalOutputs = node.outputs.map(o => ({ name: o.name, type: o.type, links: o.links }));
 			}
 
-			// Only hide positive/negative if BOTH inputs AND chain output are connected (complete pass-through)
-			// If inputs connected but chain not connected, show all outputs (hanging state needs reconnection)
-			if (hasConnectedInputs && chainIsConnected) {
+			// Hide positive/negative if chain output is connected (pass-through mode)
+			// Show all outputs when chain is not connected (terminal node needs pos/neg for CLIP)
+			if (chainIsConnected) {
 				// Keep only the chain output (remove positive/negative)
 				// But only if they don't have connections
 				const posOutput = node.outputs?.find(o => o.name === "positive");
@@ -1670,17 +1670,14 @@ app.registerExtension({
 
 			// Caps are now embedded in textboxes via CSS - no insertion needed
 
-			// Update output visibility based on connected inputs and chain output
+			// Update output visibility based on chain output connection
 			setTimeout(() => {
-				const inputSlots = node.inputs?.filter(i => i.name.startsWith("input_")) || [];
-				const hasConnectedInputs = inputSlots.some(slot => slot.link !== null);
-
 				// Check if chain output is connected
 				const chainOutput = node.outputs?.find(o => o.name === "chain");
 				const chainIsConnected = chainOutput?.links && chainOutput.links.length > 0;
 
-				// Only hide if both inputs AND chain are connected (complete pass-through)
-				if (hasConnectedInputs && chainIsConnected) {
+				// Hide positive/negative if chain is connected (pass-through mode)
+				if (chainIsConnected) {
 					// Remove positive/negative outputs if they have no connections
 					const posOutput = node.outputs?.find(o => o.name === "positive");
 					const negOutput = node.outputs?.find(o => o.name === "negative");
