@@ -42,9 +42,9 @@ Restart ComfyUI. No external dependencies required.
 - **Import/Export** — Convert to/from Dynamic Prompt syntax
 - **Tag deduplication** — Automatic duplicate removal
 - **Three modes:**
-  - `🎲 Randomize Inputs` — Pick one random path from connected inputs
-  - `➕ Combine Inputs` — Merge all paths with intelligent interleaving
-  - `🔛 Switch Input` — Manually select which input to pass through
+  - `🎲 Roll` — Pick one random path from connected inputs
+  - `➕ Combine` — Merge all paths with intelligent interleaving
+  - `🟢 Switch` — Manually select which input to pass through (shows selected option name)
 
 ---
 
@@ -56,11 +56,11 @@ The core node for all prompt processing, combining, and randomization.
 
 #### Outputs
 
-| Output | Description |
-|--------|-------------|
-| `chain` | Bundle containing both positive and negative prompts (for chaining to other PromptChain nodes) |
-| `positive` | Plain positive prompt text (connect to CLIP positive) |
-| `negative` | Plain negative prompt text (connect to CLIP negative) |
+| Output | UI Label | Description |
+|--------|----------|-------------|
+| `chain` | `out` | Bundle containing both positive and negative prompts (for chaining to other PromptChain nodes) |
+| `positive` | `positive` | Plain positive prompt text (connect to CLIP positive) |
+| `negative` | `negative` | Plain negative prompt text (connect to CLIP negative) |
 
 #### Menubar Controls
 
@@ -68,12 +68,23 @@ The menubar at the top of each node provides quick access to all controls:
 
 | Control | Description |
 |---------|-------------|
-| 🔒/🔓 Lock | Freeze output (orange when active) |
-| ⛔ Disable | Mute node (red when active) |
-| ℹ️ Preview | Show live output preview (blue when active) |
-| `+` checkbox | Show/hide positive prompt text field |
-| `-` checkbox | Show/hide negative prompt text field |
-| Mode dropdown | Select between Randomize/Combine/Switch modes |
+| 🔒/🔓 Lock | Freeze output (orange when active). Label shows when node is wide enough. |
+| ⛔ Disable | Mute node (red when active). Label shows when node is wide enough. |
+| ℹ️ Preview | Show live output preview. Label shows when node is wide enough. |
+| `+` checkbox | Show/hide positive prompt text field (blue) |
+| `-` checkbox | Show/hide negative prompt text field (red) |
+
+#### Mode Selector
+
+Below the menubar is a mode dropdown that controls how inputs are processed:
+
+| Mode | Description |
+|------|-------------|
+| 🎲 Roll | Pick one random input (shows winning input name after execution) |
+| ➕ Combine | Merge all inputs with breadth-first interleaving |
+| 🟢 [name] | Switch mode — manually select which input to use (shows selected input's name) |
+
+The dropdown shows "No Inputs" when no inputs are connected.
 
 ---
 
@@ -90,7 +101,7 @@ Inspector node for debugging text flowing through your prompt chain.
 **Output:**
 - `text` — Passes through input unchanged
 
-**Usage:** Insert between any connection to see what's actually being passed. Check `debug.log` for output.
+**Usage:** Insert between any connection to see what's actually being passed. Check `debug.log` in the extension folder (`custom_nodes/ComfyUI-PromptChain/debug.log`) for output.
 
 ---
 
@@ -101,8 +112,8 @@ PromptChain handles both **positive and negative prompts** in a single unified c
 ### How It Works
 
 Each PromptChain node has two text fields:
-- **Positive prompt** (blue-tinted header) — Your main prompt content
-- **Negative prompt** (red-tinted header) — Things to avoid
+- **Positive prompt** (dark background) — Your main prompt content
+- **Negative prompt** (subtle red-tinted background) — Things to avoid
 
 Both prompts flow through the chain together via the `chain` output. At the end of your chain, use the separate `positive` and `negative` outputs to connect to your CLIP nodes.
 
@@ -129,7 +140,7 @@ This helps reduce clutter when you only need one prompt type in a particular nod
 
 ## Modes
 
-### 🎲 Randomize Inputs
+### 🎲 Roll (Randomize)
 
 Picks **ONE random input** from all connected inputs.
 
@@ -137,7 +148,7 @@ Picks **ONE random input** from all connected inputs.
 - Use for branching logic where you want one path chosen randomly
 - Each execution may select a different input
 
-### ➕ Combine Inputs
+### ➕ Combine
 
 Merges **ALL inputs** using breadth-first interleaving.
 
@@ -150,7 +161,7 @@ Output:         "a, X, b, Y, c, d"
 
 Not `"a, b, c, d, X, Y"` — the interleaving ensures balanced representation.
 
-### 🔛 Switch Input
+### 🟢 Switch
 
 **Manually select** which connected input to pass through.
 
@@ -265,6 +276,8 @@ Toggle the **Preview** button (ℹ️) in the menubar to see real-time output.
 ### Preview Shows
 
 - **Last run timestamp** — Shows elapsed time since execution (e.g., "20 mins ago"), updates in real-time
+- **Execution time** — Shows how long the workflow took to execute (in milliseconds)
+- **Word count** — Shows word count for positive and negative prompts (e.g., "15 words / 8 neg")
 - **Selected wildcards** — See exactly which options fired
 - **Full output** — The complete processed result for both positive and negative prompts
 - **"Awaiting first run..."** — Shown until node executes for the first time
