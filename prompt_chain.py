@@ -111,7 +111,7 @@ class PromptChain:
     RETURN_NAMES = ("chain", "positive", "negative")
     OUTPUT_NODE = True
     FUNCTION = "process"
-    CATEGORY = "PromptChain"
+    CATEGORY = "PromptChain_Experimental"
 
     @classmethod
     def IS_CHANGED(cls, **kwargs):
@@ -377,7 +377,7 @@ class PromptChainDebug:
     RETURN_NAMES = ("text",)
     OUTPUT_NODE = True
     FUNCTION = "inspect"
-    CATEGORY = "PromptChain"
+    CATEGORY = "PromptChain_Experimental"
 
     def inspect(self, text, label="positive"):
         debug_log(f"[PromptChainDebug:{label}] ===== TEXT REACHING CLIP =====")

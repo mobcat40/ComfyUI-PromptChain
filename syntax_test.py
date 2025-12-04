@@ -12,7 +12,7 @@ class SyntaxTest:
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("text",)
     FUNCTION = "process"
-    CATEGORY = "text/prompt_chain"
+    CATEGORY = "PromptChain_Experimental"
 
     def process(self, text):
         return (text,)
