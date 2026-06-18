@@ -4280,8 +4280,8 @@ export {
   tick as C,
   comment as D,
   untrack as E,
-  set_checked as F,
-  update as G,
+  update as F,
+  set_checked as G,
   autofocus as H,
   to_array as I,
   from_svg as J,
@@ -4342,4 +4342,4 @@ export {
   set_text as y,
   index as z
 };
-//# sourceMappingURL=disclose-version-DX_24YU0.js.map
+//# sourceMappingURL=disclose-version-BjTnIIw0.js.map

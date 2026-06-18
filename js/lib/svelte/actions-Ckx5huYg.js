@@ -1,4 +1,4 @@
-import { a3 as effect, E as untrack, a8 as render_effect, a9 as deep_read_state, aa as safe_not_equal } from "./disclose-version-DX_24YU0.js";
+import { a3 as effect, E as untrack, a8 as render_effect, a9 as deep_read_state, aa as safe_not_equal } from "./disclose-version-BjTnIIw0.js";
 function action(dom, action2, get_value) {
   effect(() => {
     var payload = untrack(() => action2(dom, get_value == null ? void 0 : get_value()) || {});
@@ -29,4 +29,4 @@ function action(dom, action2, get_value) {
 export {
   action as a
 };
-//# sourceMappingURL=actions-k_up_5Cd.js.map
+//# sourceMappingURL=actions-Ckx5huYg.js.map

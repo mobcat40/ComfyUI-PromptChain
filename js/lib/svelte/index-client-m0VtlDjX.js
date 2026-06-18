@@ -1,4 +1,4 @@
-import { Z as component_context, _ as lifecycle_outside_component, u as user_effect, E as untrack } from "./disclose-version-DX_24YU0.js";
+import { Z as component_context, _ as lifecycle_outside_component, u as user_effect, E as untrack } from "./disclose-version-BjTnIIw0.js";
 function onMount(fn) {
   if (component_context === null) {
     lifecycle_outside_component();
@@ -23,4 +23,4 @@ export {
   onMount as a,
   onDestroy as o
 };
-//# sourceMappingURL=index-client-pJlYpUYn.js.map
+//# sourceMappingURL=index-client-m0VtlDjX.js.map

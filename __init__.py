@@ -52,6 +52,7 @@ from .core import pose_api  # noqa: F401
 from .core import inpaint_files  # noqa: F401  (age-sweeps input/promptchain_inpaint at startup)
 from .core import upscale_api  # noqa: F401
 from .core import edit_api  # noqa: F401
+from .core import modal_setup_api  # noqa: F401
 from .core import subject_api  # noqa: F401
 from .core import install_sections  # noqa: F401
 from .core import ai_api  # noqa: F401

@@ -1,4 +1,4 @@
-import { a1 as listen_to_event_and_reset_event, a2 as current_batch, a3 as effect, a4 as is_array, a5 as select_multiple_invalid_value, a6 as is, a7 as teardown } from "./disclose-version-DX_24YU0.js";
+import { a1 as listen_to_event_and_reset_event, a2 as current_batch, a3 as effect, a4 as is_array, a5 as select_multiple_invalid_value, a6 as is, a7 as teardown } from "./disclose-version-BjTnIIw0.js";
 function select_option(select, value, mounting = false) {
   if (select.multiple) {
     if (value == void 0) {
@@ -97,4 +97,4 @@ export {
   init_select as i,
   select_option as s
 };
-//# sourceMappingURL=select-v-OJNWPh.js.map
+//# sourceMappingURL=select-Dgaht2aI.js.map

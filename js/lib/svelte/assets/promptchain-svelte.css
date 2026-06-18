@@ -283,6 +283,37 @@
     background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 4px; cursor: pointer;
   }
   .pcr-up-fit-btn.svelte-xw7bpl:hover { color: #fff; border-color: #555; }
+  .pcr-up-fit-btn.on.svelte-xw7bpl { color: #fff; background: #c85909; border-color: #c85909; }
+  /* Before/after split. The wrapper fills the stage so its clip-path inset is
+     screen-space; pointer-events:none lets a pan pass through to the stage —
+     only the divider grabs the pointer. */
+  .pcr-up-split-before.svelte-xw7bpl { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+  .pcr-up-split-divider.svelte-xw7bpl {
+    position: absolute; top: 0; bottom: 0;
+    width: 18px; margin-left: -9px;   /* wide invisible grab zone, line centered */
+    z-index: 7; cursor: ew-resize; touch-action: none;
+  }
+  .pcr-up-split-divider.svelte-xw7bpl::before {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 50%;
+    width: 2px; margin-left: -1px;
+    background: rgba(255, 255, 255, 0.9); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+  }
+  .pcr-up-split-knob.svelte-xw7bpl {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 30px; height: 30px; border-radius: 50%;
+    background: rgba(20, 20, 20, 0.85); border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    display: flex; align-items: center; justify-content: center; color: #fff;
+  }
+  .pcr-up-split-knob.svelte-xw7bpl svg:where(.svelte-xw7bpl) { width: 18px; height: 18px; }
+  .pcr-up-split-label.svelte-xw7bpl {
+    position: absolute; top: 8px; z-index: 6;
+    padding: 2px 7px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
+    color: #fff; background: rgba(20, 20, 20, 0.7); border-radius: 4px;
+    pointer-events: none;
+  }
+  .pcr-up-split-label.before.svelte-xw7bpl { left: 8px; }
+  .pcr-up-split-label.after.svelte-xw7bpl { right: 8px; }
   .pcr-up-right.svelte-xw7bpl {
     flex: 0 0 340px; min-height: 0;
     display: flex; flex-direction: column;
@@ -290,6 +321,13 @@
   }
   /* settings stay visible but inert while the run owns the modal */
   .pcr-up-right.running.svelte-xw7bpl { pointer-events: none; opacity: 0.55; }
+  .pcr-up-restore-chip.svelte-xw7bpl {
+    align-self: flex-start; margin-bottom: 10px;
+    padding: 5px 11px; font-size: 12px; color: #d8c08a;
+    background: rgba(200, 89, 9, 0.12); border: 1px solid rgba(200, 89, 9, 0.5);
+    border-radius: 6px; cursor: pointer;
+  }
+  .pcr-up-restore-chip.svelte-xw7bpl:hover { color: #fff; background: rgba(200, 89, 9, 0.25); border-color: #c85909; }
   .pcr-up-floor-msg.svelte-xw7bpl { margin: 0; font-size: 13px; color: #ccc; line-height: 1.4; }
   /* (unused) .pcr-up-modes { display: flex; flex-direction: column; gap: 8px; }*/
   .pcr-up-mode.svelte-xw7bpl {
@@ -423,6 +461,13 @@
   .pcr-ip-body.svelte-ch4fw9 { display: flex; gap: 16px; flex: 1; min-height: 0; }
   .pcr-ip-left.svelte-ch4fw9 { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   .pcr-ip-right.svelte-ch4fw9 { flex: 0 0 320px; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; padding-right: 4px; }
+  .pcr-ip-restore-chip.svelte-ch4fw9 {
+    align-self: flex-start; margin-bottom: 10px;
+    padding: 5px 11px; font-size: 12px; color: #d8c08a;
+    background: rgba(200, 89, 9, 0.12); border: 1px solid rgba(200, 89, 9, 0.5);
+    border-radius: 6px; cursor: pointer;
+  }
+  .pcr-ip-restore-chip.svelte-ch4fw9:hover { color: #fff; background: rgba(200, 89, 9, 0.25); border-color: #c85909; }
   .pcr-ip-tabs.svelte-ch4fw9 { display: flex; align-items: center; margin-bottom: 8px; }
   /* Segmented control, same pattern as the upscale modal's .pcr-up-seg */
   .pcr-ip-seg.svelte-ch4fw9 {
@@ -1177,17 +1222,66 @@
     flex: 1; min-width: 0; min-height: 0;
     display: flex; flex-direction: column; gap: 8px;
   }
+  .pcr-rp-stage-head.svelte-1elgmyq {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    min-height: 24px;
+  }
   .pcr-rp-stage-label.svelte-1elgmyq { font-size: 10.5px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; color: #7c7c7c; }
+  .pcr-rp-stage-tools.svelte-1elgmyq { display: flex; align-items: center; gap: 6px; }
   .pcr-rp-poser-mount.svelte-1elgmyq {
     flex: 1; min-height: 0;
     background: #101010; border: 1px solid #2a2a2a; border-radius: 6px; overflow: hidden;
   }
   .pcr-rp-stage-img.svelte-1elgmyq {
+    position: relative;
     flex: 1; min-height: 0;
     display: flex; align-items: center; justify-content: center;
     background: #101010; border: 1px solid #2a2a2a; border-radius: 6px; overflow: hidden;
+    touch-action: none;
   }
-  .pcr-rp-stage-img.svelte-1elgmyq img:where(.svelte-1elgmyq) { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .pcr-rp-stage-img.zoomable.svelte-1elgmyq { cursor: grab; }
+  .pcr-rp-stage-img.zoomable.svelte-1elgmyq:active { cursor: grabbing; }
+  /* live render preview: a moving frame, centered by the stage's flex */
+  .pcr-rp-live.svelte-1elgmyq { max-width: 100%; max-height: 100%; object-fit: contain; }
+  /* absolute so the stage's flex centering doesn't fight the pan/zoom transform */
+  .pcr-rp-zoomwrap.svelte-1elgmyq { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
+  .pcr-rp-preview.svelte-1elgmyq { display: block; user-select: none; pointer-events: none; }
+  .pcr-rp-fit-btn.svelte-1elgmyq {
+    padding: 3px 10px; font-size: 11.5px; color: #aaa;
+    background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 4px; cursor: pointer;
+  }
+  .pcr-rp-fit-btn.svelte-1elgmyq:hover { color: #fff; border-color: #555; }
+  .pcr-rp-fit-btn.on.svelte-1elgmyq { color: #fff; background: #c85909; border-color: #c85909; }
+  /* Before/after split. The wrapper fills the stage so its clip-path inset is
+     screen-space; pointer-events:none lets a pan pass through — only the
+     divider grabs the pointer. */
+  .pcr-rp-split-before.svelte-1elgmyq { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+  .pcr-rp-split-divider.svelte-1elgmyq {
+    position: absolute; top: 0; bottom: 0;
+    width: 18px; margin-left: -9px;   /* wide invisible grab zone, line centered */
+    z-index: 7; cursor: ew-resize; touch-action: none;
+  }
+  .pcr-rp-split-divider.svelte-1elgmyq::before {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 50%;
+    width: 2px; margin-left: -1px;
+    background: rgba(255, 255, 255, 0.9); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+  }
+  .pcr-rp-split-knob.svelte-1elgmyq {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 30px; height: 30px; border-radius: 50%;
+    background: rgba(20, 20, 20, 0.85); border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    display: flex; align-items: center; justify-content: center; color: #fff;
+  }
+  .pcr-rp-split-knob.svelte-1elgmyq svg:where(.svelte-1elgmyq) { width: 18px; height: 18px; }
+  .pcr-rp-split-label.svelte-1elgmyq {
+    position: absolute; top: 8px; z-index: 6;
+    padding: 2px 7px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
+    color: #fff; background: rgba(20, 20, 20, 0.7); border-radius: 4px;
+    pointer-events: none;
+  }
+  .pcr-rp-split-label.before.svelte-1elgmyq { left: 8px; }
+  .pcr-rp-split-label.after.svelte-1elgmyq { right: 8px; }
   .pcr-rp-bar-wrap.svelte-1elgmyq { display: flex; flex-direction: column; gap: 5px; }
   .pcr-rp-bar.svelte-1elgmyq { height: 6px; border-radius: 3px; background: #2c2c33; overflow: hidden; }
   .pcr-rp-bar-fill.svelte-1elgmyq { height: 100%; background: #c85909; transition: width 0.15s linear; }
@@ -1196,6 +1290,13 @@
 
   .pcr-rp-config.svelte-1elgmyq { flex: 0 0 360px; min-height: 0; overflow-y: auto; padding-right: 4px; }
   .pcr-rp-config.running.svelte-1elgmyq { pointer-events: none; opacity: 0.55; }
+  /* (unused) .pcr-rp-restore-chip {
+    margin-bottom: 10px;
+    padding: 5px 11px; font-size: 12px; color: #d8c08a;
+    background: rgba(200, 89, 9, 0.12); border: 1px solid rgba(200, 89, 9, 0.5);
+    border-radius: 6px; cursor: pointer;
+  }*/
+  /* (unused) .pcr-rp-restore-chip:hover { color: #fff; background: rgba(200, 89, 9, 0.25); border-color: #c85909; }*/
   .pcr-rp-select.svelte-1elgmyq, .pcr-rp-text.svelte-1elgmyq {
     width: 100%; box-sizing: border-box;
     background: #0f0f12; border: 1px solid #3a3a3a; border-radius: 6px;

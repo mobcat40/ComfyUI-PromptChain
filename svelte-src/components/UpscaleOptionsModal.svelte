@@ -2,6 +2,7 @@
   import { untrack } from "svelte";
   import { portal } from "../lib/portal.js";
   import { recallModalMemory, storeModalMemory } from "../lib/modal-memory.js";
+  import { loadModalSetup, saveModalSetup } from "../lib/modal-setup.js";
   import SettingsSlider from "./model/SettingsSlider.svelte";
   import SavePathInput from "./SavePathInput.svelte";
   import SearchableSelect from "./shared/SearchableSelect.svelte";
@@ -474,6 +475,14 @@
       climbModel: engineKind !== "source" ? climbModel : undefined,
       plainEngine: onUseInEdit ? plainEngine : undefined,
     });
+    // Durable, restart-surviving twin of the above, in the per-image sidecar.
+    // Fire-and-forget — a failed save must never block Apply. (Prompt restore
+    // is deferred: it needs the {#key} editor remount, not a bare assignment.)
+    saveModalSetup(fetchApi, imageKey, "upscale", {
+      mode, depthSource, upscaleBy, denoise, sampler, scheduler,
+      condition, preserveDefocus, engine: engineSel, climbStage, climbModel,
+      prompt, advanced: { ...advanced },
+    }, { w: docWidth || width, h: docHeight || height });
     // Model-scope memory: dials that track the CHECKPOINT, not the image —
     // the last plain pass and (source-graft) denoise applied for this model
     // become its defaults everywhere (user spec). Merged, not replaced, so
@@ -494,6 +503,62 @@
   let runActive = $derived(
     !!progress && progress.phase !== "done" && progress.phase !== "error" && progress.phase !== "cancelled"
   );
+
+  // ── saved-setup restore (server sidecar, keyed by imageKey == displayedHash) ──
+  // Loaded async on open into savedSetup; applied ONLY when the user clicks the
+  // chip — so it never runs inside the open reset and can't fight the memory /
+  // regional gating there.
+  let savedSetup = $state(null);
+  let promptRestoreNonce = $state(0);  // bump to force the prompt editor to reseed
+  $effect(() => {
+    if (!open || !fetchApi || !imageKey) { savedSetup = null; return; }
+    let cancelled = false;
+    loadModalSetup(fetchApi, imageKey).then((doc) => {
+      if (cancelled || !doc) return;
+      const up = doc.kinds?.upscale;
+      // Guard on the DOCUMENT dims (stable per hash), not the transient region
+      // crop — an Edit-region upscale passes region-sized width/height but keys
+      // by the whole-doc hash, so a region guard would hide the chip.
+      const keyW = docWidth || width, keyH = docHeight || height;
+      const dimsOk = !doc.dims || (doc.dims.w === keyW && doc.dims.h === keyH);
+      savedSetup = up && dimsOk ? up : null;
+    });
+    return () => { cancelled = true; };
+  });
+
+  function applySavedSetup() {
+    const s = savedSetup;
+    if (!s) return;
+    if (typeof s.mode === "string" && caps?.modes?.[s.mode]?.ok) mode = s.mode;
+    if (typeof s.depthSource === "string" && caps?.sources?.[s.depthSource]?.ok) depthSource = s.depthSource;
+    if (typeof s.upscaleBy === "number") upscaleBy = Math.max(scaleSlider.min, Math.min(scaleSlider.max, s.upscaleBy));
+    if (typeof s.condition === "string") condition = s.condition;
+    if (typeof s.preserveDefocus === "boolean") preserveDefocus = s.preserveDefocus;
+    if (s.advanced && typeof s.advanced === "object") advanced = { ...s.advanced };
+    // Switching engine resets denoise/sampler/scheduler to its defaults, so
+    // validate + pick the engine FIRST, then lay the saved dials over the top
+    // (same ordering as the open-effect's memory restore).
+    if (typeof s.engine === "string") {
+      const ok = s.engine === "source" ? !!caps?.graftable
+        : s.engine === "plain" ? true
+        : !!caps?.engineModels?.some((m) => m.hash === s.engine);
+      if (ok) { memoryPrompt = null; pickEngine(s.engine); }
+    }
+    if (typeof s.denoise === "number") denoise = s.denoise;
+    if (typeof s.sampler === "string") sampler = s.sampler;
+    if (typeof s.scheduler === "string") scheduler = s.scheduler;
+    if (s.climbStage === "ultrasharp") climbStage = "ultrasharp";
+    else if (s.climbStage === "seedvr2" && caps?.seedvr2Available) climbStage = "seedvr2";
+    if (typeof s.climbModel === "string" && caps?.upscaleModelOptions?.includes(s.climbModel)) climbModel = s.climbModel;
+    // Prompt — reseed the rich editor via the remount nonce; prefillFor() reads
+    // memoryPrompt, so set it before bumping (after pickEngine cleared it).
+    if (typeof s.prompt === "string" && s.prompt.trim()) {
+      memoryPrompt = s.prompt;
+      prompt = s.prompt;
+      promptRestoreNonce++;
+    }
+    savedSetup = null;  // dismiss the chip once applied
+  }
 
   // ── preview pan/zoom ──────────────────────────────────────────────
   // The source (before a run) and the finished result are stable images you
@@ -521,6 +586,9 @@
   }
   function onStageDown(e) {
     if (e.button > 2 || !inspectSrc) return;
+    // The zoom controls sit over the stage; starting a pan here would capture
+    // the pointer and the synthesized click would never reach the button.
+    if (e.target.closest?.(".pcr-up-zoomctl")) return;
     panning = true; panLast = { x: e.clientX, y: e.clientY };
     e.preventDefault(); stageEl.setPointerCapture(e.pointerId);
   }
@@ -544,6 +612,45 @@
     panX = cx - ((cx - panX) / zoom) * nz;
     panY = cy - ((cy - panY) / zoom) * nz;
     zoom = nz;
+  }
+
+  // ── before/after compare ──────────────────────────────────────────
+  // A screen-space divider wipes the original source (Before, left) over the
+  // finished result (After, right). Both layers share the pan/zoom transform
+  // so they stay registered; the source is drawn at the result's natural box,
+  // so the only visible difference is the upscale's added detail. Available
+  // only once there's a result to compare against.
+  let compareSplit = $state(false);
+  let splitX = $state(0);
+  let splitDragging = false;
+  let canCompare = $derived(!runActive && !!previewUrl && !!progress?.resultUrl);
+  // Drop the wipe the instant there's nothing valid behind it — a re-run
+  // starts, or the modal reopens on a fresh image. It re-arms only on a click.
+  $effect(() => { if (!canCompare && compareSplit) compareSplit = false; });
+
+  function toggleCompare() {
+    if (!canCompare) return;
+    compareSplit = !compareSplit;
+    if (compareSplit) {
+      const r = stageEl?.getBoundingClientRect();
+      splitX = r ? r.width / 2 : 0;  // open centered so both halves show
+    }
+  }
+  function onSplitDown(e) {
+    e.stopPropagation();   // the stage would otherwise start a pan
+    e.preventDefault();
+    splitDragging = true;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+  function onSplitMove(e) {
+    if (!splitDragging) return;
+    e.stopPropagation();
+    const r = stageEl.getBoundingClientRect();
+    splitX = Math.max(0, Math.min(r.width, e.clientX - r.left));
+  }
+  function onSplitUp(e) {
+    splitDragging = false;
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* already released */ }
   }
 
   function handleKeydown(e) {
@@ -584,6 +691,7 @@
           <div class="pcr-up-stage" class:zoomable={!!inspectSrc} bind:this={stageEl}
             onpointerdown={onStageDown} onpointermove={onStageMove}
             onpointerup={onStageUp} onpointercancel={onStageUp} onwheel={onStageWheel}
+            ondblclick={fitView}
             oncontextmenu={(e) => e.preventDefault()}>
             {#if liveTile}
               <!-- transient per-tile sampler preview: a moving crop, just center it -->
@@ -592,9 +700,37 @@
               <div class="pcr-up-zoomwrap" style="transform: translate({panX}px, {panY}px) scale({zoom});">
                 <img class="pcr-up-preview" src={inspectSrc} alt="" draggable="false" onload={onPreviewLoad} />
               </div>
+              {#if compareSplit && canCompare}
+                <!-- Original (Before) clipped to the LEFT of the divider in
+                     screen space (calc(100% - splitX) = the right inset). The
+                     inner wrap reuses the exact transform so it stays pixel-
+                     aligned with the result behind it; sized to the result's
+                     natural box, so only the added detail differs. -->
+                <div class="pcr-up-split-before" style="clip-path: inset(0 calc(100% - {splitX}px) 0 0);">
+                  <div class="pcr-up-zoomwrap" style="transform: translate({panX}px, {panY}px) scale({zoom});">
+                    <img class="pcr-up-preview" src={previewUrl} alt="" draggable="false" width={imgNatW} height={imgNatH} />
+                  </div>
+                </div>
+                <div class="pcr-up-split-label before">Before</div>
+                <div class="pcr-up-split-label after">After</div>
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <div class="pcr-up-split-divider" style="left: {splitX}px;"
+                  onpointerdown={onSplitDown} onpointermove={onSplitMove}
+                  onpointerup={onSplitUp} onpointercancel={onSplitUp}>
+                  <div class="pcr-up-split-knob">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="9.5 8 5.5 12 9.5 16"/><polyline points="14.5 8 18.5 12 14.5 16"/>
+                    </svg>
+                  </div>
+                </div>
+              {/if}
               {#if imgNatW}
                 <div class="pcr-up-zoomctl">
                   <span class="pcr-up-zoompct">{Math.round(zoom * 100)}%</span>
+                  {#if canCompare}
+                    <button class="pcr-up-fit-btn" class:on={compareSplit} onclick={toggleCompare}
+                      title="Drag the divider to wipe the original over the result">Compare</button>
+                  {/if}
                   <button class="pcr-up-fit-btn" onclick={fitView}>Fit</button>
                 </div>
               {/if}
@@ -623,6 +759,10 @@
           {/if}
         </div>
         <div class="pcr-up-right" class:running={runActive}>
+          {#if savedSetup && !progress}
+            <button class="pcr-up-restore-chip" onclick={applySavedSetup}
+              title="Re-apply the dials from your last upscale of this image">↩ Restore last setup</button>
+          {/if}
           {#if !caps?.graftable && engineKind === "plain"}
             <p class="pcr-up-floor-msg">
               This image has no usable prompt metadata — a plain model upscale (ESRGAN) will be used.
@@ -696,7 +836,7 @@
             <div class="pcr-mcard-title">{engineKind === "qwen" ? "Instruction" : "Prompt"}</div>
             <div class="pcr-up-prompt-block">
               <span class="pcr-up-save-label">{engineKind === "qwen" ? "how Qwen Edit should enhance" : "what the tiles re-detail with"}</span>
-              {#key promptSeedKey}
+              {#key promptSeedKey + ":" + promptRestoreNonce}
                 {#if mountPromptEditor}
                   <div class="pcr-up-prompt pcr-up-prompt-editor" use:promptEditor></div>
                 {:else}
@@ -979,6 +1119,37 @@
     background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 4px; cursor: pointer;
   }
   .pcr-up-fit-btn:hover { color: #fff; border-color: #555; }
+  .pcr-up-fit-btn.on { color: #fff; background: #c85909; border-color: #c85909; }
+  /* Before/after split. The wrapper fills the stage so its clip-path inset is
+     screen-space; pointer-events:none lets a pan pass through to the stage —
+     only the divider grabs the pointer. */
+  .pcr-up-split-before { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+  .pcr-up-split-divider {
+    position: absolute; top: 0; bottom: 0;
+    width: 18px; margin-left: -9px;   /* wide invisible grab zone, line centered */
+    z-index: 7; cursor: ew-resize; touch-action: none;
+  }
+  .pcr-up-split-divider::before {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 50%;
+    width: 2px; margin-left: -1px;
+    background: rgba(255, 255, 255, 0.9); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+  }
+  .pcr-up-split-knob {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 30px; height: 30px; border-radius: 50%;
+    background: rgba(20, 20, 20, 0.85); border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    display: flex; align-items: center; justify-content: center; color: #fff;
+  }
+  .pcr-up-split-knob svg { width: 18px; height: 18px; }
+  .pcr-up-split-label {
+    position: absolute; top: 8px; z-index: 6;
+    padding: 2px 7px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
+    color: #fff; background: rgba(20, 20, 20, 0.7); border-radius: 4px;
+    pointer-events: none;
+  }
+  .pcr-up-split-label.before { left: 8px; }
+  .pcr-up-split-label.after { right: 8px; }
   .pcr-up-right {
     flex: 0 0 340px; min-height: 0;
     display: flex; flex-direction: column;
@@ -986,6 +1157,13 @@
   }
   /* settings stay visible but inert while the run owns the modal */
   .pcr-up-right.running { pointer-events: none; opacity: 0.55; }
+  .pcr-up-restore-chip {
+    align-self: flex-start; margin-bottom: 10px;
+    padding: 5px 11px; font-size: 12px; color: #d8c08a;
+    background: rgba(200, 89, 9, 0.12); border: 1px solid rgba(200, 89, 9, 0.5);
+    border-radius: 6px; cursor: pointer;
+  }
+  .pcr-up-restore-chip:hover { color: #fff; background: rgba(200, 89, 9, 0.25); border-color: #c85909; }
   .pcr-up-floor-msg { margin: 0; font-size: 13px; color: #ccc; line-height: 1.4; }
   .pcr-up-modes { display: flex; flex-direction: column; gap: 8px; }
   .pcr-up-mode {

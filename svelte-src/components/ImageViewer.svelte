@@ -202,6 +202,12 @@
   let lineageCurrentIdx = $derived(
     lineageList.findIndex(item => item?.hash === displayedHash)
   );
+  // Re-pose restore walks these — the current image first, then its whole family
+  // — so a re-posed result (or a later edit of it) resumes the setup that was
+  // saved on its source image, not just the exact hash it ran on.
+  let reposeLineageKeys = $derived(
+    [displayedHash, ...lineageList.map((i) => i?.hash)].filter((h, i, a) => h && a.indexOf(h) === i)
+  );
 
   // ── lineage strip bundling ──
   // Content-keyed lineage attaches EVERY reuse of the same source bytes to one
@@ -371,14 +377,31 @@
       console.error(`[PromptChain] ${label} fetch failed for ${displayedHash}:`, e);
     };
     if (img?._directUrl) {
-      // browse image without DB hash — extract metadata from the file
+      // Browse-opened image. browse/meta hashes the file and returns its full
+      // DB record when the file is tracked, so surface the family and align
+      // displayedHash to that content hash — lineage, the current-node
+      // highlight, and the edit/inpaint/upscale handoffs then all resolve like
+      // a gallery open. A path-keyed entry (input scope) never reached the hash
+      // endpoints, so the image's whole family was invisible.
       const scope = img._browseScope || "output";
       const path = img._browsePath || displayedHash;
+      const openedHash = displayedHash;
+      lineageData = null;
       fetchApi(`/promptchain/browse/meta?scope=${scope}&path=${encodeURIComponent(path)}`)
         .then(r => r.ok ? r.json() : null)
-        .then(data => { imageInfo = data; })
+        .then(data => {
+          imageInfo = data;
+          if (!data?.hash || displayedHash !== openedHash) return;
+          // input scope is path-keyed: re-key so the effect re-runs down the
+          // hash branch (which fetches lineage). output already carries its
+          // hash, so re-key is a no-op there — fetch the family directly.
+          if (displayedHash !== data.hash) { displayedHash = data.hash; return; }
+          fetchApi(`/promptchain/lineage/${data.hash}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { if (displayedHash === data.hash) lineageData = d; })
+            .catch((e) => console.error(`[PromptChain] lineage fetch failed for ${data.hash}:`, e));
+        })
         .catch(onMetaError("browse meta"));
-      lineageData = null;
     } else {
       // DB-tracked image — use hash-based endpoints
       fetchApi(`/promptchain/image-meta/${displayedHash}`)
@@ -2010,6 +2033,9 @@
 
 <RePoseModal
   open={reposeModalOpen}
+  imageKey={displayedHash || ""}
+  lineageKeys={reposeLineageKeys}
+  {fetchApi}
   sourceUrl={reposePrepared?.sourceUrl || ""}
   width={reposePrepared?.width || 0}
   height={reposePrepared?.height || 0}

@@ -10912,7 +10912,7 @@ function setupPoseStudio(node) {
 // → syncToLatent and downstream tracing no-op). Returns a handle the modal uses
 // to read the latest control map, switch output mode (clay vs depth), and tear
 // the whole thing down on close.
-export async function mountDetachedPoser(parentEl, { width = 832, height = 1216, outputMode = "default" } = {}) {
+export async function mountDetachedPoser(parentEl, { width = 832, height = 1216, outputMode = "default", poseState = "" } = {}) {
   installPoseStyles();
   const container = document.createElement("div");
   container.className = "pcr-pose-studio";
@@ -10933,7 +10933,9 @@ export async function mountDetachedPoser(parentEl, { width = 832, height = 1216,
     outputs: [],
     widgets: [
       { name: "control_map", value: "" },
-      { name: "pose_state", value: "" },
+      // Seed-before-mount: mountViewport→restoreSavedState reads this widget once
+      // at mount, so a seeded scene boots directly (no fragile post-mount load).
+      { name: "pose_state", value: poseState || "" },
       { name: "width", value: width },
       { name: "height", value: height },
     ],

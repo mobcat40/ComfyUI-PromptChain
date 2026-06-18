@@ -7,6 +7,7 @@
   import { untrack } from "svelte";
   import { portal } from "../lib/portal.js";
   import { recallModalMemory, storeModalMemory } from "../lib/modal-memory.js";
+  import { loadModalSetup, saveModalSetup } from "../lib/modal-setup.js";
   import SettingsSlider from "./model/SettingsSlider.svelte";
   import SavePathInput from "./SavePathInput.svelte";
   import SearchableSelect from "./shared/SearchableSelect.svelte";
@@ -314,6 +315,95 @@
       wasOpen = false;
     }
   });
+
+  // ── saved-setup restore (server sidecar, keyed by imageKey == displayedHash) ──
+  // Loaded async on open into savedSetup; applied ONLY on the user's chip click,
+  // so it stays out of the untrack() reset above and can't wipe a painted mask.
+  // The PuLID / Style-Reference cluster is the headline gap — the reset wipes it
+  // back to defaults every open.
+  let savedSetup = $state(null);
+  let promptRestoreNonce = $state(0);  // bump to force the prompt editor to reseed
+  $effect(() => {
+    if (!open || !fetchApi || !imageKey) { savedSetup = null; return; }
+    let cancelled = false;
+    loadModalSetup(fetchApi, imageKey).then((doc) => {
+      if (cancelled || !doc) return;
+      const ip = doc.kinds?.inpaint;
+      const dimsOk = !doc.dims || (doc.dims.w === width && doc.dims.h === height);
+      savedSetup = ip && dimsOk ? ip : null;
+    });
+    return () => { cancelled = true; };
+  });
+
+  function applySavedSetup() {
+    const s = savedSetup;
+    if (!s) return;
+    // Engine first — pickEngine reseeds sampler/scheduler and drops conditions
+    // for flux-like engines (same ordering as the open-effect's memory restore).
+    if (typeof s.engine === "string") {
+      const ok = s.engine === "source" ? (caps?.sourceUsable !== false)
+        : !!caps?.engineModels?.some((m) => m.hash === s.engine);
+      if (ok) pickEngine(s.engine);
+    }
+    if (engineKind === "source" && typeof s.mode === "string") {
+      const modeOk = s.mode === "basic" ? true
+        : s.mode === "depth" ? caps?.depthAvailable
+        : s.mode === "regional" ? caps?.regionalAvailable
+        : s.mode === "regional-depth" ? (caps?.regionalAvailable && caps?.depthAvailable)
+        : false;
+      if (modeOk) mode = s.mode;
+    }
+    if (typeof s.denoise === "number") denoise = s.denoise;
+    if (typeof s.sampler === "string") sampler = s.sampler;
+    if (typeof s.scheduler === "string") scheduler = s.scheduler;
+    if (typeof s.grow === "number") grow = s.grow;
+    if (typeof s.feather === "number") feather = s.feather;
+    if (typeof s.maskOpacity === "number") maskOpacity = s.maskOpacity;
+    // Condition cluster — only when the resolved engine can carry it and the
+    // condition is actually installed (flux/qwen engines can't).
+    const fluxLike = engineKind === "flux1" || engineKind === "qwen";
+    // conditionOk (not the raw caps flag) so an SDXL-engine pick re-enables the
+    // condition the same way the live dropdown does — else it's silently dropped.
+    if (typeof s.condition === "string" && !(fluxLike && s.condition !== "none")
+        && (s.condition === "none" || conditionOk(s.condition))) {
+      condition = s.condition;
+      if (typeof s.referenceImage === "string") referenceImage = s.referenceImage;
+      if (typeof s.conditionWeight === "number") conditionWeight = s.conditionWeight;
+      if (typeof s.ipaWeightType === "string") ipaWeightType = s.ipaWeightType;
+      if (typeof s.ipaStartAt === "number") ipaStartAt = s.ipaStartAt;
+      if (typeof s.ipaEndAt === "number") ipaEndAt = s.ipaEndAt;
+      if (typeof s.pulidFidelity === "number") pulidFidelity = s.pulidFidelity;
+      if (typeof s.pulidStartAt === "number") pulidStartAt = s.pulidStartAt;
+      if (typeof s.pulidEndAt === "number") pulidEndAt = s.pulidEndAt;
+    }
+    // Prompt — reseed the rich editor via the remount nonce (a bare assignment
+    // doesn't repaint the mounted CM6 view); prefillFor() reads memoryPrompt.
+    if (typeof s.prompt === "string" && s.prompt.trim()) {
+      memoryPrompt = s.prompt;
+      prompt = s.prompt;
+      promptRestoreNonce++;
+    }
+    // Painted mask — the saved alpha plane, recolored to the painter's red
+    // (source-in uses only its alpha, matching applyInitialMask's contract).
+    if (s.hasMask && imageKey && maskCanvas) {
+      const img = new Image();
+      img.onload = () => {
+        const ctx = maskCanvas.getContext("2d");
+        const tmp = document.createElement("canvas");
+        tmp.width = width; tmp.height = height;
+        const tctx = tmp.getContext("2d");
+        tctx.drawImage(img, 0, 0, width, height);
+        tctx.globalCompositeOperation = "source-in";
+        tctx.fillStyle = "rgb(255, 60, 60)";
+        tctx.fillRect(0, 0, width, height);
+        ctx.clearRect(0, 0, width, height);
+        ctx.drawImage(tmp, 0, 0);
+        hasMask = true;
+      };
+      img.src = apiURL(`/promptchain/modal-setup/${imageKey}/inpaint__mask.png?t=${Date.now()}`);
+    }
+    savedSetup = null;  // dismiss the chip once applied
+  }
 
   let running = $derived(!!progress && progress.phase !== "done" && progress.phase !== "error" && progress.phase !== "cancelled");
   let outputUrl = $derived((() => {
@@ -688,6 +778,21 @@
       engine: engineKind === "source" ? "source" : engineSel,
       denoise,
     });
+    // Durable per-image twin (sidecar): dials (PuLID/Style-Ref cluster is the
+    // headline) + prompt + the painted mask as an ALPHA plane — the raw
+    // maskCanvas (opaque-red where painted, transparent elsewhere), NOT
+    // exportMask's white-on-black, so applySavedSetup's source-in recolor
+    // round-trips it. Fire-and-forget.
+    const maskPlaneBlob = await new Promise((res) => maskCanvas.toBlob(res, "image/png"));
+    saveModalSetup(fetchApi, imageKey, "inpaint", {
+      engine: engineSel,
+      mode: engineKind === "source" ? mode : undefined,
+      denoise, sampler, scheduler, grow, feather, maskOpacity,
+      condition, referenceImage,
+      conditionWeight, ipaWeightType, ipaStartAt, ipaEndAt,
+      pulidFidelity, pulidStartAt, pulidEndAt,
+      prompt, hasMask: true,
+    }, { w: width, h: height }, maskPlaneBlob ? { "inpaint__mask.png": maskPlaneBlob } : {});
     unsub?.();
     unsub = tracker.subscribe((state) => {
       progress = state;
@@ -894,6 +999,10 @@
           </div>
         </div>
         <div class="pcr-ip-right">
+          {#if savedSetup && !running}
+            <button class="pcr-ip-restore-chip" onclick={applySavedSetup}
+              title="Re-apply the engine / reference / dials from your last inpaint of this image">↩ Restore last setup</button>
+          {/if}
           {#if caps?.engineModels?.length}
             <div class="pcr-mcard">
             <div class="pcr-mcard-title">Engine</div>
@@ -1016,7 +1125,7 @@
               {/each}
             </div>
           {/if}
-          {#key promptSeedKey}
+          {#key promptSeedKey + ":" + promptRestoreNonce}
             {#if mountPromptEditor}
               <div class="pcr-ip-prompt pcr-ip-prompt-editor" use:promptEditor></div>
             {:else}
@@ -1135,6 +1244,13 @@
   .pcr-ip-body { display: flex; gap: 16px; flex: 1; min-height: 0; }
   .pcr-ip-left { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   .pcr-ip-right { flex: 0 0 320px; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; padding-right: 4px; }
+  .pcr-ip-restore-chip {
+    align-self: flex-start; margin-bottom: 10px;
+    padding: 5px 11px; font-size: 12px; color: #d8c08a;
+    background: rgba(200, 89, 9, 0.12); border: 1px solid rgba(200, 89, 9, 0.5);
+    border-radius: 6px; cursor: pointer;
+  }
+  .pcr-ip-restore-chip:hover { color: #fff; background: rgba(200, 89, 9, 0.25); border-color: #c85909; }
   .pcr-ip-tabs { display: flex; align-items: center; margin-bottom: 8px; }
   /* Segmented control, same pattern as the upscale modal's .pcr-up-seg */
   .pcr-ip-seg {

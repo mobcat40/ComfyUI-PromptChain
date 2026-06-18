@@ -1,5 +1,5 @@
-import { t as template_effect, R as active_effect, S as assign_nodes, T as get_first_child, U as remove_effect_dom, V as create_element, W as NAMESPACE_SVG, X as NAMESPACE_MATHML, b as block, Y as EFFECT_TRANSPARENT, B as BranchManager, c as proxy, d as delegate, p as push, a as prop, u as user_effect, o as bind_this, j as delegated, k as append, l as pop, A as from_html, n as child } from "./disclose-version-DX_24YU0.js";
-import { a as onMount, o as onDestroy } from "./index-client-pJlYpUYn.js";
+import { t as template_effect, R as active_effect, S as assign_nodes, T as get_first_child, U as remove_effect_dom, V as create_element, W as NAMESPACE_SVG, X as NAMESPACE_MATHML, b as block, Y as EFFECT_TRANSPARENT, B as BranchManager, c as proxy, d as delegate, p as push, a as prop, u as user_effect, o as bind_this, j as delegated, k as append, l as pop, A as from_html, n as child } from "./disclose-version-BjTnIIw0.js";
+import { a as onMount, o as onDestroy } from "./index-client-m0VtlDjX.js";
 function html(node, get_value, is_controlled = false, svg = false, mathml = false, skip_warning = false) {
   var anchor = node;
   var value = "";
@@ -155,4 +155,4 @@ export {
   PopupAnchor as P,
   html as h
 };
-//# sourceMappingURL=PopupAnchor-Eu2n2jy6.js.map
+//# sourceMappingURL=PopupAnchor-sxqUMRLP.js.map

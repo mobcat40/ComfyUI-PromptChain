@@ -7,6 +7,7 @@
   // theme (modal-shared.css) + the upscale modal's sizing so it reads identically.
   import { untrack } from "svelte";
   import { portal } from "../lib/portal.js";
+  import { loadModalSetup, saveModalSetup } from "../lib/modal-setup.js";
   import "./sidebar/modal-shared.css";
 
   let {
@@ -14,6 +15,9 @@
     sourceUrl = "",
     width = 0,
     height = 0,
+    imageKey = "",              // displayedHash — the image being re-posed (save key)
+    lineageKeys = [],           // [current, ...ancestors] hashes — restore walks these
+    fetchApi = null,
     caps = null,                // { recipes: [...] } from fetchReposeCaps
     progress = null,            // background tracker state
     onMountPoser = null,        // (el, {width,height,outputMode}) => Promise<handle>
@@ -40,8 +44,8 @@
   let loraStrength = $state(0.7);   // pose-LoRA weight (the "pattern" strength)
   let megapixels = $state(1.0);     // Qwen input-image scale target (AnyPose only)
 
-  let poserEl = null;
-  let poserHandle = null;
+  let poserEl = $state(null);      // $state so the mount effect re-runs when the element rebinds on reopen
+  let poserHandle = $state(null);  // $state so the scene-load effect reacts when it mounts
 
   // Default the recipe to the first installable one when the modal opens.
   $effect(() => {
@@ -91,15 +95,17 @@
     return { destroy() { disposed = true; view?.destroy?.(); } };
   }
 
-  // Mount the detached poser once per open; never re-mount on recipe change (that
-  // would discard the user's pose) — output mode is switched in place below.
+  // Mount the detached poser once per open, SEEDED with any restored scene so it
+  // boots straight into it. Gated on restoreReady so the seed is known first;
+  // never re-mounts on recipe change (output mode is switched in place below).
   $effect(() => {
-    if (!open || !poserEl || !onMountPoser) return;
+    if (!open || !poserEl || !onMountPoser || !restoreReady) return;
     let disposed = false, handle = null;
     const w = untrack(() => width) || 832;
     const h = untrack(() => height) || 1216;
     const mode = untrack(() => recipe?.poserMode) || "default";
-    Promise.resolve(onMountPoser(poserEl, { width: w, height: h, outputMode: mode }))
+    const seed = untrack(() => restorePoseState) || "";
+    Promise.resolve(onMountPoser(poserEl, { width: w, height: h, outputMode: mode, poseState: seed }))
       .then((hd) => { if (disposed) hd?.dispose?.(); else { handle = hd; poserHandle = hd; } })
       .catch((err) => console.error("[Re-pose] poser mount failed", err));
     return () => { disposed = true; handle?.dispose?.(); if (poserHandle === handle) poserHandle = null; };
@@ -138,6 +144,78 @@
       },
       controlMapFilename: cm.filename,
     });
+    // Durable per-image setup (sidecar). Dials only — promptDoc rides the recipe
+    // restore; the 3D scene blob is Phase 2 (task #6). Fire-and-forget.
+    saveModalSetup(fetchApi, imageKey, "repose", {
+      recipeId: selectedRecipeId,
+      modelFilename, promptDoc, steps, cfg, loraStrength, megapixels,
+      randomizeSeed, seed,
+      poseState: cm.poseState || "",  // the full 3D scene, seeded into the poser on restore
+    }, { w: width, h: height });
+  }
+
+  // ── AUTO-restore the last re-pose setup for this image (or its lineage) ──
+  // On open we walk the lineage keys (current image first, then its ancestors/
+  // relatives) and AUTOMATICALLY apply the first saved re-pose setup found —
+  // recipe, model, prompt, strength, and the full 3D scene. No chip, no dims
+  // guard: a pose is size-independent, so a re-posed RESULT (often a different
+  // size) still resumes its source's setup.
+  let promptRestoreNonce = $state(0);   // bump to force the prompt editor to reseed
+  let restoreReady = $state(false);     // restore attempt done — GATES the poser mount
+  let restorePoseState = $state("");    // saved scene to SEED the poser with at mount
+  let attempted = false;                // one restore pass per open
+
+  function restoreKeys() {
+    const ks = (lineageKeys && lineageKeys.length) ? lineageKeys : (imageKey ? [imageKey] : []);
+    return ks.filter(Boolean);
+  }
+
+  // Walk the lineage keys (current image first, then its family), AUTO-apply the
+  // first saved re-pose setup, and stash its scene to SEED the poser. The mount
+  // effect above waits on restoreReady, so the poser boots straight into the
+  // saved scene every open — no post-mount load, no disposed-handle race.
+  $effect(() => {
+    if (!open) { attempted = false; restoreReady = false; restorePoseState = ""; return; }
+    if (!fetchApi || attempted) return;
+    const keys = restoreKeys();
+    if (!keys.length) return;   // wait until at least the current image's key is known
+    attempted = true;
+    let cancelled = false;
+    (async () => {
+      for (const k of keys) {
+        const doc = await loadModalSetup(fetchApi, k);
+        if (cancelled) return;
+        const rp = doc?.kinds?.repose;
+        if (rp) {
+          applySetup(rp);                          // recipe / model / prompt / dials
+          restorePoseState = rp.poseState || "";   // seed the poser (mount effect)
+          restoreReady = true;
+          return;
+        }
+      }
+      if (!cancelled) { restorePoseState = ""; restoreReady = true; }
+    })();
+    return () => { cancelled = true; };
+  });
+
+  function applySetup(s) {
+    if (!s) return;
+    if (typeof s.recipeId === "string") {
+      const r = recipes.find((x) => x.id === s.recipeId);
+      if (r) applyRecipeDefaults(r);  // sets recipe + its default prompt/dials/model
+    }
+    if (typeof s.modelFilename === "string" && (recipe?.models || []).some((m) => m.filename === s.modelFilename)) {
+      modelFilename = s.modelFilename;
+    }
+    if (typeof s.steps === "number") steps = s.steps;
+    if (typeof s.cfg === "number") cfg = s.cfg;
+    if (typeof s.loraStrength === "number") loraStrength = s.loraStrength;
+    if (typeof s.megapixels === "number") megapixels = s.megapixels;
+    if (typeof s.randomizeSeed === "boolean") randomizeSeed = s.randomizeSeed;
+    if (typeof s.seed === "number") seed = s.seed;
+    // Custom prompt — override the recipe default + reseed the editor (a bare
+    // promptDoc assignment won't repaint the mounted CM6 view; the nonce does).
+    if (typeof s.promptDoc === "string" && s.promptDoc.trim()) { promptDoc = s.promptDoc; promptRestoreNonce++; }
   }
 
   function progressText(p) {
@@ -149,6 +227,95 @@
     if (p.phase === "error") return `Error: ${p.message || "failed"}`;
     if (p.phase === "cancelled") return "Cancelled.";
     return "";
+  }
+
+  // ── preview pan/zoom + before/after compare ───────────────────────
+  // The source (before a run) and the finished result are stable images you
+  // inspect with drag-to-pan + wheel-to-zoom; the live render preview is a
+  // moving frame, so it stays centered (same split the upscale modal makes).
+  // Compare wipes the source (Before) over the result (After) — both layers
+  // share the pan/zoom transform so they stay registered.
+  let liveTile = $derived(running && progress?.previewUrl ? progress.previewUrl : null);
+  let inspectSrc = $derived(
+    progress?.phase === "done" && progress?.resultUrl ? progress.resultUrl
+      : running ? null
+      : (sourceUrl || null)
+  );
+  let stageEl;
+  let imgNatW = $state(0), imgNatH = $state(0);
+  let zoom = $state(1), panX = $state(0), panY = $state(0);
+  let panning = false, panLast = null;
+
+  function fitView() {
+    if (!stageEl || !imgNatW || !imgNatH) { zoom = 1; panX = 0; panY = 0; return; }
+    const r = stageEl.getBoundingClientRect();
+    zoom = Math.min(r.width / imgNatW, r.height / imgNatH, 1) || 1;
+    panX = (r.width - imgNatW * zoom) / 2;
+    panY = (r.height - imgNatH * zoom) / 2;
+  }
+  function onPreviewLoad(e) {
+    imgNatW = e.currentTarget.naturalWidth || 0;
+    imgNatH = e.currentTarget.naturalHeight || 0;
+    fitView();
+  }
+  function onStageDown(e) {
+    if (e.button > 2 || !inspectSrc) return;
+    panning = true; panLast = { x: e.clientX, y: e.clientY };
+    e.preventDefault(); stageEl.setPointerCapture(e.pointerId);
+  }
+  function onStageMove(e) {
+    if (!panning) return;
+    panX += e.clientX - panLast.x; panY += e.clientY - panLast.y;
+    panLast = { x: e.clientX, y: e.clientY };
+  }
+  function onStageUp(e) {
+    if (!panning) return;
+    panning = false; panLast = null;
+    try { stageEl.releasePointerCapture(e.pointerId); } catch { /* already released */ }
+  }
+  function onStageWheel(e) {
+    if (!inspectSrc || !imgNatW) return;
+    e.preventDefault();
+    const r = stageEl.getBoundingClientRect();
+    const cx = e.clientX - r.left, cy = e.clientY - r.top;
+    const f = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+    const nz = Math.max(0.05, Math.min(12, zoom * f));
+    panX = cx - ((cx - panX) / zoom) * nz;
+    panY = cy - ((cy - panY) / zoom) * nz;
+    zoom = nz;
+  }
+
+  let compareSplit = $state(false);
+  let splitX = $state(0);
+  let splitDragging = false;
+  let canCompare = $derived(!running && !!sourceUrl && progress?.phase === "done" && !!progress?.resultUrl);
+  // Drop the wipe the instant there's nothing valid behind it (a new run, the
+  // modal reopens) — it re-arms only on a click.
+  $effect(() => { if (!canCompare && compareSplit) compareSplit = false; });
+
+  function toggleCompare() {
+    if (!canCompare) return;
+    compareSplit = !compareSplit;
+    if (compareSplit) {
+      const r = stageEl?.getBoundingClientRect();
+      splitX = r ? r.width / 2 : 0;  // open centered so both halves show
+    }
+  }
+  function onSplitDown(e) {
+    e.stopPropagation();   // the stage would otherwise start a pan
+    e.preventDefault();
+    splitDragging = true;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+  function onSplitMove(e) {
+    if (!splitDragging) return;
+    e.stopPropagation();
+    const r = stageEl.getBoundingClientRect();
+    splitX = Math.max(0, Math.min(r.width, e.clientX - r.left));
+  }
+  function onSplitUp(e) {
+    splitDragging = false;
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* already released */ }
   }
 </script>
 
@@ -167,18 +334,62 @@
       <div class="pcr-modal-body pcr-rp-body">
         <!-- LEFT: detached 3D poser -->
         <div class="pcr-rp-stage">
-          <div class="pcr-rp-stage-label">Pose</div>
+          <div class="pcr-rp-stage-head"><span class="pcr-rp-stage-label">Pose</span></div>
           <div class="pcr-rp-poser-mount" bind:this={poserEl}></div>
         </div>
 
         <!-- MIDDLE: source, then live preview / result during a run -->
         <div class="pcr-rp-stage">
-          <div class="pcr-rp-stage-label">{running ? "Rendering" : progress?.phase === "done" ? "Result" : "Source"}</div>
-          <div class="pcr-rp-stage-img">
-            {#if (running || progress?.phase === "done") && (progress?.resultUrl || progress?.previewUrl)}
-              <img src={progress.resultUrl || progress.previewUrl} alt="preview" draggable="false" />
-            {:else if sourceUrl}
-              <img src={sourceUrl} alt="source" draggable="false" />
+          <div class="pcr-rp-stage-head">
+            <span class="pcr-rp-stage-label">{running ? "Rendering" : progress?.phase === "done" ? "Result" : "Source"}</span>
+            {#if inspectSrc && imgNatW}
+              <!-- Fit/Compare live here (not over the image) so the stage's
+                   pointer capture can't swallow their clicks. -->
+              <div class="pcr-rp-stage-tools">
+                {#if canCompare}
+                  <button class="pcr-rp-fit-btn" class:on={compareSplit} onclick={toggleCompare}
+                    title="Drag the divider to wipe the source over the result">Compare</button>
+                {/if}
+                <button class="pcr-rp-fit-btn" onclick={fitView}>Fit</button>
+              </div>
+            {/if}
+          </div>
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div class="pcr-rp-stage-img" class:zoomable={!!inspectSrc} bind:this={stageEl}
+            onpointerdown={onStageDown} onpointermove={onStageMove}
+            onpointerup={onStageUp} onpointercancel={onStageUp} onwheel={onStageWheel}
+            ondblclick={fitView}
+            oncontextmenu={(e) => e.preventDefault()}>
+            {#if liveTile}
+              <!-- transient live render preview: a moving frame, just center it -->
+              <img class="pcr-rp-live" src={liveTile} alt="preview" draggable="false" />
+            {:else if inspectSrc}
+              <div class="pcr-rp-zoomwrap" style="transform: translate({panX}px, {panY}px) scale({zoom});">
+                <img class="pcr-rp-preview" src={inspectSrc} alt="" draggable="false" onload={onPreviewLoad} />
+              </div>
+              {#if compareSplit && canCompare}
+                <!-- Source (Before) clipped to the LEFT of the divider in screen
+                     space; the inner wrap reuses the exact transform so it stays
+                     pixel-aligned with the result behind it; sized to the
+                     result's natural box so only the re-pose differs. -->
+                <div class="pcr-rp-split-before" style="clip-path: inset(0 calc(100% - {splitX}px) 0 0);">
+                  <div class="pcr-rp-zoomwrap" style="transform: translate({panX}px, {panY}px) scale({zoom});">
+                    <img class="pcr-rp-preview" src={sourceUrl} alt="" draggable="false" width={imgNatW} height={imgNatH} />
+                  </div>
+                </div>
+                <div class="pcr-rp-split-label before">Before</div>
+                <div class="pcr-rp-split-label after">After</div>
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <div class="pcr-rp-split-divider" style="left: {splitX}px;"
+                  onpointerdown={onSplitDown} onpointermove={onSplitMove}
+                  onpointerup={onSplitUp} onpointercancel={onSplitUp}>
+                  <div class="pcr-rp-split-knob">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="9.5 8 5.5 12 9.5 16"/><polyline points="14.5 8 18.5 12 14.5 16"/>
+                    </svg>
+                  </div>
+                </div>
+              {/if}
             {/if}
           </div>
           {#if progress && progress.phase !== "building"}
@@ -212,7 +423,7 @@
 
           <div class="pcr-mcard">
             <div class="pcr-mcard-title">Prompt</div>
-            {#key selectedRecipeId}
+            {#key selectedRecipeId + ":" + promptRestoreNonce}
               {#if mountPromptEditor}
                 <div class="pcr-rp-text pcr-rp-editor" use:promptEditor></div>
               {:else}
@@ -249,6 +460,8 @@
           <button class="pcr-modal-btn pcr-modal-btn-danger" onclick={() => onCancel()}>Cancel</button>
         {:else if progress?.phase === "done"}
           <button class="pcr-modal-btn pcr-modal-btn-secondary" onclick={() => onCancel()}>Close</button>
+          <!-- Re-run with the (now-editable) recipe/model/pose without closing — mirrors Upscale's "Run Again" / Inpaint's "Re-Apply". -->
+          <button class="pcr-modal-btn pcr-modal-btn-secondary" disabled={!canRun} onclick={run}>Re-Apply</button>
           <button class="pcr-modal-btn pcr-modal-btn-primary" disabled={!onUseInEdit || !progress.resultUrl} onclick={() => onUseInEdit?.(progress)}>Add to Edit</button>
         {:else if progress?.phase === "error"}
           <button class="pcr-modal-btn pcr-modal-btn-secondary" onclick={() => onCancel()}>Close</button>
@@ -274,17 +487,66 @@
     flex: 1; min-width: 0; min-height: 0;
     display: flex; flex-direction: column; gap: 8px;
   }
+  .pcr-rp-stage-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    min-height: 24px;
+  }
   .pcr-rp-stage-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; color: #7c7c7c; }
+  .pcr-rp-stage-tools { display: flex; align-items: center; gap: 6px; }
   .pcr-rp-poser-mount {
     flex: 1; min-height: 0;
     background: #101010; border: 1px solid #2a2a2a; border-radius: 6px; overflow: hidden;
   }
   .pcr-rp-stage-img {
+    position: relative;
     flex: 1; min-height: 0;
     display: flex; align-items: center; justify-content: center;
     background: #101010; border: 1px solid #2a2a2a; border-radius: 6px; overflow: hidden;
+    touch-action: none;
   }
-  .pcr-rp-stage-img img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .pcr-rp-stage-img.zoomable { cursor: grab; }
+  .pcr-rp-stage-img.zoomable:active { cursor: grabbing; }
+  /* live render preview: a moving frame, centered by the stage's flex */
+  .pcr-rp-live { max-width: 100%; max-height: 100%; object-fit: contain; }
+  /* absolute so the stage's flex centering doesn't fight the pan/zoom transform */
+  .pcr-rp-zoomwrap { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
+  .pcr-rp-preview { display: block; user-select: none; pointer-events: none; }
+  .pcr-rp-fit-btn {
+    padding: 3px 10px; font-size: 11.5px; color: #aaa;
+    background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 4px; cursor: pointer;
+  }
+  .pcr-rp-fit-btn:hover { color: #fff; border-color: #555; }
+  .pcr-rp-fit-btn.on { color: #fff; background: #c85909; border-color: #c85909; }
+  /* Before/after split. The wrapper fills the stage so its clip-path inset is
+     screen-space; pointer-events:none lets a pan pass through — only the
+     divider grabs the pointer. */
+  .pcr-rp-split-before { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+  .pcr-rp-split-divider {
+    position: absolute; top: 0; bottom: 0;
+    width: 18px; margin-left: -9px;   /* wide invisible grab zone, line centered */
+    z-index: 7; cursor: ew-resize; touch-action: none;
+  }
+  .pcr-rp-split-divider::before {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 50%;
+    width: 2px; margin-left: -1px;
+    background: rgba(255, 255, 255, 0.9); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+  }
+  .pcr-rp-split-knob {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 30px; height: 30px; border-radius: 50%;
+    background: rgba(20, 20, 20, 0.85); border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    display: flex; align-items: center; justify-content: center; color: #fff;
+  }
+  .pcr-rp-split-knob svg { width: 18px; height: 18px; }
+  .pcr-rp-split-label {
+    position: absolute; top: 8px; z-index: 6;
+    padding: 2px 7px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
+    color: #fff; background: rgba(20, 20, 20, 0.7); border-radius: 4px;
+    pointer-events: none;
+  }
+  .pcr-rp-split-label.before { left: 8px; }
+  .pcr-rp-split-label.after { right: 8px; }
   .pcr-rp-bar-wrap { display: flex; flex-direction: column; gap: 5px; }
   .pcr-rp-bar { height: 6px; border-radius: 3px; background: #2c2c33; overflow: hidden; }
   .pcr-rp-bar-fill { height: 100%; background: #c85909; transition: width 0.15s linear; }
@@ -293,6 +555,13 @@
 
   .pcr-rp-config { flex: 0 0 360px; min-height: 0; overflow-y: auto; padding-right: 4px; }
   .pcr-rp-config.running { pointer-events: none; opacity: 0.55; }
+  .pcr-rp-restore-chip {
+    margin-bottom: 10px;
+    padding: 5px 11px; font-size: 12px; color: #d8c08a;
+    background: rgba(200, 89, 9, 0.12); border: 1px solid rgba(200, 89, 9, 0.5);
+    border-radius: 6px; cursor: pointer;
+  }
+  .pcr-rp-restore-chip:hover { color: #fff; background: rgba(200, 89, 9, 0.25); border-color: #c85909; }
   .pcr-rp-select, .pcr-rp-text {
     width: 100%; box-sizing: border-box;
     background: #0f0f12; border: 1px solid #3a3a3a; border-radius: 6px;
