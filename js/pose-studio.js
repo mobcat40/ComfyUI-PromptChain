@@ -8,7 +8,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { poseRegistry } from "./lib/pose-registry.js";
-import { setEditorContent } from "./lib/editor.js";
+import { setEditorContent, attachDocChangeListener } from "./lib/editor.js";
 import { getLink } from "./lib/slot-utils.js";
 
 const NODE_TYPE = "PromptChain_PoseStudio";
@@ -16,7 +16,7 @@ const MIN_NODE_SIZE = [320, 400];
 // Build stamp — open the browser console (F12). If you do NOT see this exact line after
 // restarting ComfyUI, your server is still serving the OLD extension JS (it caches it at
 // startup) and no code change can reach you until it actually reloads this file.
-console.log("%c[PromptChain PoseStudio] BUILD missing-mesh-locate-2 (+ proactive on-load missing-mesh warning banner) loaded", "color:#7fffb0;font-weight:bold");
+console.log("%c[PromptChain PoseStudio] BUILD region-rename-reverse-1 (text $name{} rename -> figure rename) loaded", "color:#7fffb0;font-weight:bold");
 
 // ── figure/prop clipboard ───────────────────────────────────────────────────
 // Copy a selection (person, prop, or band-selected group) and paste it into the
@@ -1008,6 +1008,66 @@ function renameRegionBlock(node, oldName, newName) {
   setEditorContent(pc._pcrEditor, text.replace(re, (m, brace) => "$" + newName + brace));
 }
 
+// ── Text → Poser region-name sync (the reverse of renameRegionBlock) ─────────
+// renameRegionBlock pushes a Poser-side rename INTO the prompt; this brings a
+// prompt-side rename BACK to the figure. Renaming `$mannequin1 {` → `$alice {`
+// in the bound PromptChain editor renames mannequin 1 in the viewport. The
+// editor has no figure identity in it (only names, in order), so we act ONLY on
+// an unambiguous single in-place rename and debounce (the editor fires per
+// keystroke) so half-typed names never touch figure state. Add/delete edits are
+// left to the forward reconcile; invalid/duplicate names are rejected by the
+// same gate the inline rename uses (renameEntityByName on _pcrPose).
+const REGION_BLOCK_NAME_RE = /\$([A-Za-z_]\w*)\s*\{/g;
+function regionBlockNames(text) {
+  const out = [];
+  REGION_BLOCK_NAME_RE.lastIndex = 0;
+  let m;
+  while ((m = REGION_BLOCK_NAME_RE.exec(text)) !== null) out.push(m[1]);
+  return out;
+}
+// One block renamed in place → {from,to}; otherwise null. Differing counts mean
+// an add/delete (the reconcile's job); more than one change means an ambiguous
+// paste we can't map without identity. Case-sensitive so a case-only edit still
+// propagates (binding itself stays case-insensitive).
+function singleBlockRename(prev, cur) {
+  if (prev.length !== cur.length) return null;
+  let hit = null;
+  for (let i = 0; i < cur.length; i++) {
+    if (cur[i] === prev[i]) continue;
+    if (hit) return null;
+    hit = { from: prev[i], to: cur[i] };
+  }
+  return hit;
+}
+function syncRegionRenamesFromText(pc) {
+  if (!pc?._pcrEditor) return;
+  const cur = regionBlockNames(pc._pcrEditor.state.doc.toString());
+  const prev = pc._pcrLastBlockNames;
+  pc._pcrLastBlockNames = cur; // advance the baseline every run, applied or not
+  if (!prev) return;           // first observation — nothing to diff against
+  const ren = singleBlockRename(prev, cur);
+  if (!ren || !ren.to) return;
+  // The Poser bound to THIS prompt (MASKS→couple→regions→pc). Found live so it
+  // stays correct across rewiring/teardown; a torn-down Poser left the registry.
+  const poser = poseRegistry.all().find((p) => p._pcrAlive && traceRegionalNodes(p).pc === pc);
+  poser?._pcrPose?.renameEntityByName?.(ren.from, ren.to);
+}
+// Attach the debounced observer to the bound prompt's editor, once per editor
+// instance (re-attaches if the node rebuilds its editor on reload). Called from
+// the same spots as the forward sync, so it's live the moment a Poser is wired
+// regionally. No-op when this Poser doesn't feed an AttentionCouple.
+function ensureReverseRegionSync(node) {
+  const { pc } = traceRegionalNodes(node);
+  if (!pc?._pcrEditor) return;
+  if (pc._pcrRegionSyncView === pc._pcrEditor) return; // already observing this view
+  pc._pcrRegionSyncView = pc._pcrEditor;
+  pc._pcrLastBlockNames = regionBlockNames(pc._pcrEditor.state.doc.toString());
+  attachDocChangeListener(pc._pcrEditor, () => {
+    clearTimeout(pc._pcrRegionSyncTimer);
+    pc._pcrRegionSyncTimer = setTimeout(() => syncRegionRenamesFromText(pc), 400);
+  });
+}
+
 // Custom names bind region→figure by NAME on the server, which needs the figure
 // list — wire POSE_JSON into the couple's pose input if it isn't already. Old
 // couple defs (page loaded before the backend gained 'pose') just skip; default
@@ -1118,6 +1178,7 @@ async function captureAndUpload(node) {
     // with the region entities — figures AND named props (add-only). No-op
     // unless this Poser feeds an AttentionCouple.
     reconcileRegionBlocks(node, ps.entityNames ? ps.entityNames() : effectiveFigureNames(ps.figures));
+    ensureReverseRegionSync(node); // and watch the prompt for $name{} renames typed back the other way
   } catch (e) {
     console.error("[PoseStudio] control-map upload failed", e);
   } finally {
@@ -2886,10 +2947,11 @@ async function mountViewport(node, container) {
   // $mannequin1 now that the first figure exists. No-op otherwise; adding more
   // people tops it up on each capture.
   reconcileRegionBlocks(node, effectiveFigureNames(figures)); // no props exist yet at mount
+  ensureReverseRegionSync(node); // observe the bound prompt for typed $name{} renames
   // Let external triggers (the regional [add]) re-run the block sync after they
   // wire MASKS->couple, since pure rewiring fires no capture. Reads live names —
   // figures and named props (liveEntityNames hoists; props exist by call time).
-  node._pcrReconcileRegions = () => reconcileRegionBlocks(node, liveEntityNames());
+  node._pcrReconcileRegions = () => { reconcileRegionBlocks(node, liveEntityNames()); ensureReverseRegionSync(node); };
 
   // Orbit listens on the canvas (same element as the posing handlers + transform gizmo,
   // so pointer capture is shared and selection/gizmo dragging keep working). The canvas
@@ -8147,12 +8209,14 @@ async function mountViewport(node, container) {
   // Export / import the whole scene (figures, props, links, foot-pins, camera) as a .json
   // file, so a posed scene can be carried between workflows. Reuses serializePose +
   // restoreSavedState — the same path that round-trips pose_state inside a workflow.
-  const exportScene = () => {
+  // The 💾 button opens a naming modal (styled like Save Pose) so the author picks the
+  // file name; confirming runs the download below.
+  const downloadScene = (filename) => {
     try {
       const blob = new Blob([JSON.stringify(serializePose(node), null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url; a.download = "promptchain-pose-scene.json";
+      a.href = url; a.download = filename;
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(url);
       // The scene JSON (like the workflow) carries imported meshes only by content
@@ -8161,6 +8225,119 @@ async function mountViewport(node, container) {
       if (imported) showClipToast(`scene exported — ⚠ ${imported} imported mesh${imported > 1 ? "es" : ""} won't travel; recipients need the file(s) or 🔍 Locate`, true);
       else showClipToast("scene exported");
     } catch (e) { console.error("[PoseStudio] scene export failed", e); }
+  };
+  // Coerce whatever the author types into one safe download name: drop a trailing
+  // .json (re-added below), neutralise path separators / illegal filename chars and
+  // leading dots so the browser never rejects the download, and fall back to a default.
+  const sanitizeSceneFilename = (raw) => {
+    const base = (raw || "").trim().replace(/\.json$/i, "").replace(/[\\/:*?"<>|]+/g, "_").replace(/^\.+/, "").trim();
+    return (base || "promptchain-pose-scene") + ".json";
+  };
+  // Visual twin of the sidebar's Rename modal (PromptModal.svelte + modal-shared.css):
+  // same chrome, plain text field, SVG ✕ close, secondary/primary footer buttons with
+  // the primary disabled while the field is empty. Styles are inlined (not the shared
+  // global CSS classes) so the modal renders correctly even on a graph page where the
+  // Svelte bundle's CSS isn't present.
+  let exportModal = null; // built lazily on first export (after the teardown chain is in place)
+  const closeExport = () => { if (exportModal) exportModal.backdrop.style.display = "none"; };
+  const attemptExport = () => {
+    const raw = exportModal.input.value.trim();
+    if (!raw) return; // confirm is disabled while empty; guard the Enter path too
+    closeExport();
+    downloadScene(sanitizeSceneFilename(raw));
+  };
+  const buildExportModal = () => {
+    const backdrop = document.createElement("div");
+    backdrop.className = "pcr-scene-export-backdrop";
+    backdrop.style.cssText =
+      "position:fixed;top:0;left:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;" +
+      "background:rgba(0,0,0,0.6);font:14px system-ui,sans-serif;";
+    const dialog = document.createElement("div");
+    dialog.setAttribute("role", "dialog");
+    dialog.setAttribute("aria-modal", "true");
+    dialog.style.cssText =
+      "min-width:320px;max-width:480px;background:#262626;border:1px solid #3a3a3a;border-radius:8px;" +
+      "box-shadow:0 8px 32px rgba(0,0,0,0.5);";
+    const header = document.createElement("div");
+    header.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #3a3a3a;";
+    const title = document.createElement("span");
+    title.textContent = "Export Scene";
+    title.style.cssText = "font-size:16px;font-weight:600;color:#fff;";
+    const closeBtn = document.createElement("button");
+    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    closeBtn.style.cssText = "display:flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;background:transparent;border:none;border-radius:4px;color:#888;cursor:pointer;";
+    closeBtn.addEventListener("mouseenter", () => { closeBtn.style.background = "rgba(255,255,255,0.1)"; closeBtn.style.color = "#fff"; });
+    closeBtn.addEventListener("mouseleave", () => { closeBtn.style.background = "transparent"; closeBtn.style.color = "#888"; });
+    header.append(title, closeBtn);
+    const body = document.createElement("div");
+    body.style.cssText = "padding:20px;";
+    const input = document.createElement("input");
+    input.type = "text";
+    input.maxLength = 80;
+    input.placeholder = "File name";
+    input.style.cssText =
+      "width:100%;box-sizing:border-box;padding:10px 12px;background:#1a1a1a;border:1px solid #3a3a3a;" +
+      "border-radius:6px;color:#fff;font-size:14px;outline:none;";
+    body.append(input);
+    const footer = document.createElement("div");
+    footer.style.cssText = "display:flex;justify-content:flex-end;gap:10px;padding:16px 20px;border-top:1px solid #3a3a3a;";
+    const mkFooterBtn = (label, bg, fg) => {
+      const b = document.createElement("button");
+      b.textContent = label;
+      b.style.cssText = `padding:8px 16px;border:none;border-radius:6px;font-size:14px;font-weight:500;cursor:pointer;background:${bg};color:${fg};`;
+      return b;
+    };
+    const cancelBtn = mkFooterBtn("Cancel", "#3a3a3a", "#ccc");
+    cancelBtn.addEventListener("mouseenter", () => { cancelBtn.style.background = "#4a4a4a"; });
+    cancelBtn.addEventListener("mouseleave", () => { cancelBtn.style.background = "#3a3a3a"; });
+    const confirmBtn = mkFooterBtn("Export", "#973f00", "#fff");
+    confirmBtn.addEventListener("mouseenter", () => { if (!confirmBtn.disabled) confirmBtn.style.background = "#c85909"; });
+    confirmBtn.addEventListener("mouseleave", () => { confirmBtn.style.background = "#973f00"; });
+    // Mirror PromptModal: the primary action is disabled while the field is empty.
+    const refreshConfirm = () => {
+      const empty = !input.value.trim();
+      confirmBtn.disabled = empty;
+      confirmBtn.style.opacity = empty ? "0.5" : "1";
+      confirmBtn.style.cursor = empty ? "default" : "pointer";
+    };
+    footer.append(cancelBtn, confirmBtn);
+    dialog.append(header, body, footer);
+    backdrop.appendChild(dialog);
+
+    input.addEventListener("input", refreshConfirm);
+    input.addEventListener("focus", () => { input.style.borderColor = "#dd7634"; });
+    input.addEventListener("blur", () => { input.style.borderColor = "#3a3a3a"; });
+    backdrop.addEventListener("pointerdown", (e) => e.stopPropagation()); // keep canvas/selection handlers out
+    backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeExport(); }); // click the dim to cancel
+    backdrop.addEventListener("keydown", (e) => {
+      e.stopPropagation(); // graph/viewport hotkeys must never fire while the modal is up
+      if (e.key === "Escape") { e.preventDefault(); closeExport(); }
+      else if (e.key === "Enter" && e.target === input) { e.preventDefault(); attemptExport(); }
+    });
+    closeBtn.addEventListener("click", closeExport);
+    cancelBtn.addEventListener("click", closeExport);
+    confirmBtn.addEventListener("click", attemptExport);
+    document.body.appendChild(backdrop);
+    // Ride the portaled-flyout teardown chain so the modal never outlives the node.
+    const prevCleanup = node._pcrMenuCleanup;
+    node._pcrMenuCleanup = () => { prevCleanup?.(); backdrop.remove(); };
+
+    exportModal = { backdrop, input, refreshConfirm };
+  };
+  const openExportScene = () => {
+    if (!exportModal) buildExportModal();
+    exportModal.backdrop.style.zIndex = String((node.properties?.pcrFullscreenZ || 10001) + 10); // above this poser's flyout menus
+    const defaultName = "promptchain-pose-scene.json";
+    exportModal.input.value = defaultName;
+    exportModal.refreshConfirm();
+    exportModal.backdrop.style.display = "flex";
+    requestAnimationFrame(() => {
+      exportModal.input.focus();
+      // Pre-select the base name only (leaves ".json") so typing replaces the name
+      // without clobbering the extension — same trick the sidebar Rename modal uses.
+      exportModal.input.setSelectionRange(0, defaultName.length - ".json".length);
+    });
   };
   const importInput = document.createElement("input");
   importInput.type = "file"; importInput.accept = ".json,.glb,.gltf,.obj"; importInput.style.display = "none";
@@ -8183,7 +8360,7 @@ async function mountViewport(node, container) {
     } catch (e) { console.error("[PoseStudio] scene import failed (not a valid pose JSON?)", e); }
   });
   container.appendChild(importInput);
-  mainGroup.appendChild(mkToolBtn("💾", "Export this scene to a .json file (transfer between workflows)", exportScene));
+  mainGroup.appendChild(mkToolBtn("💾", "Export this scene to a .json file (transfer between workflows)", openExportScene));
   mainGroup.appendChild(mkToolBtn("📂", "Open: a scene .json (replaces the scene) or a .glb/.gltf/.obj model (adds it as a prop)", () => importInput.click()));
 
   // ── copy / paste people + props ─────────────────────────────────────────────
@@ -8491,6 +8668,53 @@ async function mountViewport(node, container) {
       openRenameProp(prop);
     }
   });
+
+  // Text → Poser: the bound prompt's `$oldName {` block was renamed to
+  // `$newName {` (see syncRegionRenamesFromText). Apply it to the matching
+  // entity so a rename typed in the prompt renames the actual mannequin/prop.
+  // Mirrors commitRename's apply branches but DELIBERATELY skips renameRegionBlock
+  // (the editor already holds newName — rewriting it would loop) and validates
+  // through the same gate (reserved / duplicate / identifier), so a bad typed
+  // name is rejected here instead of corrupting figure state. Returns
+  // {applied, error?} — the caller leaves the user's text untouched either way.
+  const renameEntityByName = (oldName, newName) => {
+    const from = String(oldName || "").toLowerCase();
+    const to = String(newName || "");
+    if (!from || !to) return { applied: false };
+    // Figures match on their EFFECTIVE name (custom, else mannequinN).
+    const fIdx = effectiveFigureNames(figures).findIndex((n) => n.toLowerCase() === from);
+    if (fIdx >= 0) {
+      const fig = figures[fIdx];
+      // Reverting a block to this figure's OWN default name clears the custom
+      // name — validateEntityName forbids typing "mannequinN", so handle the
+      // legitimate self-revert before that gate (other indices stay rejected).
+      if (to.toLowerCase() === "mannequin" + (fIdx + 1)) {
+        if (fig.customName == null) return { applied: false };
+        fig.customName = null;
+        updateFigureLabels(); requestRender(); captureAndUpload(node);
+        return { applied: true };
+      }
+      const res = validateEntityName(fig, to);
+      if (res.error) return { applied: false, error: res.error };
+      if (!res.name || res.name === fig.customName) return { applied: false };
+      fig.customName = res.name;
+      ensureCouplePoseWire(node);
+      updateFigureLabels(); requestRender(); captureAndUpload(node);
+      return { applied: true };
+    }
+    // Named props match on their customName.
+    const mesh = namedPropMeshes().find((m) => (m.userData.customName || "").toLowerCase() === from);
+    if (mesh) {
+      const res = validateEntityName(mesh, to);
+      if (res.error) return { applied: false, error: res.error };
+      if (!res.name || res.name === mesh.userData.customName) return { applied: false };
+      mesh.userData.customName = res.name;
+      ensureCouplePoseWire(node);
+      updatePropLabels(); updatePropUI(); requestRender(); captureAndUpload(node);
+      return { applied: true };
+    }
+    return { applied: false }; // no entity by that name (e.g. an orphan $block)
+  };
 
   // ── drag-and-drop scene import ──────────────────────────────────────────────
   // Drop a finished render (PNG/WebP with embedded workflow), a workflow .json,
@@ -10354,7 +10578,7 @@ async function mountViewport(node, container) {
   cpNewBtn.addEventListener("click", startNewGarment);
   cpDoneBtn.addEventListener("click", exitClothingPaint);
 
-  node._pcrPose = { THREE, scene, camera, renderer, controls, transformControls, rig, figures, propsApi, attachApi, ro, container, requestRender, captureBlob, captureRegionMasks, disposeCapture, recordHistory, onKey, onWinPointerDown, onContextMenu, exitFullscreen, enterDock, exitDock, entityNames: liveEntityNames,
+  node._pcrPose = { THREE, scene, camera, renderer, controls, transformControls, rig, figures, propsApi, attachApi, ro, container, requestRender, captureBlob, captureRegionMasks, disposeCapture, recordHistory, onKey, onWinPointerDown, onContextMenu, exitFullscreen, enterDock, exitDock, entityNames: liveEntityNames, renameEntityByName,
     // Headless-harness probe (cheap, read-only) — lets the puppeteer rig see
     // closure state the DOM can't reveal. Not a public API.
     _dbgSculptDiag: (cols = 9, rows = 14) => {

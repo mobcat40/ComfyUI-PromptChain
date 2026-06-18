@@ -54,6 +54,26 @@ function toggleLineComment(view) {
   if (changes.length > 0) view.dispatch({ changes });
 }
 
+// Append a doc-change listener to an ALREADY-CREATED editor. CodeMirror's
+// updateListener is fixed at construction (createEditor wires the node's own
+// onChange there), so a later observer — e.g. the 3D Poser watching a bound
+// prompt for `$name{}` block renames — is added dynamically via appendConfig.
+// Returns a disposer that quiesces the callback (CM keeps the extension, but the
+// guard makes it a no-op after teardown).
+export function attachDocChangeListener(view, onDocChange) {
+  const CM = window.PromptChainCM;
+  if (!CM || !view) return () => {};
+  let active = true;
+  view.dispatch({
+    effects: CM.StateEffect.appendConfig.of(
+      CM.EditorView.updateListener.of((update) => {
+        if (active && update.docChanged) onDocChange(update.state.doc.toString());
+      })
+    ),
+  });
+  return () => { active = false; };
+}
+
 // Creates a CodeMirror 6 editor inside the container.
 // onChange(text) fires on every document edit.
 // onUpdate(viewUpdate) fires on every CM6 update (selection, focus, etc).
