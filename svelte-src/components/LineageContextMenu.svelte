@@ -3,6 +3,7 @@
 
   let {
     x, y,
+    canExpand = false,
     canEdit = false,
     canDelete = false,
     isLocal = false,
@@ -44,6 +45,10 @@
 </script>
 
 <div use:portal class="pcr-ctx" bind:this={menuEl} style="left:{pos.left}px;top:{pos.top}px;">
+  {#if canExpand}
+    <button class="pcr-ctx-item" onclick={() => act("expand-branches")}>Expand branches</button>
+    {#if canEdit || canDelete || isLocal}<div class="pcr-ctx-sep"></div>{/if}
+  {/if}
   {#if canEdit}
     <button class="pcr-ctx-item" onclick={() => act("edit")}>Edit</button>
   {/if}
@@ -52,6 +57,7 @@
   {/if}
   {#if isLocal}
     {#if canEdit || canDelete}<div class="pcr-ctx-sep"></div>{/if}
+    <button class="pcr-ctx-item" disabled={orphaned} onclick={() => act("copy-path")}>Copy Path</button>
     <button class="pcr-ctx-item" disabled={orphaned} onclick={() => act("open-file")}>Open File</button>
     <button class="pcr-ctx-item" disabled={orphaned} onclick={() => act("open-folder")}>Open Folder</button>
     {#if isWindows}

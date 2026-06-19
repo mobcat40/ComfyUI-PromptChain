@@ -1,12 +1,12 @@
-import { b as block, B as BranchManager, d as delegate, p as push, a as prop, s as state, c as proxy, u as user_effect, g as get, e as set, i as if_block, f as sibling, t as template_effect, h as set_class, j as delegated, k as append, l as pop, m as user_derived, n as child, o as bind_this, q as set_value, r as event, v as first_child, w as each, x as set_attribute, y as set_text, z as index, A as from_html, C as tick, D as comment, E as untrack, F as update, G as set_checked, H as autofocus, I as to_array, J as from_svg, $ as $window, K as mount, L as unmount } from "./disclose-version-BjTnIIw0.js";
-import { o as onDestroy } from "./index-client-m0VtlDjX.js";
-import { s as set_style } from "./style-CbOHK2KU.js";
-import { a as action } from "./actions-Ckx5huYg.js";
-import { b as bind_value, a as bind_checked } from "./input-Bjai8x-c.js";
-import { i as init_select, s as select_option, b as bind_select_value } from "./select-Dgaht2aI.js";
-import { p as portal, C as ConfirmModal } from "./ConfirmModal-DSeVjwuq.js";
-import { S as SettingsSlider } from "./SettingsSlider-Bxw-taga.js";
-import { P as PopupAnchor, h as html } from "./PopupAnchor-sxqUMRLP.js";
+import { b as block, B as BranchManager, d as delegate, p as push, a as prop, s as state, c as proxy, u as user_effect, g as get, e as set, i as if_block, f as sibling, t as template_effect, h as set_class, j as delegated, k as append, l as pop, m as user_derived, n as child, o as bind_this, q as set_value, r as event, v as first_child, w as each, x as set_attribute, y as set_text, z as index, A as from_html, C as tick, D as comment, E as untrack, F as update, G as set_checked, H as autofocus, I as to_array, J as from_svg, $ as $window, K as noop, L as mount, M as unmount } from "./disclose-version-uq4tn5Y6.js";
+import { o as onDestroy } from "./index-client-iMRCrpBY.js";
+import { s as set_style } from "./style-Boi27oOu.js";
+import { a as action } from "./actions-WPfqiWYB.js";
+import { b as bind_value, a as bind_checked } from "./input-DFQhebEz.js";
+import { i as init_select, s as select_option, b as bind_select_value } from "./select-Dp4ExMMc.js";
+import { p as portal, C as ConfirmModal } from "./ConfirmModal-BGcVYndw.js";
+import { S as SettingsSlider } from "./SettingsSlider-CKF_XmgB.js";
+import { P as PopupAnchor, h as html } from "./PopupAnchor-C6OWGGTI.js";
 const NAN = Symbol("NaN");
 function key(node, get_key, render_fn) {
   var branches = new BranchManager(node);
@@ -76,11 +76,11 @@ async function saveModalSetup(fetchApi, hash, kind, data, dims = null, planes = 
   }
 }
 var root_1$7 = from_html(`<input class="pcr-spi-edit svelte-zjr12h" type="text" spellcheck="false"/>`);
-var root_3$7 = from_html(`<button type="button"> </button> <span class="pcr-spi-sep svelte-zjr12h">/</span>`, 1);
+var root_3$8 = from_html(`<button type="button"> </button> <span class="pcr-spi-sep svelte-zjr12h">/</span>`, 1);
 var root_2$8 = from_html(`<!> <input class="pcr-spi-input svelte-zjr12h" type="text" spellcheck="false"/>`, 1);
 var root_5$7 = from_html(`<div><svg width="12" height="12" viewBox="0 -960 960 960" fill="currentColor" class="svelte-zjr12h"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h240l80 80h320q33 0 56.5 23.5T880-640v400q0 33-23.5 56.5T800-160H160Z"></path></svg> </div>`);
 var root_4$7 = from_html(`<div class="pcr-spi-dd svelte-zjr12h"></div>`);
-var root$3 = from_html(`<div><div class="pcr-spi-field svelte-zjr12h"><!></div> <!></div>`);
+var root$2 = from_html(`<div><div class="pcr-spi-field svelte-zjr12h"><!></div> <!></div>`);
 function SavePathInput($$anchor, $$props) {
   push($$props, true);
   let value = prop($$props, "value", 3, ""), onChange = prop($$props, "onChange", 3, () => {
@@ -231,7 +231,7 @@ function SavePathInput($$anchor, $$props) {
     fetchApi()(`/promptchain/reveal-file?scope=output&path=${encodeURIComponent(rel)}`).catch(() => {
     });
   }
-  var div = root$3();
+  var div = root$2();
   let classes;
   var div_1 = child(div);
   var node = child(div_1);
@@ -283,7 +283,7 @@ function SavePathInput($$anchor, $$props) {
       var fragment = root_2$8();
       var node_1 = first_child(fragment);
       each(node_1, 17, () => get(chips), index, ($$anchor3, chip, i) => {
-        var fragment_1 = root_3$7();
+        var fragment_1 = root_3$8();
         var button = first_child(fragment_1);
         let classes_1;
         var text_1 = child(button);
@@ -358,13 +358,13 @@ function SavePathInput($$anchor, $$props) {
   pop();
 }
 delegate(["click", "input", "keydown", "mousedown"]);
-var root_3$6 = from_html(`<div class="pcr-mode-menu-empty">No matching models</div>`);
-var root_6$5 = from_html(`<div class="pcr-ssel-group svelte-1izuj9d"> </div>`);
+var root_3$7 = from_html(`<div class="pcr-mode-menu-empty">No matching models</div>`);
+var root_6$6 = from_html(`<div class="pcr-ssel-group svelte-1izuj9d"> </div>`);
 var root_8$5 = from_html(`<span class="pcr-mode-menu-check"></span>`);
-var root_7$5 = from_html(`<div><span class="pcr-mode-menu-label"></span> <!></div>`);
+var root_7$6 = from_html(`<div><span class="pcr-mode-menu-label"></span> <!></div>`);
 var root_5$6 = from_html(`<!> <!>`, 1);
 var root_2$7 = from_html(`<div class="pcr-mode-menu-search-container"><input type="text" class="pcr-mode-menu-search"/></div> <div class="pcr-mode-menu-separator"></div> <div class="pcr-mode-menu-list"><!></div>`, 1);
-var root$2 = from_html(`<button type="button" class="pcr-ssel-trigger svelte-1izuj9d"><span class="pcr-ssel-label svelte-1izuj9d"> </span> <span class="pcr-ssel-caret svelte-1izuj9d"></span></button> <!>`, 1);
+var root$1 = from_html(`<button type="button" class="pcr-ssel-trigger svelte-1izuj9d"><span class="pcr-ssel-label svelte-1izuj9d"> </span> <span class="pcr-ssel-caret svelte-1izuj9d"></span></button> <!>`, 1);
 function SearchableSelect($$anchor, $$props) {
   push($$props, true);
   let id = prop($$props, "id", 3, ""), value = prop($$props, "value", 3, ""), groups = prop($$props, "groups", 19, () => []), disabled = prop($$props, "disabled", 3, false), popupKey = prop($$props, "popupKey", 3, "searchable-select"), placeholder = prop($$props, "placeholder", 3, "Search models..."), onpick = prop($$props, "onpick", 3, () => {
@@ -454,7 +454,7 @@ function SearchableSelect($$anchor, $$props) {
     }
     return result;
   }
-  var fragment = root$2();
+  var fragment = root$1();
   var button = first_child(fragment);
   var span = child(button);
   var text_1 = child(span);
@@ -486,7 +486,7 @@ function SearchableSelect($$anchor, $$props) {
           var node_1 = child(div_1);
           {
             var consequent = ($$anchor4) => {
-              var div_2 = root_3$6();
+              var div_2 = root_3$7();
               append($$anchor4, div_2);
             };
             var alternate = ($$anchor4) => {
@@ -497,7 +497,7 @@ function SearchableSelect($$anchor, $$props) {
                 var node_3 = first_child(fragment_4);
                 {
                   var consequent_1 = ($$anchor6) => {
-                    var div_3 = root_6$5();
+                    var div_3 = root_6$6();
                     var text_2 = child(div_3);
                     template_effect(() => set_text(text_2, get(g).label));
                     append($$anchor6, div_3);
@@ -509,7 +509,7 @@ function SearchableSelect($$anchor, $$props) {
                 var node_4 = sibling(node_3, 2);
                 each(node_4, 17, () => get(g).options, index, ($$anchor6, opt) => {
                   const i = user_derived(() => get(flat).indexOf(get(opt)));
-                  var div_4 = root_7$5();
+                  var div_4 = root_7$6();
                   let classes;
                   var span_2 = child(div_4);
                   html(span_2, () => highlightText(get(opt).label), true);
@@ -569,17 +569,17 @@ function SearchableSelect($$anchor, $$props) {
 }
 delegate(["click", "keydown"]);
 var root_2$6 = from_html(`<button class="pcr-modal-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>`);
-var root_3$5 = from_html(`<img class="pcr-up-live svelte-xw7bpl" alt="" draggable="false"/>`);
+var root_3$6 = from_html(`<img class="pcr-up-live svelte-xw7bpl" alt="" draggable="false"/>`);
 var root_5$5 = from_html(`<div class="pcr-up-split-before svelte-xw7bpl"><div class="pcr-up-zoomwrap svelte-xw7bpl"><img class="pcr-up-preview svelte-xw7bpl" alt="" draggable="false"/></div></div> <div class="pcr-up-split-label before svelte-xw7bpl">Before</div> <div class="pcr-up-split-label after svelte-xw7bpl">After</div> <div class="pcr-up-split-divider svelte-xw7bpl"><div class="pcr-up-split-knob svelte-xw7bpl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="svelte-xw7bpl"><polyline points="9.5 8 5.5 12 9.5 16"></polyline><polyline points="14.5 8 18.5 12 14.5 16"></polyline></svg></div></div>`, 1);
-var root_7$4 = from_html(`<button title="Drag the divider to wipe the original over the result">Compare</button>`);
-var root_6$4 = from_html(`<div class="pcr-up-zoomctl svelte-xw7bpl"><span class="pcr-up-zoompct svelte-xw7bpl"> </span> <!> <button class="pcr-up-fit-btn svelte-xw7bpl">Fit</button></div>`);
+var root_7$5 = from_html(`<button title="Drag the divider to wipe the original over the result">Compare</button>`);
+var root_6$5 = from_html(`<div class="pcr-up-zoomctl svelte-xw7bpl"><span class="pcr-up-zoompct svelte-xw7bpl"> </span> <!> <button class="pcr-up-fit-btn svelte-xw7bpl">Fit</button></div>`);
 var root_4$6 = from_html(`<div class="pcr-up-zoomwrap svelte-xw7bpl"><img class="pcr-up-preview svelte-xw7bpl" alt="" draggable="false"/></div> <!> <!>`, 1);
 var root_9$4 = from_html(`<div class="pcr-up-progress-text pcr-up-done svelte-xw7bpl"> </div>`);
 var root_10$4 = from_html(`<div class="pcr-up-progress-text pcr-up-error svelte-xw7bpl"> </div>`);
 var root_12$4 = from_html(`<div class="pcr-up-bar-label svelte-xw7bpl"> </div>`);
-var root_11$3 = from_html(`<div class="pcr-up-progress-text svelte-xw7bpl"> </div> <div class="pcr-up-bar svelte-xw7bpl"><div></div></div> <!>`, 1);
+var root_11$2 = from_html(`<div class="pcr-up-progress-text svelte-xw7bpl"> </div> <div class="pcr-up-bar svelte-xw7bpl"><div></div></div> <!>`, 1);
 var root_8$4 = from_html(`<div class="pcr-up-progress svelte-xw7bpl"><!></div>`);
-var root_13$4 = from_html(`<button class="pcr-up-restore-chip svelte-xw7bpl" title="Re-apply the dials from your last upscale of this image">↩ Restore last setup</button>`);
+var root_13$3 = from_html(`<button class="pcr-up-restore-chip svelte-xw7bpl" title="Re-apply the dials from your last upscale of this image">↩ Restore last setup</button>`);
 var root_14$4 = from_html(`<p class="pcr-up-floor-msg svelte-xw7bpl">This image has no usable prompt metadata — a plain model upscale (ESRGAN) will be used.</p>`);
 var root_16$4 = from_html(`<span class="pcr-up-cond-hint svelte-xw7bpl"> </span>`);
 var root_17$4 = from_html(`<span class="pcr-up-cond-hint svelte-xw7bpl">re-renders the whole frame at ~2MP from your instruction — composition can shift slightly; the climb model below pushes to the target size</span>`);
@@ -603,8 +603,8 @@ var root_34$3 = from_html(`<div class="pcr-up-combos svelte-xw7bpl"><div class="
 var root_36$3 = from_html(`<div class="pcr-up-combo svelte-xw7bpl"><label class="pcr-up-combo-label svelte-xw7bpl" for="pcr-up-restore">Restore</label> <select id="pcr-up-restore"><option> </option><option> </option></select></div>`);
 var root_37$3 = from_html(`<option> </option>`);
 var root_35$3 = from_html(`<div class="pcr-up-combos svelte-xw7bpl"><!> <div class="pcr-up-combo svelte-xw7bpl"><label class="pcr-up-combo-label svelte-xw7bpl" for="pcr-up-climb">Climb model</label> <select id="pcr-up-climb"></select></div></div>`);
-var root_39$2 = from_html(`<option> </option>`);
-var root_40$2 = from_html(`<option> </option>`);
+var root_39$3 = from_html(`<option> </option>`);
+var root_40$3 = from_html(`<option> </option>`);
 var root_38$3 = from_html(`<div class="pcr-up-combos svelte-xw7bpl"><div class="pcr-up-combo svelte-xw7bpl"><label class="pcr-up-combo-label svelte-xw7bpl" for="pcr-up-sampler">Sampler</label> <select id="pcr-up-sampler"></select></div> <div class="pcr-up-combo svelte-xw7bpl"><label class="pcr-up-combo-label svelte-xw7bpl" for="pcr-up-scheduler">Scheduler</label> <select id="pcr-up-scheduler"></select></div></div>`);
 var root_42$3 = from_html(`<span class="pcr-up-adv-dirty svelte-xw7bpl"> </span>`);
 var root_44$3 = from_html(`<label class="pcr-up-ultrasharp svelte-xw7bpl"><input type="checkbox" class="svelte-xw7bpl"/> <span class="pcr-up-ultrasharp-text svelte-xw7bpl">Preserve soft background <span class="pcr-up-ultrasharp-hint svelte-xw7bpl">defocused regions keep the original's smoothness instead of growing invented texture</span></span></label>`);
@@ -614,10 +614,10 @@ var root_48$2 = from_html(`<div class="pcr-up-slider-row svelte-xw7bpl"><span cl
 var root_43$3 = from_html(`<div class="pcr-up-adv-body svelte-xw7bpl"><!> <!> <!></div>`);
 var root_41$3 = from_html(`<div class="pcr-up-adv-toggle svelte-xw7bpl"><span>▶</span> Advanced <!></div> <!>`, 1);
 var root_49$2 = from_html(`<div class="pcr-up-save svelte-xw7bpl"><span class="pcr-up-save-label svelte-xw7bpl">Save to</span> <!></div>`);
-var root_51$2 = from_html(`<button class="pcr-modal-btn pcr-modal-btn-danger">Cancel</button>`);
+var root_51$1 = from_html(`<button class="pcr-modal-btn pcr-modal-btn-danger">Cancel</button>`);
 var root_53$2 = from_html(`<button class="pcr-modal-btn pcr-modal-btn-primary">Add to Edit</button>`);
 var root_54$2 = from_html(`<button class="pcr-modal-btn pcr-modal-btn-primary">View result</button>`);
-var root_52$2 = from_html(`<button class="pcr-modal-btn pcr-modal-btn-secondary">Close</button> <button class="pcr-modal-btn pcr-modal-btn-secondary"> </button> <!>`, 1);
+var root_52$1 = from_html(`<button class="pcr-modal-btn pcr-modal-btn-secondary">Close</button> <button class="pcr-modal-btn pcr-modal-btn-secondary"> </button> <!>`, 1);
 var root_56$2 = from_html(`<button class="pcr-modal-btn pcr-modal-btn-secondary">Create Workflow</button>`);
 var root_55$2 = from_html(`<button class="pcr-modal-btn pcr-modal-btn-secondary">Cancel</button> <!> <button class="pcr-modal-btn pcr-modal-btn-primary">Apply</button>`, 1);
 var root_1$6 = from_html(`<div class="pcr-modal-backdrop"><div class="pcr-modal pcr-up-modal svelte-xw7bpl" role="dialog" aria-modal="true"><div class="pcr-modal-header"><span class="pcr-modal-title"> </span> <!></div> <div class="pcr-modal-body pcr-up-body svelte-xw7bpl"><div class="pcr-up-left svelte-xw7bpl"><div><!></div> <!></div> <div><!> <!> <!> <!> <!> <!> <div class="pcr-mcard"><div class="pcr-mcard-title">Settings</div> <!> <!> <!> <!> <!> <!></div></div></div> <div class="pcr-modal-footer"><!></div></div></div>`);
@@ -1404,7 +1404,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
       var node_3 = child(div_5);
       {
         var consequent_1 = ($$anchor3) => {
-          var img = root_3$5();
+          var img = root_3$6();
           template_effect(() => set_attribute(img, "src", get(liveTile)));
           append($$anchor3, img);
         };
@@ -1441,13 +1441,13 @@ function UpscaleOptionsModal($$anchor, $$props) {
           var node_5 = sibling(node_4, 2);
           {
             var consequent_4 = ($$anchor4) => {
-              var div_10 = root_6$4();
+              var div_10 = root_6$5();
               var span_1 = child(div_10);
               var text_2 = child(span_1);
               var node_6 = sibling(span_1, 2);
               {
                 var consequent_3 = ($$anchor5) => {
-                  var button_1 = root_7$4();
+                  var button_1 = root_7$5();
                   let classes_1;
                   template_effect(() => classes_1 = set_class(button_1, 1, "pcr-up-fit-btn svelte-xw7bpl", null, classes_1, { on: get(compareSplit) }));
                   delegated("click", button_1, toggleCompare);
@@ -1498,7 +1498,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
               append($$anchor4, div_13);
             };
             var alternate = ($$anchor4) => {
-              var fragment_3 = root_11$3();
+              var fragment_3 = root_11$2();
               var div_14 = first_child(fragment_3);
               var text_5 = child(div_14);
               var div_15 = sibling(div_14, 2);
@@ -1540,7 +1540,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
       var node_10 = child(div_18);
       {
         var consequent_10 = ($$anchor3) => {
-          var button_3 = root_13$4();
+          var button_3 = root_13$3();
           delegated("click", button_3, applySavedSetup);
           append($$anchor3, button_3);
         };
@@ -2014,7 +2014,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
           var select_5 = sibling(child(div_51), 2);
           let classes_12;
           each(select_5, 21, () => caps().samplerOptions, index, ($$anchor4, opt) => {
-            var option_9 = root_39$2();
+            var option_9 = root_39$3();
             let styles_6;
             var text_22 = child(option_9);
             var option_9_value = {};
@@ -2041,7 +2041,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
           var select_6 = sibling(child(div_52), 2);
           let classes_13;
           each(select_6, 21, () => caps().schedulerOptions, index, ($$anchor4, opt) => {
-            var option_10 = root_40$2();
+            var option_10 = root_40$3();
             let styles_7;
             var text_23 = child(option_10);
             var option_10_value = {};
@@ -2243,7 +2243,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
           var node_45 = first_child(fragment_8);
           {
             var consequent_38 = ($$anchor4) => {
-              var button_4 = root_51$2();
+              var button_4 = root_51$1();
               delegated("click", button_4, function(...$$args) {
                 var _a;
                 (_a = onCancelRun()) == null ? void 0 : _a.apply(this, $$args);
@@ -2251,7 +2251,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
               append($$anchor4, button_4);
             };
             var alternate_2 = ($$anchor4) => {
-              var fragment_9 = root_52$2();
+              var fragment_9 = root_52$1();
               var button_5 = first_child(fragment_9);
               var button_6 = sibling(button_5, 2);
               var text_28 = child(button_6);
@@ -2354,17 +2354,17 @@ delegate([
   "change"
 ]);
 var root_2$5 = from_html(`<button class="pcr-modal-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>`);
-var root_3$4 = from_html(`<label class="pcr-ip-tool pcr-ip-opacity svelte-ch4fw9">Opacity <input type="range" min="0" max="1" step="0.05" class="svelte-ch4fw9"/></label> <div class="pcr-ip-tools svelte-ch4fw9"><label class="pcr-ip-tool svelte-ch4fw9">Brush <input type="range" min="4" max="1024" step="4" class="svelte-ch4fw9"/></label> <div class="pcr-ip-iconbtns svelte-ch4fw9"><button title="Brush" aria-label="Brush"><svg viewBox="0 0 24 24" class="svelte-ch4fw9"><path d="M9.06 11.9l8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"></path><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z"></path></svg></button> <button title="Eraser" aria-label="Eraser"><svg viewBox="0 0 24 24" class="svelte-ch4fw9"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path><path d="M22 21H7"></path><path d="m5 11 9 9"></path></svg></button></div> <button class="pcr-ip-tool-btn svelte-ch4fw9">Clear</button> <button class="pcr-ip-tool-btn svelte-ch4fw9">Fit</button></div>`, 1);
+var root_3$5 = from_html(`<label class="pcr-ip-tool pcr-ip-opacity svelte-ch4fw9">Opacity <input type="range" min="0" max="1" step="0.05" class="svelte-ch4fw9"/></label> <div class="pcr-ip-tools svelte-ch4fw9"><label class="pcr-ip-tool svelte-ch4fw9">Brush <input type="range" min="4" max="1024" step="4" class="svelte-ch4fw9"/></label> <div class="pcr-ip-iconbtns svelte-ch4fw9"><button title="Brush" aria-label="Brush"><svg viewBox="0 0 24 24" class="svelte-ch4fw9"><path d="M9.06 11.9l8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"></path><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z"></path></svg></button> <button title="Eraser" aria-label="Eraser"><svg viewBox="0 0 24 24" class="svelte-ch4fw9"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path><path d="M22 21H7"></path><path d="m5 11 9 9"></path></svg></button></div> <button class="pcr-ip-tool-btn svelte-ch4fw9">Clear</button> <button class="pcr-ip-tool-btn svelte-ch4fw9">Fit</button></div>`, 1);
 var root_4$5 = from_html(`<div class="pcr-ip-tools svelte-ch4fw9"><button class="pcr-ip-tool-btn svelte-ch4fw9">Fit</button> <button title="Drag the divider to wipe the original over the result">Compare</button></div>`);
 var root_5$4 = from_html(`<div></div>`);
-var root_7$3 = from_html(`<div class="pcr-ip-center svelte-ch4fw9"><img class="pcr-ip-live-preview svelte-ch4fw9" alt="" draggable="false"/></div>`);
+var root_7$4 = from_html(`<div class="pcr-ip-center svelte-ch4fw9"><img class="pcr-ip-live-preview svelte-ch4fw9" alt="" draggable="false"/></div>`);
 var root_9$3 = from_html(`<div class="pcr-ip-split-before svelte-ch4fw9"><div class="pcr-ip-stage svelte-ch4fw9"><img alt="" draggable="false" class="svelte-ch4fw9"/></div></div> <div class="pcr-ip-split-label before svelte-ch4fw9">Before</div> <div class="pcr-ip-split-label after svelte-ch4fw9">After</div> <div class="pcr-ip-split-divider svelte-ch4fw9"><div class="pcr-ip-split-knob svelte-ch4fw9"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="svelte-ch4fw9"><polyline points="9.5 8 5.5 12 9.5 16"></polyline><polyline points="14.5 8 18.5 12 14.5 16"></polyline></svg></div></div>`, 1);
 var root_8$3 = from_html(`<div class="pcr-ip-stage svelte-ch4fw9"><img alt="" draggable="false" class="svelte-ch4fw9"/></div> <!>`, 1);
 var root_10$3 = from_html(`<div class="pcr-ip-center svelte-ch4fw9"><div class="pcr-ip-waiting svelte-ch4fw9"> </div></div>`);
 var root_12$3 = from_html(`<span class="pcr-ip-bar-label svelte-ch4fw9"> </span>`);
-var root_11$2 = from_html(`<div class="pcr-ip-progress svelte-ch4fw9"><div class="pcr-ip-bar svelte-ch4fw9"><div></div></div> <!></div>`);
-var root_6$3 = from_html(`<!> <!>`, 1);
-var root_13$3 = from_html(`<button class="pcr-ip-restore-chip svelte-ch4fw9" title="Re-apply the engine / reference / dials from your last inpaint of this image">↩ Restore last setup</button>`);
+var root_11$1 = from_html(`<div class="pcr-ip-progress svelte-ch4fw9"><div class="pcr-ip-bar svelte-ch4fw9"><div></div></div> <!></div>`);
+var root_6$4 = from_html(`<!> <!>`, 1);
+var root_13$2 = from_html(`<button class="pcr-ip-restore-chip svelte-ch4fw9" title="Re-apply the engine / reference / dials from your last inpaint of this image">↩ Restore last setup</button>`);
 var root_15$3 = from_html(`<div class="pcr-ip-hint svelte-ch4fw9">renders the painted region with this checkpoint — no render metadata needed, and PuLID / Style Reference work on any source</div>`);
 var root_16$3 = from_html(`<div class="pcr-ip-hint svelte-ch4fw9">re-renders the painted region with this FLUX.1 model at the denoise below — describe the content, strong on faces and eyes</div>`);
 var root_17$3 = from_html(`<div class="pcr-ip-hint svelte-ch4fw9">follows your instruction inside the mask only — unmasked pixels stay untouched; the region renders at full model resolution</div>`);
@@ -2387,9 +2387,9 @@ var root_34$2 = from_html(`<textarea class="pcr-ip-prompt svelte-ch4fw9" spellch
 var root_35$2 = from_html(`<span class="pcr-ip-label svelte-ch4fw9">Workflow prompt (reference)</span> <textarea class="pcr-ip-refprompt svelte-ch4fw9" readonly="" spellcheck="false"></textarea>`, 1);
 var root_36$2 = from_html(`<div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Denoise</span> <!></div>`);
 var root_38$2 = from_html(`<option> </option>`);
-var root_39$1 = from_html(`<option> </option>`);
+var root_39$2 = from_html(`<option> </option>`);
 var root_37$2 = from_html(`<div class="pcr-ip-combos svelte-ch4fw9"><div class="pcr-ip-combo svelte-ch4fw9"><label class="pcr-ip-label svelte-ch4fw9" for="pcr-ip-sampler">Sampler</label> <select id="pcr-ip-sampler"></select></div> <div class="pcr-ip-combo svelte-ch4fw9"><label class="pcr-ip-label svelte-ch4fw9" for="pcr-ip-scheduler">Scheduler</label> <select id="pcr-ip-scheduler"></select></div></div>`);
-var root_40$1 = from_html(`<div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Grow</span> <!></div> <div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Feather</span> <!></div>`, 1);
+var root_40$2 = from_html(`<div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Grow</span> <!></div> <div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Feather</span> <!></div>`, 1);
 var root_41$2 = from_html(`<span class="pcr-ip-label svelte-ch4fw9">Save to</span> <!>`, 1);
 var root_42$2 = from_html(`<div class="pcr-ip-error svelte-ch4fw9"> </div>`);
 var root_43$2 = from_html(`<button class="pcr-modal-btn pcr-modal-btn-danger svelte-ch4fw9">Stop</button>`);
@@ -3344,7 +3344,7 @@ function InpaintModal($$anchor, $$props) {
       var node_3 = sibling(div_6, 2);
       {
         var consequent_1 = ($$anchor3) => {
-          var fragment_1 = root_3$4();
+          var fragment_1 = root_3$5();
           var label = first_child(fragment_1);
           var input = sibling(child(label));
           var div_9 = sibling(label, 2);
@@ -3417,11 +3417,11 @@ function InpaintModal($$anchor, $$props) {
       var node_5 = sibling(node_4, 2);
       {
         var consequent_8 = ($$anchor3) => {
-          var fragment_2 = root_6$3();
+          var fragment_2 = root_6$4();
           var node_6 = first_child(fragment_2);
           {
             var consequent_3 = ($$anchor4) => {
-              var div_15 = root_7$3();
+              var div_15 = root_7$4();
               var img_2 = child(div_15);
               template_effect(() => set_attribute(img_2, "src", get(progress).previewUrl));
               append($$anchor4, div_15);
@@ -3481,7 +3481,7 @@ function InpaintModal($$anchor, $$props) {
           var node_8 = sibling(node_6, 2);
           {
             var consequent_7 = ($$anchor4) => {
-              var div_22 = root_11$2();
+              var div_22 = root_11$1();
               var div_23 = child(div_22);
               var div_24 = child(div_23);
               let classes_7;
@@ -3518,7 +3518,7 @@ function InpaintModal($$anchor, $$props) {
       var node_10 = child(div_25);
       {
         var consequent_9 = ($$anchor3) => {
-          var button_7 = root_13$3();
+          var button_7 = root_13$2();
           delegated("click", button_7, applySavedSetup);
           append($$anchor3, button_7);
         };
@@ -3981,7 +3981,7 @@ function InpaintModal($$anchor, $$props) {
           var select_4 = sibling(child(div_50), 2);
           let classes_10;
           each(select_4, 21, () => caps().schedulerOptions, index, ($$anchor4, opt) => {
-            var option_6 = root_39$1();
+            var option_6 = root_39$2();
             let styles_4;
             var text_12 = child(option_6);
             var option_6_value = {};
@@ -4022,7 +4022,7 @@ function InpaintModal($$anchor, $$props) {
       var node_34 = sibling(div_51, 2);
       {
         var consequent_27 = ($$anchor3) => {
-          var fragment_13 = root_40$1();
+          var fragment_13 = root_40$2();
           var div_52 = first_child(fragment_13);
           var node_35 = sibling(child(div_52), 2);
           SettingsSlider(node_35, {
@@ -4204,7 +4204,7 @@ delegate([
   "change"
 ]);
 var root_4$4 = from_html(`<div class="pcr-adj-slider svelte-k7hhb3"><span class="pcr-adj-label svelte-k7hhb3"> </span> <!></div>`);
-var root_3$3 = from_html(`<div class="pcr-adj-group-body svelte-k7hhb3"></div>`);
+var root_3$4 = from_html(`<div class="pcr-adj-group-body svelte-k7hhb3"></div>`);
 var root_2$4 = from_html(`<div class="pcr-adj-group svelte-k7hhb3"><div class="pcr-adj-group-head svelte-k7hhb3"><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"></path></svg> <span class="pcr-adj-group-title svelte-k7hhb3"> </span> <button class="pcr-adj-group-reset svelte-k7hhb3">↺</button></div> <!></div>`);
 var root_1$4 = from_html(`<div class="pcr-modal-backdrop pcr-adj-backdrop svelte-k7hhb3"><div class="pcr-modal pcr-adj-modal svelte-k7hhb3" role="dialog" aria-modal="true"><div class="pcr-modal-header"><span class="pcr-modal-title">Camera Raw: <span class="pcr-adj-fname svelte-k7hhb3"> </span></span> <button class="pcr-modal-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div> <div class="pcr-modal-body pcr-adj-body svelte-k7hhb3"><div class="pcr-adj-viewport svelte-k7hhb3"><div class="pcr-adj-stage svelte-k7hhb3"><canvas class="svelte-k7hhb3"></canvas></div></div> <div class="pcr-adj-panel svelte-k7hhb3"></div></div> <div class="pcr-modal-footer"><span class="pcr-adj-hint svelte-k7hhb3">scroll zooms · drag pans · double-click fits · sliders preview live, OK applies once</span> <button class="pcr-modal-btn pcr-modal-btn-secondary svelte-k7hhb3">Cancel</button> <button class="pcr-modal-btn pcr-modal-btn-primary svelte-k7hhb3"> </button></div></div></div>`);
 function AdjustModal($$anchor, $$props) {
@@ -4890,7 +4890,7 @@ function AdjustModal($$anchor, $$props) {
         var node_1 = sibling(div_8, 2);
         {
           var consequent = ($$anchor4) => {
-            var div_9 = root_3$3();
+            var div_9 = root_3$4();
             each(div_9, 21, () => get(g).sliders, index, ($$anchor5, sl) => {
               var div_10 = root_4$4();
               var span_4 = child(div_10);
@@ -4987,16 +4987,16 @@ delegate([
   "dblclick"
 ]);
 var root_2$3 = from_html(`<span class="pcr-ed-dims svelte-1ozzqkm"> </span>`);
-var root_3$2 = from_svg(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 8.5 V6.5 A1.5 1.5 0 0 1 10 5 H17.5 A1.5 1.5 0 0 1 19 6.5 V14 A1.5 1.5 0 0 1 17.5 15.5 H15.5"></path><rect x="5" y="8.5" width="10.5" height="10.5" rx="1.5"></rect></svg>`);
+var root_3$3 = from_svg(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 8.5 V6.5 A1.5 1.5 0 0 1 10 5 H17.5 A1.5 1.5 0 0 1 19 6.5 V14 A1.5 1.5 0 0 1 17.5 15.5 H15.5"></path><rect x="5" y="8.5" width="10.5" height="10.5" rx="1.5"></rect></svg>`);
 var root_4$3 = from_svg(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="1.5"></rect></svg>`);
 var root_5$3 = from_html(`<div class="pcr-ed-restoring svelte-1ozzqkm"><div class="pcr-ed-restoring-card svelte-1ozzqkm"><span class="pcr-ed-spinner svelte-1ozzqkm"></span> <span> </span></div></div>`);
-var root_6$2 = from_html(`<span class="pcr-ed-label svelte-1ozzqkm">Transform</span> <button class="pcr-ed-tool-btn svelte-1ozzqkm" title="Flip horizontal">⇆ Flip H</button> <button class="pcr-ed-tool-btn svelte-1ozzqkm" title="Flip vertical">⇅ Flip V</button> <span class="pcr-ed-opt-readout svelte-1ozzqkm"> </span> <button class="pcr-ed-tool-btn svelte-1ozzqkm" title="Reset to the original size, rotation and flip">Reset</button> <button class="pcr-ed-tool-btn pcr-ed-pop-ok svelte-1ozzqkm">✓ Apply</button> <span class="pcr-ed-opt-hint svelte-1ozzqkm">drag a corner to scale · the knob above rotates (Shift = 15° steps) · drag inside to move · Shift on a corner keeps proportions · Enter applies · Esc cancels</span>`, 1);
-var root_7$2 = from_html(`<div class="pcr-ed-opt svelte-1ozzqkm"><span class="pcr-ed-label svelte-1ozzqkm">Tolerance</span> <!></div> <button>Contiguous</button> <span class="pcr-ed-opt-hint svelte-1ozzqkm">click to flood-fill with the foreground color · constrained to the selection · Alt/Ctrl+Backspace fills</span>`, 1);
+var root_6$3 = from_html(`<span class="pcr-ed-label svelte-1ozzqkm">Transform</span> <button class="pcr-ed-tool-btn svelte-1ozzqkm" title="Flip horizontal">⇆ Flip H</button> <button class="pcr-ed-tool-btn svelte-1ozzqkm" title="Flip vertical">⇅ Flip V</button> <span class="pcr-ed-opt-readout svelte-1ozzqkm"> </span> <button class="pcr-ed-tool-btn svelte-1ozzqkm" title="Reset to the original size, rotation and flip">Reset</button> <button class="pcr-ed-tool-btn pcr-ed-pop-ok svelte-1ozzqkm">✓ Apply</button> <span class="pcr-ed-opt-hint svelte-1ozzqkm">drag a corner to scale · the knob above rotates (Shift = 15° steps) · drag inside to move · Shift on a corner keeps proportions · Enter applies · Esc cancels</span>`, 1);
+var root_7$3 = from_html(`<div class="pcr-ed-opt svelte-1ozzqkm"><span class="pcr-ed-label svelte-1ozzqkm">Tolerance</span> <!></div> <button>Contiguous</button> <span class="pcr-ed-opt-hint svelte-1ozzqkm">click to flood-fill with the foreground color · constrained to the selection · Alt/Ctrl+Backspace fills</span>`, 1);
 var root_8$2 = from_html(`<div class="pcr-ed-opt svelte-1ozzqkm"><span class="pcr-ed-label svelte-1ozzqkm">Blur</span> <!></div> <div class="pcr-ed-opt svelte-1ozzqkm"><span class="pcr-ed-label svelte-1ozzqkm">Feather</span> <!></div> <span class="pcr-ed-opt-hint svelte-1ozzqkm">lasso a region — it blurs and feather-blends on release</span>`, 1);
 var root_9$2 = from_html(`<div class="pcr-ed-opt svelte-1ozzqkm"><span class="pcr-ed-label svelte-1ozzqkm">Size</span> <!></div> <div class="pcr-ed-opt svelte-1ozzqkm"><span class="pcr-ed-label svelte-1ozzqkm">Hardness</span> <!></div> <div class="pcr-ed-opt svelte-1ozzqkm"><span class="pcr-ed-label svelte-1ozzqkm">Opacity</span> <!></div> <div class="pcr-ed-opt svelte-1ozzqkm"><span class="pcr-ed-label svelte-1ozzqkm">Flow</span> <!></div> <button title="Airbrush — paint keeps building while you hold the button (Flow = rate, Opacity = ceiling)"><svg viewBox="0 0 24 24" class="svelte-1ozzqkm"><path d="M3 3h.01"></path><path d="M7 5h.01"></path><path d="M11 3h.01"></path><path d="M3 7h.01"></path><path d="M7 9h.01"></path><path d="M3 11h.01"></path><rect width="4" height="4" x="15" y="5"></rect><path d="m19 9 2 2v10c0 .6-.4 1-1 1h-6c-.6 0-1-.4-1-1V11l2-2"></path><path d="m13 14 8-2"></path></svg></button>`, 1);
-var root_11$1 = from_html(`<div class="pcr-ed-opt svelte-1ozzqkm"><span class="pcr-ed-label svelte-1ozzqkm">Opacity</span> <!></div> <div class="pcr-ed-opt svelte-1ozzqkm"><span class="pcr-ed-label svelte-1ozzqkm">Flow</span> <!></div>`, 1);
+var root_11 = from_html(`<div class="pcr-ed-opt svelte-1ozzqkm"><span class="pcr-ed-label svelte-1ozzqkm">Opacity</span> <!></div> <div class="pcr-ed-opt svelte-1ozzqkm"><span class="pcr-ed-label svelte-1ozzqkm">Flow</span> <!></div>`, 1);
 var root_12$2 = from_html(`<span class="pcr-ed-opt-hint svelte-1ozzqkm">paint over a blemish — it heals from the surroundings on release</span>`);
-var root_13$2 = from_html(`<span class="pcr-ed-opt-hint svelte-1ozzqkm"> </span>`);
+var root_13$1 = from_html(`<span class="pcr-ed-opt-hint svelte-1ozzqkm"> </span>`);
 var root_14$2 = from_html(`<span class="pcr-ed-opt-hint svelte-1ozzqkm"> </span>`);
 var root_10$2 = from_html(`<div class="pcr-ed-opt svelte-1ozzqkm"><span class="pcr-ed-label svelte-1ozzqkm">Size</span> <!></div> <div class="pcr-ed-opt svelte-1ozzqkm"><span class="pcr-ed-label svelte-1ozzqkm">Hardness</span> <!></div> <!> <!>`, 1);
 var root_16$2 = from_html(`<button> </button>`);
@@ -5022,9 +5022,9 @@ var root_35$1 = from_svg(`<svg class="pcr-ed-selants svelte-1ozzqkm"><g class="s
 var root_37$1 = from_html(`<div class="pcr-ed-thirds pcr-ed-thirds-v svelte-1ozzqkm"></div> <div class="pcr-ed-thirds pcr-ed-thirds-v svelte-1ozzqkm"></div> <div class="pcr-ed-thirds pcr-ed-thirds-h svelte-1ozzqkm"></div> <div class="pcr-ed-thirds pcr-ed-thirds-h svelte-1ozzqkm"></div>`, 1);
 var root_38$1 = from_html(`<div class="pcr-ed-crop-handle svelte-1ozzqkm"></div>`);
 var root_36$1 = from_html(`<svg class="pcr-ed-crop-shield svelte-1ozzqkm"><path fill-rule="evenodd" class="svelte-1ozzqkm"></path></svg> <div><!></div> <!>`, 1);
-var root_40 = from_html(`<div class="pcr-ed-handle svelte-1ozzqkm"></div>`);
+var root_40$1 = from_html(`<div class="pcr-ed-handle svelte-1ozzqkm"></div>`);
 var root_41$1 = from_html(`<div class="pcr-ed-rot-stem svelte-1ozzqkm"></div> <div class="pcr-ed-rot-knob svelte-1ozzqkm" title="Drag to rotate · Shift snaps to 15°"></div>`, 1);
-var root_39 = from_html(`<div class="pcr-ed-patch-wrap svelte-1ozzqkm"><canvas class="pcr-ed-patch svelte-1ozzqkm"></canvas> <div class="pcr-ed-patch-border svelte-1ozzqkm"></div> <!> <!></div>`);
+var root_39$1 = from_html(`<div class="pcr-ed-patch-wrap svelte-1ozzqkm"><canvas class="pcr-ed-patch svelte-1ozzqkm"></canvas> <div class="pcr-ed-patch-border svelte-1ozzqkm"></div> <!> <!></div>`);
 var root_42$1 = from_html(`<div class="pcr-ed-cursor svelte-1ozzqkm"></div>`);
 var root_43$1 = from_html(`<div class="pcr-ed-sel-badge svelte-1ozzqkm"> </div>`);
 var root_44$1 = from_html(`<div class="pcr-ed-heal-cross svelte-1ozzqkm"></div>`);
@@ -5033,9 +5033,9 @@ var root_46$1 = from_html(`<div class="pcr-ed-float-hint svelte-1ozzqkm">drag / 
 var root_47$1 = from_html(`<div class="pcr-ed-nav-rect svelte-1ozzqkm"></div>`);
 var root_49$1 = from_html(`<button class="pcr-ed-ip-render svelte-1ozzqkm">✦ Inpaint</button>`);
 var root_50$1 = from_html(`<button class="pcr-ed-ip-render svelte-1ozzqkm">✦ Upscale</button>`);
-var root_51$1 = from_html(`<div class="pcr-ed-render-row svelte-1ozzqkm"><button class="pcr-ed-ip-render svelte-1ozzqkm" title="Re-pose — pose a 3D figure and re-render this whole image into the new pose. Result is a new image in lineage.">✦ Re-pose</button></div>`);
+var root_51 = from_html(`<div class="pcr-ed-render-row svelte-1ozzqkm"><button class="pcr-ed-ip-render svelte-1ozzqkm" title="Re-pose — pose a 3D figure and re-render this whole image into the new pose. Result is a new image in lineage.">✦ Re-pose</button></div>`);
 var root_48$1 = from_html(`<div class="pcr-ed-panel svelte-1ozzqkm"><span class="pcr-ed-panel-title svelte-1ozzqkm"> </span> <div class="pcr-ed-render-row svelte-1ozzqkm"><!> <!></div> <!></div>`);
-var root_52$1 = from_html(`<span class="pcr-ed-layer-actions svelte-1ozzqkm"><button class="pcr-ed-layer-btn svelte-1ozzqkm" title="New layer (Ctrl+Shift+N)">＋</button> <button class="pcr-ed-layer-btn svelte-1ozzqkm" title="Merge selected layers">⬇</button> <button class="pcr-ed-layer-btn svelte-1ozzqkm" title="Flatten image">▣</button> <button class="pcr-ed-layer-btn svelte-1ozzqkm">🗑</button></span>`);
+var root_52 = from_html(`<span class="pcr-ed-layer-actions svelte-1ozzqkm"><button class="pcr-ed-layer-btn svelte-1ozzqkm" title="New layer (Ctrl+Shift+N)">＋</button> <button class="pcr-ed-layer-btn svelte-1ozzqkm" title="Merge selected layers">⬇</button> <button class="pcr-ed-layer-btn svelte-1ozzqkm" title="Flatten image">▣</button> <button class="pcr-ed-layer-btn svelte-1ozzqkm">🗑</button></span>`);
 var root_54$1 = from_html(`<option> </option>`);
 var root_56$1 = from_html(`<input class="pcr-ed-layer-rename svelte-1ozzqkm" type="text"/>`);
 var root_58$1 = from_html(`<span class="pcr-ed-layer-blendtag svelte-1ozzqkm" title="Has a layer mask">▦</span>`);
@@ -5047,18 +5047,18 @@ var root_61$1 = from_html(`<div> </div>`);
 var root_60$1 = from_html(`<div class="pcr-ed-hist svelte-1ozzqkm"></div>`);
 var root_63$1 = from_html(`<button class="svelte-1ozzqkm">Merge Layers</button>`);
 var root_64$1 = from_html(`<button class="svelte-1ozzqkm">Merge Down</button>`);
-var root_66 = from_html(`<button class="svelte-1ozzqkm"> </button>`);
-var root_67 = from_html(`<button class="svelte-1ozzqkm">Apply Layer Mask</button> <button class="svelte-1ozzqkm">Delete Layer Mask</button>`, 1);
-var root_68 = from_html(`<button class="svelte-1ozzqkm">Match Colors to Below</button>`);
-var root_69 = from_html(`<button class="danger svelte-1ozzqkm"> </button>`);
+var root_66$1 = from_html(`<button class="svelte-1ozzqkm"> </button>`);
+var root_67$1 = from_html(`<button class="svelte-1ozzqkm">Apply Layer Mask</button> <button class="svelte-1ozzqkm">Delete Layer Mask</button>`, 1);
+var root_68$1 = from_html(`<button class="svelte-1ozzqkm">Match Colors to Below</button>`);
+var root_69$1 = from_html(`<button class="danger svelte-1ozzqkm"> </button>`);
 var root_62$1 = from_html(`<div class="pcr-ed-layer-menu svelte-1ozzqkm"><button class="svelte-1ozzqkm">New Layer</button> <!> <button class="svelte-1ozzqkm">Duplicate Layer</button> <!> <!> <button class="svelte-1ozzqkm">Flatten Image</button> <!></div>`);
-var root_71 = from_html(`<button class="svelte-1ozzqkm">Deselect</button> <button class="svelte-1ozzqkm">Select Inverse</button>`, 1);
-var root_72 = from_html(`<button class="svelte-1ozzqkm">Layer Via Copy</button> <button class="svelte-1ozzqkm">Layer Via Cut</button>`, 1);
-var root_70 = from_html(`<div class="pcr-ed-layer-menu svelte-1ozzqkm"><!> <button class="svelte-1ozzqkm"> </button> <button class="svelte-1ozzqkm">Select All</button> <button class="svelte-1ozzqkm"> </button> <!></div>`);
-var root_73 = from_html(`<div class="pcr-ed-error svelte-1ozzqkm"> </div>`);
-var root_74 = from_html(`<div class="pcr-ed-error pcr-ed-busy svelte-1ozzqkm"> </div>`);
-var root_75 = from_html(`<div class="pcr-ed-error pcr-ed-busy svelte-1ozzqkm">⏳ Selecting subject…</div>`);
-var root_76 = from_html(`<div class="pcr-ed-dialog-backdrop svelte-1ozzqkm"><div class="pcr-ed-dialog svelte-1ozzqkm" role="alertdialog"><div class="pcr-ed-dialog-text svelte-1ozzqkm"> <span class="pcr-ed-dialog-em svelte-1ozzqkm">Alt-click</span> a clean area of the image to define a source point, then paint.</div> <div class="pcr-ed-dialog-btns svelte-1ozzqkm"><button class="pcr-modal-btn pcr-modal-btn-primary svelte-1ozzqkm">OK</button></div></div></div>`);
+var root_71$1 = from_html(`<button class="svelte-1ozzqkm">Deselect</button> <button class="svelte-1ozzqkm">Select Inverse</button>`, 1);
+var root_72$1 = from_html(`<button class="svelte-1ozzqkm">Layer Via Copy</button> <button class="svelte-1ozzqkm">Layer Via Cut</button>`, 1);
+var root_70$1 = from_html(`<div class="pcr-ed-layer-menu svelte-1ozzqkm"><!> <button class="svelte-1ozzqkm"> </button> <button class="svelte-1ozzqkm">Select All</button> <button class="svelte-1ozzqkm"> </button> <!></div>`);
+var root_73$1 = from_html(`<div class="pcr-ed-error svelte-1ozzqkm"> </div>`);
+var root_74$1 = from_html(`<div class="pcr-ed-error pcr-ed-busy svelte-1ozzqkm"> </div>`);
+var root_75$1 = from_html(`<div class="pcr-ed-error pcr-ed-busy svelte-1ozzqkm">⏳ Selecting subject…</div>`);
+var root_76$1 = from_html(`<div class="pcr-ed-dialog-backdrop svelte-1ozzqkm"><div class="pcr-ed-dialog svelte-1ozzqkm" role="alertdialog"><div class="pcr-ed-dialog-text svelte-1ozzqkm"> <span class="pcr-ed-dialog-em svelte-1ozzqkm">Alt-click</span> a clean area of the image to define a source point, then paint.</div> <div class="pcr-ed-dialog-btns svelte-1ozzqkm"><button class="pcr-modal-btn pcr-modal-btn-primary svelte-1ozzqkm">OK</button></div></div></div>`);
 var root_77 = from_html(`<div class="pcr-ed-dialog-backdrop svelte-1ozzqkm"><div class="pcr-ed-dialog svelte-1ozzqkm" role="alertdialog"><div class="pcr-ed-dialog-text svelte-1ozzqkm"> </div> <div class="pcr-ed-dialog-btns svelte-1ozzqkm"><button class="pcr-modal-btn pcr-modal-btn-primary svelte-1ozzqkm">OK</button></div></div></div>`);
 var root_78 = from_html(`<span class="pcr-ed-saved svelte-1ozzqkm">✓ Edits saved</span>`);
 var root_1$3 = from_html(`<div class="pcr-modal-backdrop"><div role="dialog" aria-modal="true"><div class="pcr-modal-header"><span class="pcr-modal-title">Editing: <span class="pcr-ed-fname svelte-1ozzqkm"> </span><!></span> <div class="pcr-ed-headbtns svelte-1ozzqkm"><button class="pcr-modal-close"><!></button> <button class="pcr-modal-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div></div> <!> <div class="pcr-modal-body pcr-ed-body svelte-1ozzqkm"><div class="pcr-ed-optbar svelte-1ozzqkm"><!></div> <div class="pcr-ed-cols svelte-1ozzqkm"><div class="pcr-ed-toolstrip svelte-1ozzqkm"><!> <div class="pcr-ed-strip-sep svelte-1ozzqkm"></div> <button class="pcr-ed-strip-btn svelte-1ozzqkm" title="Undo (Ctrl+Z)"><svg viewBox="0 0 24 24" class="svelte-1ozzqkm"></svg></button> <button class="pcr-ed-strip-btn svelte-1ozzqkm" title="Redo (Ctrl+Y)"><svg viewBox="0 0 24 24" class="svelte-1ozzqkm"></svg></button> <button class="pcr-ed-strip-btn svelte-1ozzqkm" title="Clear all edits"><svg viewBox="0 0 24 24" class="svelte-1ozzqkm"></svg></button> <div class="pcr-ed-strip-sep svelte-1ozzqkm"></div> <button title="Foreground color — click to pick" aria-label="Color picker"></button> <button class="pcr-ed-strip-bgcolor svelte-1ozzqkm" title="Background color (fills holes when moving on Background) — click to set from foreground" aria-label="Background color"></button> <!></div> <div class="pcr-ed-left svelte-1ozzqkm"><div><div class="pcr-ed-stage svelte-1ozzqkm"><img alt="" draggable="false" class="svelte-1ozzqkm"/> <canvas class="svelte-1ozzqkm"></canvas> <canvas class="svelte-1ozzqkm"></canvas> <!> <!> <!> <!> <!> <!> <!> <!> <!></div> <!> <!> <!> <!> <!></div></div> <div class="pcr-ed-right svelte-1ozzqkm"><div class="pcr-ed-panel svelte-1ozzqkm"><div class="pcr-ed-panel-titlerow svelte-1ozzqkm"><span class="pcr-ed-panel-title svelte-1ozzqkm">Navigator</span> <span class="pcr-ed-nav-pct svelte-1ozzqkm"> </span></div> <div class="pcr-ed-nav-stage svelte-1ozzqkm"><img alt="" draggable="false" class="svelte-1ozzqkm"/> <!></div> <div class="pcr-ed-nav-zoomrow svelte-1ozzqkm"><button class="pcr-ed-nav-zbtn svelte-1ozzqkm" aria-label="Zoom out">−</button> <input class="pcr-ed-nav-slider svelte-1ozzqkm" type="range" step="0.01"/> <button class="pcr-ed-nav-zbtn svelte-1ozzqkm" aria-label="Zoom in">+</button></div></div> <!> <div class="pcr-ed-panel svelte-1ozzqkm"><div class="pcr-ed-panel-titlerow svelte-1ozzqkm"><span class="pcr-ed-lh-tabs svelte-1ozzqkm"><button>Layers</button> <button>History</button></span> <!></div> <!></div> <!> <!></div></div></div> <!> <!> <!> <!> <!> <div class="pcr-modal-footer"><div class="pcr-ed-footer-save svelte-1ozzqkm"><span class="pcr-ed-label svelte-1ozzqkm">Save to</span> <!></div> <!> <button class="pcr-modal-btn pcr-modal-btn-secondary svelte-1ozzqkm">Cancel</button> <button class="pcr-modal-btn pcr-modal-btn-secondary svelte-1ozzqkm"> </button> <button class="pcr-modal-btn pcr-modal-btn-primary svelte-1ozzqkm"> </button></div></div></div>`);
@@ -9652,7 +9652,7 @@ function EditModal($$anchor, $$props) {
       var node_2 = child(button);
       {
         var consequent_1 = ($$anchor3) => {
-          var svg_1 = root_3$2();
+          var svg_1 = root_3$3();
           append($$anchor3, svg_1);
         };
         var alternate = ($$anchor3) => {
@@ -9684,7 +9684,7 @@ function EditModal($$anchor, $$props) {
       var node_4 = child(div_7);
       {
         var consequent_3 = ($$anchor3) => {
-          var fragment_1 = root_6$2();
+          var fragment_1 = root_6$3();
           var button_2 = sibling(first_child(fragment_1), 2);
           var button_3 = sibling(button_2, 2);
           var span_4 = sibling(button_3, 2);
@@ -9701,7 +9701,7 @@ function EditModal($$anchor, $$props) {
           append($$anchor3, fragment_1);
         };
         var consequent_4 = ($$anchor3) => {
-          var fragment_2 = root_7$2();
+          var fragment_2 = root_7$3();
           var div_8 = first_child(fragment_2);
           var node_5 = sibling(child(div_8), 2);
           SettingsSlider(node_5, {
@@ -9855,7 +9855,7 @@ function EditModal($$anchor, $$props) {
           var node_14 = sibling(div_16, 2);
           {
             var consequent_7 = ($$anchor4) => {
-              var fragment_6 = root_11$1();
+              var fragment_6 = root_11();
               var div_17 = first_child(fragment_6);
               var node_15 = sibling(child(div_17), 2);
               SettingsSlider(node_15, {
@@ -9897,7 +9897,7 @@ function EditModal($$anchor, $$props) {
               append($$anchor4, span_5);
             };
             var consequent_9 = ($$anchor4) => {
-              var span_6 = root_13$2();
+              var span_6 = root_13$1();
               var text_4 = child(span_6);
               template_effect(() => set_text(text_4, get(healSource) ? "paint over the flaw — texture from the source, lighting from the spot · Alt-click to re-sample" : "Alt-click a clean area to set the sample source"));
               append($$anchor4, span_6);
@@ -10427,13 +10427,13 @@ function EditModal($$anchor, $$props) {
       {
         var consequent_28 = ($$anchor3) => {
           const hs = user_derived(() => 11 / get(zoom));
-          var div_50 = root_39();
+          var div_50 = root_39$1();
           var canvas_3 = child(div_50);
           bind_this(canvas_3, ($$value) => set(patchEl, $$value), () => get(patchEl));
           var div_51 = sibling(canvas_3, 2);
           var node_42 = sibling(div_51, 2);
           each(node_42, 17, () => HANDLES, index, ($$anchor4, dir) => {
-            var div_52 = root_40();
+            var div_52 = root_40$1();
             template_effect(($0) => set_style(div_52, $0), [() => tHandleStyle(get(dir), get(patch), get(zoom))]);
             delegated("pointerdown", div_52, (e) => patchPointerDown(e, get(dir)));
             delegated("pointermove", div_52, patchPointerMove);
@@ -10599,7 +10599,7 @@ function EditModal($$anchor, $$props) {
           var node_53 = sibling(div_67, 2);
           {
             var consequent_37 = ($$anchor4) => {
-              var div_68 = root_51$1();
+              var div_68 = root_51();
               var button_29 = child(div_68);
               template_effect(() => button_29.disabled = !!get(handoffBusy));
               delegated("click", button_29, openReposeHandoff);
@@ -10626,7 +10626,7 @@ function EditModal($$anchor, $$props) {
       var node_54 = sibling(span_15, 2);
       {
         var consequent_39 = ($$anchor3) => {
-          var span_16 = root_52$1();
+          var span_16 = root_52();
           var button_32 = child(span_16);
           var button_33 = sibling(button_32, 2);
           var button_34 = sibling(button_33, 2);
@@ -10866,7 +10866,7 @@ function EditModal($$anchor, $$props) {
               var node_62 = first_child(fragment_17);
               {
                 var consequent_46 = ($$anchor5) => {
-                  var button_40 = root_66();
+                  var button_40 = root_66$1();
                   var text_24 = child(button_40);
                   template_effect(() => set_text(text_24, `Add Layer Mask${get(selActive) ? " (Reveal Selection)" : ""}`));
                   delegated("click", button_40, () => {
@@ -10876,7 +10876,7 @@ function EditModal($$anchor, $$props) {
                   append($$anchor5, button_40);
                 };
                 var alternate_5 = ($$anchor5) => {
-                  var fragment_18 = root_67();
+                  var fragment_18 = root_67$1();
                   var button_41 = first_child(fragment_18);
                   var button_42 = sibling(button_41, 2);
                   delegated("click", button_41, () => {
@@ -10905,7 +10905,7 @@ function EditModal($$anchor, $$props) {
           var node_63 = sibling(node_61, 2);
           {
             var consequent_48 = ($$anchor4) => {
-              var button_43 = root_68();
+              var button_43 = root_68$1();
               delegated("click", button_43, () => {
                 const i = get(layerMenu).i;
                 set(layerMenu, null);
@@ -10924,7 +10924,7 @@ function EditModal($$anchor, $$props) {
           var node_64 = sibling(button_44, 2);
           {
             var consequent_49 = ($$anchor4) => {
-              var button_45 = root_69();
+              var button_45 = root_69$1();
               var text_25 = child(button_45);
               template_effect(() => set_text(text_25, get(selectedIds).length > 1 ? "Delete Layers" : "Delete Layer"));
               delegated("click", button_45, () => {
@@ -10960,11 +10960,11 @@ function EditModal($$anchor, $$props) {
       var node_65 = sibling(node_59, 2);
       {
         var consequent_53 = ($$anchor3) => {
-          var div_76 = root_70();
+          var div_76 = root_70$1();
           var node_66 = child(div_76);
           {
             var consequent_51 = ($$anchor4) => {
-              var fragment_19 = root_71();
+              var fragment_19 = root_71$1();
               var button_46 = first_child(fragment_19);
               var button_47 = sibling(button_46, 2);
               delegated("click", button_46, () => {
@@ -10989,7 +10989,7 @@ function EditModal($$anchor, $$props) {
           var node_67 = sibling(button_50, 2);
           {
             var consequent_52 = ($$anchor4) => {
-              var fragment_20 = root_72();
+              var fragment_20 = root_72$1();
               var button_51 = first_child(fragment_20);
               var button_52 = sibling(button_51, 2);
               delegated("click", button_51, () => {
@@ -11033,7 +11033,7 @@ function EditModal($$anchor, $$props) {
       var node_68 = sibling(div_6, 2);
       {
         var consequent_54 = ($$anchor3) => {
-          var div_77 = root_73();
+          var div_77 = root_73$1();
           var text_28 = child(div_77);
           template_effect(() => set_text(text_28, `⚠ ${get(errorMsg) ?? ""}`));
           append($$anchor3, div_77);
@@ -11045,13 +11045,13 @@ function EditModal($$anchor, $$props) {
       var node_69 = sibling(node_68, 2);
       {
         var consequent_55 = ($$anchor3) => {
-          var div_78 = root_74();
+          var div_78 = root_74$1();
           var text_29 = child(div_78);
           template_effect(() => set_text(text_29, `⏳ ${get(selSetupMsg) ?? ""}`));
           append($$anchor3, div_78);
         };
         var consequent_56 = ($$anchor3) => {
-          var div_79 = root_75();
+          var div_79 = root_75$1();
           append($$anchor3, div_79);
         };
         if_block(node_69, ($$render) => {
@@ -11079,7 +11079,7 @@ function EditModal($$anchor, $$props) {
       var node_71 = sibling(node_70, 2);
       {
         var consequent_57 = ($$anchor3) => {
-          var div_80 = root_76();
+          var div_80 = root_76$1();
           var div_81 = child(div_80);
           var div_82 = child(div_81);
           var text_30 = child(div_82);
@@ -11284,17 +11284,17 @@ delegate([
   "input",
   "keydown"
 ]);
-var root_3$1 = from_html(`<button title="Drag the divider to wipe the source over the result">Compare</button>`);
+var root_3$2 = from_html(`<button title="Drag the divider to wipe the source over the result">Compare</button>`);
 var root_2$2 = from_html(`<div class="pcr-rp-stage-tools svelte-1elgmyq"><!> <button class="pcr-rp-fit-btn svelte-1elgmyq">Fit</button></div>`);
 var root_4$2 = from_html(`<img class="pcr-rp-live svelte-1elgmyq" alt="preview" draggable="false"/>`);
-var root_6$1 = from_html(`<div class="pcr-rp-split-before svelte-1elgmyq"><div class="pcr-rp-zoomwrap svelte-1elgmyq"><img class="pcr-rp-preview svelte-1elgmyq" alt="" draggable="false"/></div></div> <div class="pcr-rp-split-label before svelte-1elgmyq">Before</div> <div class="pcr-rp-split-label after svelte-1elgmyq">After</div> <div class="pcr-rp-split-divider svelte-1elgmyq"><div class="pcr-rp-split-knob svelte-1elgmyq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="svelte-1elgmyq"><polyline points="9.5 8 5.5 12 9.5 16"></polyline><polyline points="14.5 8 18.5 12 14.5 16"></polyline></svg></div></div>`, 1);
+var root_6$2 = from_html(`<div class="pcr-rp-split-before svelte-1elgmyq"><div class="pcr-rp-zoomwrap svelte-1elgmyq"><img class="pcr-rp-preview svelte-1elgmyq" alt="" draggable="false"/></div></div> <div class="pcr-rp-split-label before svelte-1elgmyq">Before</div> <div class="pcr-rp-split-label after svelte-1elgmyq">After</div> <div class="pcr-rp-split-divider svelte-1elgmyq"><div class="pcr-rp-split-knob svelte-1elgmyq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="svelte-1elgmyq"><polyline points="9.5 8 5.5 12 9.5 16"></polyline><polyline points="14.5 8 18.5 12 14.5 16"></polyline></svg></div></div>`, 1);
 var root_5$2 = from_html(`<div class="pcr-rp-zoomwrap svelte-1elgmyq"><img class="pcr-rp-preview svelte-1elgmyq" alt="" draggable="false"/></div> <!>`, 1);
-var root_7$1 = from_html(`<div class="pcr-rp-bar-wrap svelte-1elgmyq"><div class="pcr-rp-bar svelte-1elgmyq"><div class="pcr-rp-bar-fill svelte-1elgmyq"></div></div> <span> </span></div>`);
+var root_7$2 = from_html(`<div class="pcr-rp-bar-wrap svelte-1elgmyq"><div class="pcr-rp-bar svelte-1elgmyq"><div class="pcr-rp-bar-fill svelte-1elgmyq"></div></div> <span> </span></div>`);
 var root_8$1 = from_html(`<option> </option>`);
 var root_9$1 = from_html(`<div class="pcr-rp-hint svelte-1elgmyq"> </div>`);
 var root_10$1 = from_html(`<option> </option>`);
 var root_12$1 = from_html(`<div class="pcr-rp-text pcr-rp-editor svelte-1elgmyq"></div>`);
-var root_13$1 = from_html(`<textarea class="pcr-rp-text svelte-1elgmyq" rows="9" spellcheck="false"></textarea>`);
+var root_13 = from_html(`<textarea class="pcr-rp-text svelte-1elgmyq" rows="9" spellcheck="false"></textarea>`);
 var root_14$1 = from_html(`<label class="pcr-rp-field svelte-1elgmyq"><span class="svelte-1elgmyq">Input scale (MP)</span><input type="number" min="0.25" max="4" step="0.25" class="svelte-1elgmyq"/></label>`);
 var root_15$1 = from_html(`<label class="pcr-rp-field svelte-1elgmyq"><span class="svelte-1elgmyq">Seed</span><input type="number" class="svelte-1elgmyq"/></label>`);
 var root_16$1 = from_html(`<div class="pcr-rp-hint svelte-1elgmyq">Depth-locked: the poser outputs a depth map; output follows the pose frame.</div>`);
@@ -11752,7 +11752,7 @@ function RePoseModal($$anchor, $$props) {
           var node_3 = child(div_8);
           {
             var consequent = ($$anchor4) => {
-              var button_1 = root_3$1();
+              var button_1 = root_3$2();
               let classes;
               template_effect(() => classes = set_class(button_1, 1, "pcr-rp-fit-btn svelte-1elgmyq", null, classes, { on: get(compareSplit) }));
               delegated("click", button_1, toggleCompare);
@@ -11786,7 +11786,7 @@ function RePoseModal($$anchor, $$props) {
           var node_5 = sibling(div_10, 2);
           {
             var consequent_3 = ($$anchor4) => {
-              var fragment_2 = root_6$1();
+              var fragment_2 = root_6$2();
               var div_11 = first_child(fragment_2);
               var div_12 = child(div_11);
               var img_2 = child(div_12);
@@ -11825,7 +11825,7 @@ function RePoseModal($$anchor, $$props) {
       var node_6 = sibling(div_9, 2);
       {
         var consequent_5 = ($$anchor3) => {
-          var div_14 = root_7$1();
+          var div_14 = root_7$2();
           var div_15 = child(div_14);
           var div_16 = child(div_15);
           let styles;
@@ -11906,7 +11906,7 @@ function RePoseModal($$anchor, $$props) {
             append($$anchor4, div_22);
           };
           var alternate = ($$anchor4) => {
-            var textarea = root_13$1();
+            var textarea = root_13();
             bind_value(textarea, () => get(promptDoc), ($$value) => set(promptDoc, $$value));
             append($$anchor4, textarea);
           };
@@ -12062,15 +12062,17 @@ delegate([
   "contextmenu",
   "change"
 ]);
-var root_1$1 = from_html(`<button class="pcr-ctx-item svelte-esmc9y">Edit</button>`);
-var root_2$1 = from_html(`<button class="pcr-ctx-item pcr-ctx-danger svelte-esmc9y">Delete</button>`);
-var root_4$1 = from_html(`<div class="pcr-ctx-sep svelte-esmc9y"></div>`);
-var root_5$1 = from_html(`<button class="pcr-ctx-item svelte-esmc9y">Properties</button>`);
-var root_3 = from_html(`<!> <button class="pcr-ctx-item svelte-esmc9y">Open File</button> <button class="pcr-ctx-item svelte-esmc9y">Open Folder</button> <!>`, 1);
-var root$1 = from_html(`<div class="pcr-ctx svelte-esmc9y"><!> <!> <!></div>`);
+var root_2$1 = from_html(`<div class="pcr-ctx-sep svelte-esmc9y"></div>`);
+var root_1$1 = from_html(`<button class="pcr-ctx-item svelte-esmc9y">Expand branches</button> <!>`, 1);
+var root_3$1 = from_html(`<button class="pcr-ctx-item svelte-esmc9y">Edit</button>`);
+var root_4$1 = from_html(`<button class="pcr-ctx-item pcr-ctx-danger svelte-esmc9y">Delete</button>`);
+var root_6$1 = from_html(`<div class="pcr-ctx-sep svelte-esmc9y"></div>`);
+var root_7$1 = from_html(`<button class="pcr-ctx-item svelte-esmc9y">Properties</button>`);
+var root_5$1 = from_html(`<!> <button class="pcr-ctx-item svelte-esmc9y">Copy Path</button> <button class="pcr-ctx-item svelte-esmc9y">Open File</button> <button class="pcr-ctx-item svelte-esmc9y">Open Folder</button> <!>`, 1);
+var root = from_html(`<div class="pcr-ctx svelte-esmc9y"><!> <!> <!> <!></div>`);
 function LineageContextMenu($$anchor, $$props) {
   push($$props, true);
-  let canEdit = prop($$props, "canEdit", 3, false), canDelete = prop($$props, "canDelete", 3, false), isLocal = prop($$props, "isLocal", 3, false), isWindows = prop($$props, "isWindows", 3, false), orphaned = prop($$props, "orphaned", 3, false);
+  let canExpand = prop($$props, "canExpand", 3, false), canEdit = prop($$props, "canEdit", 3, false), canDelete = prop($$props, "canDelete", 3, false), isLocal = prop($$props, "isLocal", 3, false), isWindows = prop($$props, "isWindows", 3, false), orphaned = prop($$props, "orphaned", 3, false);
   let menuEl;
   function act(action2) {
     var _a, _b;
@@ -12101,67 +12103,92 @@ function LineageContextMenu($$anchor, $$props) {
       window.removeEventListener("keydown", onKey);
     };
   });
-  var div = root$1();
+  var div = root();
   var node = child(div);
   {
-    var consequent = ($$anchor2) => {
-      var button = root_1$1();
-      delegated("click", button, () => act("edit"));
-      append($$anchor2, button);
-    };
-    if_block(node, ($$render) => {
-      if (canEdit()) $$render(consequent);
-    });
-  }
-  var node_1 = sibling(node, 2);
-  {
     var consequent_1 = ($$anchor2) => {
-      var button_1 = root_2$1();
-      delegated("click", button_1, () => act("delete"));
-      append($$anchor2, button_1);
-    };
-    if_block(node_1, ($$render) => {
-      if (canDelete()) $$render(consequent_1);
-    });
-  }
-  var node_2 = sibling(node_1, 2);
-  {
-    var consequent_4 = ($$anchor2) => {
-      var fragment = root_3();
-      var node_3 = first_child(fragment);
+      var fragment = root_1$1();
+      var button = first_child(fragment);
+      var node_1 = sibling(button, 2);
       {
-        var consequent_2 = ($$anchor3) => {
-          var div_1 = root_4$1();
+        var consequent = ($$anchor3) => {
+          var div_1 = root_2$1();
           append($$anchor3, div_1);
         };
-        if_block(node_3, ($$render) => {
-          if (canEdit() || canDelete()) $$render(consequent_2);
+        if_block(node_1, ($$render) => {
+          if (canEdit() || canDelete() || isLocal()) $$render(consequent);
         });
       }
-      var button_2 = sibling(node_3, 2);
-      var button_3 = sibling(button_2, 2);
-      var node_4 = sibling(button_3, 2);
+      delegated("click", button, () => act("expand-branches"));
+      append($$anchor2, fragment);
+    };
+    if_block(node, ($$render) => {
+      if (canExpand()) $$render(consequent_1);
+    });
+  }
+  var node_2 = sibling(node, 2);
+  {
+    var consequent_2 = ($$anchor2) => {
+      var button_1 = root_3$1();
+      delegated("click", button_1, () => act("edit"));
+      append($$anchor2, button_1);
+    };
+    if_block(node_2, ($$render) => {
+      if (canEdit()) $$render(consequent_2);
+    });
+  }
+  var node_3 = sibling(node_2, 2);
+  {
+    var consequent_3 = ($$anchor2) => {
+      var button_2 = root_4$1();
+      delegated("click", button_2, () => act("delete"));
+      append($$anchor2, button_2);
+    };
+    if_block(node_3, ($$render) => {
+      if (canDelete()) $$render(consequent_3);
+    });
+  }
+  var node_4 = sibling(node_3, 2);
+  {
+    var consequent_6 = ($$anchor2) => {
+      var fragment_1 = root_5$1();
+      var node_5 = first_child(fragment_1);
       {
-        var consequent_3 = ($$anchor3) => {
-          var button_4 = root_5$1();
-          template_effect(() => button_4.disabled = orphaned());
-          delegated("click", button_4, () => act("properties"));
-          append($$anchor3, button_4);
+        var consequent_4 = ($$anchor3) => {
+          var div_2 = root_6$1();
+          append($$anchor3, div_2);
         };
-        if_block(node_4, ($$render) => {
-          if (isWindows()) $$render(consequent_3);
+        if_block(node_5, ($$render) => {
+          if (canEdit() || canDelete()) $$render(consequent_4);
+        });
+      }
+      var button_3 = sibling(node_5, 2);
+      var button_4 = sibling(button_3, 2);
+      var button_5 = sibling(button_4, 2);
+      var node_6 = sibling(button_5, 2);
+      {
+        var consequent_5 = ($$anchor3) => {
+          var button_6 = root_7$1();
+          template_effect(() => button_6.disabled = orphaned());
+          delegated("click", button_6, () => act("properties"));
+          append($$anchor3, button_6);
+        };
+        if_block(node_6, ($$render) => {
+          if (isWindows()) $$render(consequent_5);
         });
       }
       template_effect(() => {
-        button_2.disabled = orphaned();
         button_3.disabled = orphaned();
+        button_4.disabled = orphaned();
+        button_5.disabled = orphaned();
       });
-      delegated("click", button_2, () => act("open-file"));
-      delegated("click", button_3, () => act("open-folder"));
-      append($$anchor2, fragment);
+      delegated("click", button_3, () => act("copy-path"));
+      delegated("click", button_4, () => act("open-file"));
+      delegated("click", button_5, () => act("open-folder"));
+      append($$anchor2, fragment_1);
     };
-    if_block(node_2, ($$render) => {
-      if (isLocal()) $$render(consequent_4);
+    if_block(node_4, ($$render) => {
+      if (isLocal()) $$render(consequent_6);
     });
   }
   action(div, ($$node) => {
@@ -12174,6 +12201,73 @@ function LineageContextMenu($$anchor, $$props) {
   pop();
 }
 delegate(["click"]);
+function ancestry(tree, hash) {
+  const { byHash } = tree;
+  const set2 = /* @__PURE__ */ new Set();
+  let cur = hash;
+  let root2 = hash;
+  while (cur && byHash.has(cur) && !set2.has(cur)) {
+    set2.add(cur);
+    root2 = cur;
+    cur = byHash.get(cur).parent_hash;
+  }
+  return { root: root2, set: set2 };
+}
+function buildLane(tree, startHash, spineSet) {
+  const { byHash, childrenOf } = tree;
+  const nodes = [];
+  const junctions = [];
+  const guard = /* @__PURE__ */ new Set();
+  let cur = startHash;
+  while (cur && byHash.has(cur) && !guard.has(cur)) {
+    guard.add(cur);
+    nodes.push(byHash.get(cur));
+    const kids = childrenOf.get(cur) || [];
+    let primary = spineSet ? kids.find((k) => spineSet.has(k.hash)) : null;
+    if (!primary) primary = kids[0] || null;
+    const offPrimary = kids.filter((k) => k !== primary).map((k) => k.hash);
+    if (offPrimary.length) junctions.push({ atHash: cur, childRoots: offPrimary });
+    cur = primary ? primary.hash : null;
+  }
+  return { startHash, nodes, junctions };
+}
+function buildRender(tree, anchorHash, brokenOut) {
+  const a = ancestry(tree, anchorHash);
+  const col0 = buildLane(tree, a.root, a.set);
+  const columns = [];
+  const edges = [];
+  const started = /* @__PURE__ */ new Set();
+  const junctionsByNode = /* @__PURE__ */ new Map();
+  const visit = (lane, topRow) => {
+    lane.topRow = topRow;
+    columns.push(lane);
+    for (let i = 0; i + 1 < lane.nodes.length; i++) {
+      edges.push({ from: lane.nodes[i].hash, to: lane.nodes[i + 1].hash });
+    }
+    for (const j of lane.junctions) {
+      const forkRow = lane.nodes.findIndex((n) => n.hash === j.atHash);
+      let rec = junctionsByNode.get(j.atHash);
+      if (!rec) {
+        rec = { shown: [], hidden: [] };
+        junctionsByNode.set(j.atHash, rec);
+      }
+      for (const childRoot of j.childRoots) {
+        if (brokenOut.has(childRoot)) {
+          rec.shown.push(childRoot);
+          if (!started.has(childRoot)) {
+            started.add(childRoot);
+            edges.push({ from: j.atHash, to: childRoot });
+            visit(buildLane(tree, childRoot), topRow + forkRow + 1);
+          }
+        } else {
+          rec.hidden.push(childRoot);
+        }
+      }
+    }
+  };
+  visit(col0, 0);
+  return { columns, edges, junctionsByNode, rootHash: col0.nodes.length ? col0.nodes[0].hash : null };
+}
 function regionFigureIndices(regionList, poseJson) {
   let names = [];
   let numFigures = null;
@@ -12266,73 +12360,83 @@ function buildFigureRegions({ workflow, regionsRaw, poseFilesOk, apiURL }) {
     return [];
   }
 }
-var root_1 = from_html(`<div class="pcr-viewer-newgen-banner svelte-5cciiw"> </div>`);
-var root_5 = from_html(`<div class="pcr-viewer-lineage-layers svelte-5cciiw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" class="svelte-5cciiw"><path d="M12 2 2 7l10 5 10-5-10-5Z"></path><path d="m2 17 10 5 10-5"></path><path d="m2 12 10 5 10-5"></path></svg></div>`);
-var root_4 = from_html(`<div><img alt="" draggable="false" loading="lazy" class="svelte-5cciiw"/> <div></div> <!></div>`);
-var root_8 = from_html(`<img alt="" draggable="false" loading="lazy" class="svelte-5cciiw"/>`);
-var root_7 = from_html(`<div class="pcr-viewer-lineage-bundle-stack svelte-5cciiw"></div> <span class="pcr-viewer-lineage-bundle-count svelte-5cciiw"> </span>`, 1);
-var root_9 = from_html(`<span class="pcr-viewer-lineage-bundle-count svelte-5cciiw">▴</span>`);
-var root_6 = from_html(`<div><!></div>`);
-var root_10 = from_html(`<div class="pcr-viewer-lineage-hidden svelte-5cciiw"> </div>`);
-var root_2 = from_html(`<div class="pcr-viewer-lineage pcr-viewer-lineage-visible svelte-5cciiw"><div class="pcr-viewer-lineage-header svelte-5cciiw"> </div> <div class="pcr-viewer-lineage-strip svelte-5cciiw"></div> <!></div>`);
-var root_11 = from_html(`<div class="pcr-viewer-lineage svelte-5cciiw"></div>`);
-var root_13 = from_html(`<div> </div>`);
-var root_14 = from_html(`<div> </div>`);
-var root_15 = from_html(`<div class="pcr-viewer-tip-layers svelte-5cciiw"> </div>`);
-var root_12 = from_html(`<div class="pcr-viewer-tip svelte-5cciiw"><div class="pcr-viewer-tip-name svelte-5cciiw"> </div> <!> <!> <!></div>`);
-var root_17 = from_html(`<div class="pcr-viewer-spinner svelte-5cciiw"></div>`);
-var root_18 = from_html(`<img alt="Compare" draggable="false" class="pcr-viewer-image pcr-viewer-after-image svelte-5cciiw"/>`);
-var root_21 = from_html(`<div class="pcr-viewer-error-msg svelte-5cciiw"> </div>`);
-var root_20 = from_html(
+var root_3 = from_html(`<div class="pcr-viewer-lineage-layers svelte-5cciiw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" class="svelte-5cciiw"><path d="M12 2 2 7l10 5 10-5-10-5Z"></path><path d="m2 17 10 5 10-5"></path><path d="m2 12 10 5 10-5"></path></svg></div>`);
+var root_4 = from_html(`<button class="pcr-lin-expander svelte-5cciiw"> </button>`);
+var root_5 = from_html(`<button class="pcr-lin-fold svelte-5cciiw" title="Fold this column back into its branch">⊟</button>`);
+var root_2 = from_html(`<div><img alt="" draggable="false" loading="lazy" class="svelte-5cciiw"/> <div></div> <!> <!> <!></div>`);
+var root_7 = from_html(`<button> </button>`);
+var root_9 = from_svg(`<path class="svelte-5cciiw"></path>`);
+var root_10 = from_html(`<div class="pcr-lin-col svelte-5cciiw"></div>`);
+var root_8 = from_html(`<div class="pcr-lin-lanes svelte-5cciiw"><svg class="pcr-lin-connectors svelte-5cciiw" aria-hidden="true"></svg> <!></div>`);
+var root_15 = from_html(`<div class="pcr-viewer-lineage-layers svelte-5cciiw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" class="svelte-5cciiw"><path d="M12 2 2 7l10 5 10-5-10-5Z"></path><path d="m2 17 10 5 10-5"></path><path d="m2 12 10 5 10-5"></path></svg></div>`);
+var root_14 = from_html(`<div><img alt="" draggable="false" loading="lazy" class="svelte-5cciiw"/> <div></div> <!></div>`);
+var root_18 = from_html(`<img alt="" draggable="false" loading="lazy" class="svelte-5cciiw"/>`);
+var root_17 = from_html(`<div class="pcr-viewer-lineage-bundle-stack svelte-5cciiw"></div> <span class="pcr-viewer-lineage-bundle-count svelte-5cciiw"> </span>`, 1);
+var root_19 = from_html(`<span class="pcr-viewer-lineage-bundle-count svelte-5cciiw">▴</span>`);
+var root_16 = from_html(`<div><!></div>`);
+var root_20 = from_html(`<div class="pcr-viewer-lineage-hidden svelte-5cciiw"> </div>`);
+var root_12 = from_html(`<div class="pcr-viewer-lineage-strip svelte-5cciiw"></div> <!>`, 1);
+var root_6 = from_html(`<div><div class="pcr-viewer-lineage-header svelte-5cciiw"><span class="pcr-lin-count svelte-5cciiw"> </span> <!></div> <!></div>`);
+var root_21 = from_html(`<div class="pcr-viewer-lineage svelte-5cciiw"></div>`);
+var root_23 = from_html(`<div> </div>`);
+var root_24 = from_html(`<div> </div>`);
+var root_25 = from_html(`<div class="pcr-viewer-tip-layers svelte-5cciiw"> </div>`);
+var root_22 = from_html(`<div class="pcr-viewer-tip svelte-5cciiw"><div class="pcr-viewer-tip-name svelte-5cciiw"> </div> <!> <!> <!></div>`);
+var root_26 = from_html(`<div class="pcr-viewer-newgen-banner svelte-5cciiw"> </div>`);
+var root_27 = from_html(`<div class="pcr-viewer-newgen-banner svelte-5cciiw">📋 Path copied to clipboard</div>`);
+var root_29 = from_html(`<div class="pcr-viewer-spinner svelte-5cciiw"></div>`);
+var root_30 = from_html(`<img alt="Compare" draggable="false" class="pcr-viewer-image pcr-viewer-after-image svelte-5cciiw"/>`);
+var root_33 = from_html(`<div class="pcr-viewer-error-msg svelte-5cciiw"> </div>`);
+var root_32 = from_html(
   `<div class="pcr-viewer-error-hint svelte-5cciiw">This image's record points to a file that no longer exists. If the
               file was moved or renamed, locate it — it's verified against the
               image's content hash, so the wrong file can't be attached.</div> <button class="pcr-viewer-reattach-btn svelte-5cciiw"> </button> <!> <input type="file" accept="image/*" style="display:none"/>`,
   1
 );
-var root_19 = from_html(`<div class="pcr-viewer-error svelte-5cciiw"><div> </div> <!></div>`);
-var root_23 = from_html(`<div class="pcr-viewer-compare-label-age svelte-5cciiw"> </div>`);
-var root_24 = from_html(`<div class="pcr-viewer-compare-label-age svelte-5cciiw"> </div>`);
-var root_22 = from_html(`<div class="pcr-viewer-compare-slider svelte-5cciiw"><div class="pcr-viewer-compare-handle svelte-5cciiw"><div class="pcr-viewer-compare-line svelte-5cciiw"></div> <div class="pcr-viewer-compare-circle svelte-5cciiw"><svg width="16" height="16" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-160q-33 0-56.5-23.5T120-240v-480q0-33 23.5-56.5T200-800h160v80H200v480h160v80H200Zm240 80v-800h80v80h240q33 0 56.5 23.5T840-720v480q0 33-23.5 56.5T760-160H520v80h-80Zm80-160h240v-480H520v480Zm-320 0v-480 480Zm560 0v-480 480Z"></path></svg></div> <div class="pcr-viewer-compare-line svelte-5cciiw"></div></div></div> <div class="pcr-viewer-compare-label pcr-viewer-compare-label-before svelte-5cciiw"> <!></div> <div class="pcr-viewer-compare-label pcr-viewer-compare-label-after svelte-5cciiw"> <!></div>`, 1);
-var root_16 = from_html(`<!> <img alt="" draggable="false"/> <!> <!> <!>`, 1);
-var root_25 = from_html(`<div class="pcr-viewer-nav pcr-viewer-nav-left svelte-5cciiw"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path></svg></div>`);
-var root_26 = from_html(`<div class="pcr-viewer-nav pcr-viewer-nav-right svelte-5cciiw"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"></path></svg></div>`);
-var root_28 = from_html(`<div><img alt="" draggable="false" loading="lazy" class="svelte-5cciiw"/></div>`);
-var root_29 = from_svg(`<path d="M7 14l5-5 5 5z"></path>`);
-var root_30 = from_svg(`<path d="M7 10l5 5 5-5z"></path>`);
-var root_32 = from_html(`<div><img alt="" draggable="false" loading="lazy" class="svelte-5cciiw"/></div>`);
-var root_31 = from_html(`<div class="pcr-viewer-history-grid svelte-5cciiw"></div>`);
-var root_27 = from_html(`<div><div class="pcr-viewer-history-header svelte-5cciiw"><div class="pcr-viewer-history-thumbs svelte-5cciiw"><!> <div class="pcr-viewer-history-fade svelte-5cciiw"></div></div>  <div class="pcr-viewer-history-expand svelte-5cciiw"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><!></svg></div></div>  <div class="pcr-viewer-scrubber-track svelte-5cciiw"><div class="pcr-viewer-scrubber-fill svelte-5cciiw"></div> <div class="pcr-viewer-scrubber-handle svelte-5cciiw"></div></div> <!></div>`);
-var root_34 = from_html(`<div class="pcr-viewer-zoom-preset svelte-5cciiw"> </div>`);
-var root_33 = from_html(`<div class="pcr-viewer-zoom-dropdown svelte-5cciiw"></div>`);
-var root_37 = from_html(`<div> </div>`);
-var root_38 = from_html(`<div class="pcr-viewer-compare-dropdown-divider svelte-5cciiw"></div>  <div class="pcr-viewer-compare-dropdown-item pcr-viewer-compare-clear svelte-5cciiw">Clear</div>`, 1);
-var root_36 = from_html(`<div class="pcr-viewer-compare-dropdown svelte-5cciiw"><!> <!></div>`);
-var root_35 = from_html(`<div class="pcr-viewer-toolbar-row pcr-viewer-compare-container svelte-5cciiw"><div title="Compare (C)"><svg width="16" height="16" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-160q-33 0-56.5-23.5T120-240v-480q0-33 23.5-56.5T200-800h160v80H200v480h160v80H200Zm240 80v-800h80v80h240q33 0 56.5 23.5T840-720v480q0 33-23.5 56.5T760-160H520v80h-80Zm80-160h240v-480H520v480Z"></path></svg> <span>Compare</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="opacity: 0.7;"><path d="M7 10l5 5 5-5z"></path></svg></div> <!></div>`);
-var root_42 = from_html(`<span class="pcr-viewer-edit-layers svelte-5cciiw"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" class="svelte-5cciiw"><path d="M12 2 2 7l10 5 10-5-10-5Z"></path><path d="m2 17 10 5 10-5"></path><path d="m2 12 10 5 10-5"></path></svg> </span>`);
-var root_41 = from_html(`<div class="pcr-viewer-toolbar-row svelte-5cciiw"><div class="pcr-viewer-toolbar-btn svelte-5cciiw" title="Edit, inpaint or upscale this image"><svg width="16" height="16" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h357l-80 80H200v560h560v-278l80-80v358q0 33-23.5 56.5T760-120H200Zm280-360ZM360-360v-170l367-367q12-12 27-18t30-6q16 0 30.5 6t26.5 18l56 57q11 12 17 26.5t6 29.5q0 15-5.5 29.5T897-728L530-360H360Zm481-424-56-56 56 56ZM440-440h56l232-232-28-28-29-28-231 231v57Zm260-260-29-28 29 28 28 28-28-28Z"></path></svg> <span> </span> <!></div></div>`);
-var root_43 = from_html(`<div class="pcr-viewer-toolbar-btn pcr-viewer-delete svelte-5cciiw" title="Delete file"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg> <span> </span></div>`);
-var root_44 = from_html(`<div class="pcr-viewer-toolbar-btn svelte-5cciiw" title="Reveal file in Explorer"><svg width="16" height="16" viewBox="0 -960 960 960" fill="currentColor"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h240l80 80h320q33 0 56.5 23.5T880-640v400q0 33-23.5 56.5T800-160H160Z"></path></svg> <span>Open Folder</span></div>`);
-var root_46 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label svelte-5cciiw">Dimensions</span> <span class="pcr-meta-val svelte-5cciiw"> </span></div>`);
-var root_47 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label svelte-5cciiw">Size</span> <span class="pcr-meta-val svelte-5cciiw"> </span></div>`);
-var root_48 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label svelte-5cciiw">Generated</span> <span class="pcr-meta-val svelte-5cciiw"> </span></div>`);
-var root_49 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label svelte-5cciiw">Filename</span> <span class="pcr-meta-val pcr-meta-break svelte-5cciiw"> </span></div>`);
-var root_50 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label pcr-label-orphan svelte-5cciiw">Status</span> <span class="pcr-meta-val pcr-meta-orphan svelte-5cciiw">Source deleted</span></div>`);
-var root_53 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label pcr-label-region svelte-5cciiw"> </span> <p class="pcr-meta-prompt svelte-5cciiw"> </p></div>`);
-var root_54 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label pcr-label-pos svelte-5cciiw">Global:</span> <p class="pcr-meta-prompt svelte-5cciiw"> </p></div>`);
-var root_52 = from_html(`<!> <!>`, 1);
-var root_55 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label pcr-label-pos svelte-5cciiw">Positive Prompt:</span> <p class="pcr-meta-prompt svelte-5cciiw"> </p></div>`);
-var root_56 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label pcr-label-neg svelte-5cciiw">Negative Prompt:</span> <p class="pcr-meta-prompt pcr-text-neg svelte-5cciiw"> </p></div>`);
-var root_51 = from_html(`<div class="pcr-meta-heading svelte-5cciiw">Prompt</div> <div class="pcr-meta-card svelte-5cciiw"><!> <!></div>`, 1);
-var root_58 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label svelte-5cciiw">Model</span> <span class="pcr-meta-val pcr-meta-break svelte-5cciiw"> </span></div>`);
-var root_59 = from_html(`<div class="pcr-meta-field pcr-clickable svelte-5cciiw" title="Click to copy"><span class="pcr-meta-label svelte-5cciiw">Seed</span> <span class="pcr-meta-val svelte-5cciiw"> </span></div>`);
-var root_60 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label svelte-5cciiw">Steps</span> <span class="pcr-meta-val svelte-5cciiw"> </span></div>`);
-var root_61 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label svelte-5cciiw">CFG</span> <span class="pcr-meta-val svelte-5cciiw"> </span></div>`);
-var root_62 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label svelte-5cciiw">Sampler</span> <span class="pcr-meta-val svelte-5cciiw"> </span></div>`);
-var root_63 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label svelte-5cciiw">Denoise</span> <span class="pcr-meta-val svelte-5cciiw"> </span></div>`);
-var root_57 = from_html(`<div class="pcr-meta-heading svelte-5cciiw">Generation Settings</div> <div class="pcr-meta-card svelte-5cciiw"><!> <!> <div class="pcr-meta-grid-2 svelte-5cciiw"><!> <!> <!> <!></div></div>`, 1);
-var root_45 = from_html(`<div class="pcr-meta-heading svelte-5cciiw">Image Info</div> <div class="pcr-meta-card svelte-5cciiw"><div class="pcr-meta-grid-2 svelte-5cciiw"><!> <!></div> <!> <!> <!></div> <!> <!>`, 1);
-var root_64 = from_html(`<div class="pcr-viewer-meta-empty svelte-5cciiw">Loading metadata...</div>`);
-var root = from_html(`<div class="pcr-viewer svelte-5cciiw"><!> <!> <!>  <div class="pcr-viewer-center svelte-5cciiw"><!> <!> <!></div> <div class="pcr-viewer-meta svelte-5cciiw"><div class="pcr-viewer-meta-header svelte-5cciiw"><span class="pcr-viewer-counter svelte-5cciiw"> </span>  <div class="pcr-viewer-close svelte-5cciiw"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div></div> <!> <div class="pcr-viewer-toolbar svelte-5cciiw"><div class="pcr-viewer-toolbar-row svelte-5cciiw"><div class="pcr-viewer-zoom-control svelte-5cciiw"><div class="pcr-viewer-zoom-btn svelte-5cciiw"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg> <span> </span></div> <!></div> <input type="range" class="pcr-viewer-zoom-slider svelte-5cciiw" min="0" max="100"/></div> <!> <!> <!> <!> <div class="pcr-viewer-toolbar-row pcr-viewer-toolbar-row-equal svelte-5cciiw"><!> <!> <div title="Copy shareable link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> <span> </span></div></div></div> <div class="pcr-viewer-meta-content svelte-5cciiw"><!></div></div></div> <!> <!> <!> <!> <!> <!>`, 1);
+var root_31 = from_html(`<div class="pcr-viewer-error svelte-5cciiw"><div> </div> <!></div>`);
+var root_35 = from_html(`<div class="pcr-viewer-compare-label-age svelte-5cciiw"> </div>`);
+var root_36 = from_html(`<div class="pcr-viewer-compare-label-age svelte-5cciiw"> </div>`);
+var root_34 = from_html(`<div class="pcr-viewer-compare-slider svelte-5cciiw"><div class="pcr-viewer-compare-handle svelte-5cciiw"><div class="pcr-viewer-compare-line svelte-5cciiw"></div> <div class="pcr-viewer-compare-circle svelte-5cciiw"><svg width="16" height="16" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-160q-33 0-56.5-23.5T120-240v-480q0-33 23.5-56.5T200-800h160v80H200v480h160v80H200Zm240 80v-800h80v80h240q33 0 56.5 23.5T840-720v480q0 33-23.5 56.5T760-160H520v80h-80Zm80-160h240v-480H520v480Zm-320 0v-480 480Zm560 0v-480 480Z"></path></svg></div> <div class="pcr-viewer-compare-line svelte-5cciiw"></div></div></div> <div class="pcr-viewer-compare-label pcr-viewer-compare-label-before svelte-5cciiw"> <!></div> <div class="pcr-viewer-compare-label pcr-viewer-compare-label-after svelte-5cciiw"> <!></div>`, 1);
+var root_28 = from_html(`<!> <img alt="" draggable="false"/> <!> <!> <!>`, 1);
+var root_37 = from_html(`<div class="pcr-viewer-nav pcr-viewer-nav-left svelte-5cciiw"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path></svg></div>`);
+var root_38 = from_html(`<div class="pcr-viewer-nav pcr-viewer-nav-right svelte-5cciiw"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"></path></svg></div>`);
+var root_40 = from_html(`<div><img alt="" draggable="false" loading="lazy" class="svelte-5cciiw"/></div>`);
+var root_41 = from_svg(`<path d="M7 14l5-5 5 5z"></path>`);
+var root_42 = from_svg(`<path d="M7 10l5 5 5-5z"></path>`);
+var root_44 = from_html(`<div><img alt="" draggable="false" loading="lazy" class="svelte-5cciiw"/></div>`);
+var root_43 = from_html(`<div class="pcr-viewer-history-grid svelte-5cciiw"></div>`);
+var root_39 = from_html(`<div><div class="pcr-viewer-history-header svelte-5cciiw"><div class="pcr-viewer-history-thumbs svelte-5cciiw"><!> <div class="pcr-viewer-history-fade svelte-5cciiw"></div></div>  <div class="pcr-viewer-history-expand svelte-5cciiw"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><!></svg></div></div>  <div class="pcr-viewer-scrubber-track svelte-5cciiw"><div class="pcr-viewer-scrubber-fill svelte-5cciiw"></div> <div class="pcr-viewer-scrubber-handle svelte-5cciiw"></div></div> <!></div>`);
+var root_46 = from_html(`<div class="pcr-viewer-zoom-preset svelte-5cciiw"> </div>`);
+var root_45 = from_html(`<div class="pcr-viewer-zoom-dropdown svelte-5cciiw"></div>`);
+var root_49 = from_html(`<div> </div>`);
+var root_50 = from_html(`<div class="pcr-viewer-compare-dropdown-divider svelte-5cciiw"></div>  <div class="pcr-viewer-compare-dropdown-item pcr-viewer-compare-clear svelte-5cciiw">Clear</div>`, 1);
+var root_48 = from_html(`<div class="pcr-viewer-compare-dropdown svelte-5cciiw"><!> <!></div>`);
+var root_47 = from_html(`<div class="pcr-viewer-toolbar-row pcr-viewer-compare-container svelte-5cciiw"><div title="Compare (C)"><svg width="16" height="16" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-160q-33 0-56.5-23.5T120-240v-480q0-33 23.5-56.5T200-800h160v80H200v480h160v80H200Zm240 80v-800h80v80h240q33 0 56.5 23.5T840-720v480q0 33-23.5 56.5T760-160H520v80h-80Zm80-160h240v-480H520v480Z"></path></svg> <span>Compare</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="opacity: 0.7;"><path d="M7 10l5 5 5-5z"></path></svg></div> <!></div>`);
+var root_54 = from_html(`<span class="pcr-viewer-edit-layers svelte-5cciiw"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" class="svelte-5cciiw"><path d="M12 2 2 7l10 5 10-5-10-5Z"></path><path d="m2 17 10 5 10-5"></path><path d="m2 12 10 5 10-5"></path></svg> </span>`);
+var root_53 = from_html(`<div class="pcr-viewer-toolbar-row svelte-5cciiw"><div class="pcr-viewer-toolbar-btn svelte-5cciiw" title="Edit, inpaint or upscale this image"><svg width="16" height="16" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h357l-80 80H200v560h560v-278l80-80v358q0 33-23.5 56.5T760-120H200Zm280-360ZM360-360v-170l367-367q12-12 27-18t30-6q16 0 30.5 6t26.5 18l56 57q11 12 17 26.5t6 29.5q0 15-5.5 29.5T897-728L530-360H360Zm481-424-56-56 56 56ZM440-440h56l232-232-28-28-29-28-231 231v57Zm260-260-29-28 29 28 28 28-28-28Z"></path></svg> <span> </span> <!></div></div>`);
+var root_55 = from_html(`<div class="pcr-viewer-toolbar-btn pcr-viewer-delete svelte-5cciiw" title="Delete file"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg> <span> </span></div>`);
+var root_56 = from_html(`<div class="pcr-viewer-toolbar-btn svelte-5cciiw" title="Reveal file in Explorer"><svg width="16" height="16" viewBox="0 -960 960 960" fill="currentColor"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h240l80 80h320q33 0 56.5 23.5T880-640v400q0 33-23.5 56.5T800-160H160Z"></path></svg> <span>Open Folder</span></div>`);
+var root_58 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label svelte-5cciiw">Dimensions</span> <span class="pcr-meta-val svelte-5cciiw"> </span></div>`);
+var root_59 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label svelte-5cciiw">Size</span> <span class="pcr-meta-val svelte-5cciiw"> </span></div>`);
+var root_60 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label svelte-5cciiw">Generated</span> <span class="pcr-meta-val svelte-5cciiw"> </span></div>`);
+var root_61 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label svelte-5cciiw">Filename</span> <span class="pcr-meta-val pcr-meta-break svelte-5cciiw"> </span></div>`);
+var root_62 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label pcr-label-orphan svelte-5cciiw">Status</span> <span class="pcr-meta-val pcr-meta-orphan svelte-5cciiw">Source deleted</span></div>`);
+var root_65 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label pcr-label-region svelte-5cciiw"> </span> <p class="pcr-meta-prompt svelte-5cciiw"> </p></div>`);
+var root_66 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label pcr-label-pos svelte-5cciiw">Global:</span> <p class="pcr-meta-prompt svelte-5cciiw"> </p></div>`);
+var root_64 = from_html(`<!> <!>`, 1);
+var root_67 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label pcr-label-pos svelte-5cciiw">Positive Prompt:</span> <p class="pcr-meta-prompt svelte-5cciiw"> </p></div>`);
+var root_68 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label pcr-label-neg svelte-5cciiw">Negative Prompt:</span> <p class="pcr-meta-prompt pcr-text-neg svelte-5cciiw"> </p></div>`);
+var root_63 = from_html(`<div class="pcr-meta-heading svelte-5cciiw">Prompt</div> <div class="pcr-meta-card svelte-5cciiw"><!> <!></div>`, 1);
+var root_70 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label svelte-5cciiw">Model</span> <span class="pcr-meta-val pcr-meta-break svelte-5cciiw"> </span></div>`);
+var root_71 = from_html(`<div class="pcr-meta-field pcr-clickable svelte-5cciiw" title="Click to copy"><span class="pcr-meta-label svelte-5cciiw">Seed</span> <span class="pcr-meta-val svelte-5cciiw"> </span></div>`);
+var root_72 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label svelte-5cciiw">Steps</span> <span class="pcr-meta-val svelte-5cciiw"> </span></div>`);
+var root_73 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label svelte-5cciiw">CFG</span> <span class="pcr-meta-val svelte-5cciiw"> </span></div>`);
+var root_74 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label svelte-5cciiw">Sampler</span> <span class="pcr-meta-val svelte-5cciiw"> </span></div>`);
+var root_75 = from_html(`<div class="pcr-meta-field svelte-5cciiw"><span class="pcr-meta-label svelte-5cciiw">Denoise</span> <span class="pcr-meta-val svelte-5cciiw"> </span></div>`);
+var root_69 = from_html(`<div class="pcr-meta-heading svelte-5cciiw">Generation Settings</div> <div class="pcr-meta-card svelte-5cciiw"><!> <!> <div class="pcr-meta-grid-2 svelte-5cciiw"><!> <!> <!> <!></div></div>`, 1);
+var root_57 = from_html(`<div class="pcr-meta-heading svelte-5cciiw">Image Info</div> <div class="pcr-meta-card svelte-5cciiw"><div class="pcr-meta-grid-2 svelte-5cciiw"><!> <!></div> <!> <!> <!></div> <!> <!>`, 1);
+var root_76 = from_html(`<div class="pcr-viewer-meta-empty svelte-5cciiw">Loading metadata...</div>`);
+var root_1 = from_html(`<div class="pcr-viewer svelte-5cciiw"><!> <!>  <div class="pcr-viewer-center svelte-5cciiw"><!> <!> <!> <!> <!></div> <div class="pcr-viewer-meta svelte-5cciiw"><div class="pcr-viewer-meta-header svelte-5cciiw"><span class="pcr-viewer-counter svelte-5cciiw"> </span>  <div class="pcr-viewer-close svelte-5cciiw"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div></div> <!> <div class="pcr-viewer-toolbar svelte-5cciiw"><div class="pcr-viewer-toolbar-row svelte-5cciiw"><div class="pcr-viewer-zoom-control svelte-5cciiw"><div class="pcr-viewer-zoom-btn svelte-5cciiw"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg> <span> </span></div> <!></div> <input type="range" class="pcr-viewer-zoom-slider svelte-5cciiw" min="0" max="100"/></div> <!> <!> <!> <!> <div class="pcr-viewer-toolbar-row pcr-viewer-toolbar-row-equal svelte-5cciiw"><!> <!> <div title="Copy shareable link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> <span> </span></div></div></div> <div class="pcr-viewer-meta-content svelte-5cciiw"><!></div></div></div> <!> <!> <!> <!> <!> <!>`, 1);
 function ImageViewer($$anchor, $$props) {
   var _a;
   push($$props, true);
@@ -12516,13 +12620,11 @@ function ImageViewer($$anchor, $$props) {
     keepLineageFocusFor = hash;
     set(displayedHash, hash, true);
   }
-  let lineageDisplay = user_derived(() => (() => {
-    const asNodes = (list) => list.map((item) => ({ kind: "node", item }));
-    if (get(lineageList).length < 2) return asNodes(get(lineageList));
-    const byHash = new Map(get(lineageList).map((f) => [f.hash, f]));
-    if (!byHash.has(get(displayedHash))) return asNodes(get(lineageList));
+  let lineageTree = user_derived(() => (() => {
+    const list = get(lineageList);
+    const byHash = new Map(list.map((f) => [f.hash, f]));
     const childrenOf = /* @__PURE__ */ new Map();
-    for (const f of get(lineageList)) {
+    for (const f of list) {
       if (!f.parent_hash || !byHash.has(f.parent_hash)) continue;
       if (!childrenOf.has(f.parent_hash)) childrenOf.set(f.parent_hash, []);
       childrenOf.get(f.parent_hash).push(f);
@@ -12530,6 +12632,14 @@ function ImageViewer($$anchor, $$props) {
     for (const kids of childrenOf.values()) {
       kids.sort((a, b) => (a.created_at || 0) - (b.created_at || 0));
     }
+    const roots = list.filter((f) => !f.parent_hash || !byHash.has(f.parent_hash)).map((f) => f.hash);
+    return { byHash, childrenOf, roots };
+  })());
+  let lineageDisplay = user_derived(() => (() => {
+    const asNodes = (list) => list.map((item) => ({ kind: "node", item }));
+    if (get(lineageList).length < 2) return asNodes(get(lineageList));
+    const { byHash, childrenOf } = get(lineageTree);
+    if (!byHash.has(get(displayedHash))) return asNodes(get(lineageList));
     const subtreeNodes = (rootHash) => {
       const out = [];
       const seen = /* @__PURE__ */ new Set();
@@ -12603,6 +12713,138 @@ function ImageViewer($$anchor, $$props) {
   let lineageVisible = user_derived(() => get(lineageDisplay).filter((d) => d.kind === "node").map((d) => d.item));
   let lineageDisplayCurrentIdx = user_derived(() => get(lineageDisplay).findIndex((d) => d.kind === "node" && d.item.hash === get(displayedHash)));
   let lineageHiddenCount = user_derived(() => get(lineageList).length - get(lineageVisible).length);
+  let brokenOut = state(proxy(/* @__PURE__ */ new Set()));
+  let subwayAnchor = user_derived(() => get(lineageFocusHash) && get(lineageTree).byHash.has(get(lineageFocusHash)) ? get(lineageFocusHash) : get(displayedHash));
+  let laneRender = user_derived(() => buildRender(get(lineageTree), get(subwayAnchor), get(brokenOut)));
+  let lanesActive = user_derived(() => get(brokenOut).size > 0 && get(lineageList).length > 1);
+  function primaryChildHash(item) {
+    const kids = get(lineageTree).childrenOf.get(item == null ? void 0 : item.hash) || [];
+    if (!kids.length) return null;
+    const a = ancestry(get(lineageTree), get(subwayAnchor));
+    return (kids.find((k) => a.set.has(k.hash)) || kids[0]).hash;
+  }
+  function canExpand(item) {
+    const primary = primaryChildHash(item);
+    return (get(lineageTree).childrenOf.get(item == null ? void 0 : item.hash) || []).some((k) => k.hash !== primary && !get(brokenOut).has(k.hash));
+  }
+  function expandBranches(item) {
+    const primary = primaryChildHash(item);
+    const next = new Set(get(brokenOut));
+    for (const k of get(lineageTree).childrenOf.get(item == null ? void 0 : item.hash) || []) if (k.hash !== primary) next.add(k.hash);
+    set(brokenOut, next, true);
+  }
+  function foldLane(childRoot) {
+    const next = new Set(get(brokenOut));
+    const stack = [childRoot];
+    while (stack.length) {
+      const h = stack.pop();
+      next.delete(h);
+      for (const k of get(lineageTree).childrenOf.get(h) || []) stack.push(k.hash);
+    }
+    set(brokenOut, next, true);
+  }
+  function collapseAllLanes() {
+    set(brokenOut, /* @__PURE__ */ new Set(), true);
+  }
+  let hasBranches = user_derived(() => (() => {
+    for (const kids of get(lineageTree).childrenOf.values()) if (kids.length > 1) return true;
+    return false;
+  })());
+  function expandAll() {
+    const a = ancestry(get(lineageTree), get(subwayAnchor));
+    const next = new Set(get(brokenOut));
+    for (const kids of get(lineageTree).childrenOf.values()) {
+      if (kids.length < 2) continue;
+      const primary = (kids.find((k) => a.set.has(k.hash)) || kids[0]).hash;
+      for (const k of kids) if (k.hash !== primary) next.add(k.hash);
+    }
+    set(brokenOut, next, true);
+  }
+  user_effect(() => {
+    var _a2;
+    if (!get(lanesActive)) return;
+    if (get(laneRender).columns.some((c) => c.nodes.some((n) => n.hash === get(displayedHash)))) return;
+    const { byHash, childrenOf } = get(lineageTree);
+    const a = ancestry(get(lineageTree), get(subwayAnchor));
+    const toBreak = [];
+    let cur = get(displayedHash);
+    const guard = /* @__PURE__ */ new Set();
+    while (cur && byHash.has(cur) && !guard.has(cur) && !a.set.has(cur)) {
+      guard.add(cur);
+      const parent = byHash.get(cur).parent_hash;
+      if (!parent || !byHash.has(parent)) break;
+      const kids = childrenOf.get(parent) || [];
+      const primary = (_a2 = kids.find((k) => a.set.has(k.hash)) || kids[0]) == null ? void 0 : _a2.hash;
+      if (cur !== primary) toBreak.push(cur);
+      cur = parent;
+    }
+    const additions = toBreak.filter((h) => !get(brokenOut).has(h));
+    if (additions.length) {
+      const next = new Set(get(brokenOut));
+      for (const h of additions) next.add(h);
+      set(brokenOut, next, true);
+    }
+  });
+  let lanesWrapEl = state(null);
+  let connectorGeom = state(proxy([]));
+  let connectorBox = state(proxy({ w: 0, h: 0 }));
+  let measureScheduled = false;
+  const LANE_ROW_H = 86;
+  function contentXY(el, root2) {
+    let x = 0, y = 0;
+    for (let n = el; n && n !== root2; n = n.offsetParent) {
+      x += n.offsetLeft;
+      y += n.offsetTop;
+    }
+    return { x, y, w: el.offsetWidth, h: el.offsetHeight };
+  }
+  function measureConnectors() {
+    const wrap = get(lanesWrapEl);
+    if (!wrap) return;
+    const geom = [];
+    for (const e of get(laneRender).edges) {
+      const a = wrap.querySelector(`[data-hash="${e.from}"]`);
+      const b = wrap.querySelector(`[data-hash="${e.to}"]`);
+      if (!a || !b) continue;
+      const ra = contentXY(a, wrap), rb = contentXY(b, wrap);
+      const px = ra.x + ra.w / 2, pb = ra.y + ra.h;
+      const cx = rb.x + rb.w / 2, ct = rb.y;
+      const key2 = `${e.from}>${e.to}`;
+      if (Math.abs(px - cx) < 1) {
+        geom.push({ key: key2, d: `M ${px} ${pb} L ${cx} ${ct}` });
+      } else {
+        const my = (pb + ct) / 2;
+        geom.push({
+          key: key2,
+          d: `M ${px} ${pb} C ${px} ${my}, ${cx} ${my}, ${cx} ${ct}`
+        });
+      }
+    }
+    set(connectorGeom, geom, true);
+    set(connectorBox, { w: wrap.scrollWidth, h: wrap.scrollHeight }, true);
+  }
+  function scheduleMeasure() {
+    if (measureScheduled) return;
+    measureScheduled = true;
+    requestAnimationFrame(() => {
+      measureScheduled = false;
+      measureConnectors();
+    });
+  }
+  user_effect(() => {
+    if (!get(lanesActive)) return;
+    const cols = get(
+      laneRender
+      // read → track expand/fold/family changes
+    ).columns;
+    if (cols) scheduleMeasure();
+  });
+  user_effect(() => {
+    if (!get(lanesWrapEl)) return;
+    const ro = new ResizeObserver(() => scheduleMeasure());
+    ro.observe(get(lanesWrapEl));
+    return () => ro.disconnect();
+  });
   let compareTargets = user_derived(() => get(lineageList).filter((item) => (item == null ? void 0 : item.hash) !== get(displayedHash)));
   let hasCompareTargets = user_derived(() => get(compareTargets).length > 0);
   let compareImageUrl = user_derived(() => get(compareTargetHash) ? imageUrl(get(compareTargetHash)) : null);
@@ -12642,11 +12884,18 @@ function ImageViewer($$anchor, $$props) {
       fetchApi()(`/promptchain/image-meta/${get(displayedHash)}`).then((r) => r.ok ? r.json() : null).then((data) => {
         set(imageInfo, data, true);
       }).catch(onMetaError("image meta"));
-      fetchApi()(`/promptchain/lineage/${get(displayedHash)}`).then((r) => r.ok ? r.json() : null).then((data) => {
+      const reqHash = get(displayedHash);
+      fetchApi()(`/promptchain/lineage/${reqHash}`).then((r) => r.ok ? r.json() : null).then((data) => {
+        if (get(
+          displayedHash
+          // stale response — a newer hash is shown
+        ) !== reqHash) return;
         set(lineageData, data, true);
+        reportLineageAnomaly(reqHash, data);
       }).catch((e) => {
+        if (get(displayedHash) !== reqHash) return;
         set(lineageData, null);
-        console.error(`[PromptChain] lineage fetch failed for ${get(displayedHash)}:`, e);
+        console.error(`[PromptChain] lineage fetch failed for ${reqHash}:`, e);
       });
     }
   });
@@ -13253,6 +13502,15 @@ ${negative}` : ""));
     } catch {
     }
   }
+  function reportLineageAnomaly(reqHash, data) {
+    const fam = data == null ? void 0 : data.family;
+    if (!Array.isArray(fam) || fam.length === 0) return;
+    const me = fam.find((f) => (f == null ? void 0 : f.hash) === reqHash);
+    const parentOrphaned = !!((me == null ? void 0 : me.parent_hash) && !fam.some((f) => (f == null ? void 0 : f.hash) === me.parent_hash));
+    if (me && !parentOrphaned) return;
+    const fams = fam.map((f) => ((f == null ? void 0 : f.hash) || "").slice(0, 8)).join(",");
+    reportHandback("lineage-tree-anomaly", `node ${(reqHash || "").slice(0, 8)} ${me ? "orphaned: parent " + (me.parent_hash || "").slice(0, 8) + " absent" : "ABSENT"} from its own family [${fams}]`);
+  }
   async function handleUpscaleToEdit(doneState) {
     var _a2, _b, _c;
     const ctx = get(upscaleEditCtx);
@@ -13471,11 +13729,58 @@ ${negative}` : ""));
     e.stopPropagation();
     set(lineageMenu, { x: e.clientX, y: e.clientY, item }, true);
   }
+  let copyPathTimer = null;
+  let copyPathToast = state(false);
+  async function copyTextToClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+    }
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.top = "-1000px";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+  async function copyPath(hash) {
+    var _a2;
+    try {
+      const r = await ((_a2 = fetchApi()) == null ? void 0 : _a2(`/promptchain/file-path?hash=${encodeURIComponent(hash)}`));
+      const d = r && r.ok ? await r.json() : null;
+      if (!(d == null ? void 0 : d.path)) return;
+      if (await copyTextToClipboard(d.path)) {
+        set(copyPathToast, true);
+        clearTimeout(copyPathTimer);
+        copyPathTimer = setTimeout(
+          () => {
+            set(copyPathToast, false);
+          },
+          1800
+        );
+      }
+    } catch {
+    }
+  }
   function lineageMenuAction(action2, item) {
     var _a2, _b, _c;
     const hash = item == null ? void 0 : item.hash;
     if (!hash) return;
-    if (action2 === "edit") {
+    if (action2 === "expand-branches") {
+      expandBranches(item);
+    } else if (action2 === "copy-path") {
+      copyPath(hash);
+    } else if (action2 === "edit") {
       lineageJump(hash);
       openEdit(hash);
     } else if (action2 === "delete") {
@@ -13584,7 +13889,7 @@ ${negative}` : ""));
       });
     }
   }
-  var fragment = root();
+  var fragment = root_1();
   event("keydown", $window, handleKeydown);
   event("mousemove", $window, handleWindowMouseMove);
   event("mouseup", $window, handleWindowMouseUp);
@@ -13593,873 +13898,1061 @@ ${negative}` : ""));
     if (get(zoomDropdownOpen) && !e.target.closest(".pcr-viewer-zoom-control")) set(zoomDropdownOpen, false);
   });
   var div = first_child(fragment);
-  var node = child(div);
   {
-    var consequent = ($$anchor2) => {
-      var div_1 = root_1();
-      var text = child(div_1);
-      template_effect(() => set_text(text, `✨ ${get(newGenBanner) ?? ""}`));
+    const lineageNode = ($$anchor2, item = noop, lane = noop) => {
+      var div_1 = root_2();
+      let classes;
+      var img_1 = child(div_1);
+      var div_2 = sibling(img_1, 2);
+      let classes_1;
+      var node = sibling(div_2, 2);
+      {
+        var consequent = ($$anchor3) => {
+          var div_3 = root_3();
+          append($$anchor3, div_3);
+        };
+        if_block(node, ($$render) => {
+          if (get(editDocLayers)[item().hash]) $$render(consequent);
+        });
+      }
+      var node_1 = sibling(node, 2);
+      {
+        var consequent_1 = ($$anchor3) => {
+          var button = root_4();
+          var text_1 = child(button);
+          template_effect(
+            ($0, $1) => {
+              set_attribute(button, "title", `Break this node's ${$0 ?? ""} other branch(es) into their own columns`);
+              set_text(text_1, `⊞${$1 ?? ""}`);
+            },
+            [
+              () => get(laneRender).junctionsByNode.get(item().hash).hidden.length,
+              () => get(laneRender).junctionsByNode.get(item().hash).hidden.length
+            ]
+          );
+          delegated("click", button, (e) => {
+            e.stopPropagation();
+            expandBranches(item());
+          });
+          append($$anchor3, button);
+        };
+        var d_1 = user_derived(() => {
+          var _a2;
+          return (_a2 = get(laneRender).junctionsByNode.get(item().hash)) == null ? void 0 : _a2.hidden.length;
+        });
+        if_block(node_1, ($$render) => {
+          if (get(d_1)) $$render(consequent_1);
+        });
+      }
+      var node_2 = sibling(node_1, 2);
+      {
+        var consequent_2 = ($$anchor3) => {
+          var button_1 = root_5();
+          delegated("click", button_1, (e) => {
+            e.stopPropagation();
+            foldLane(lane().startHash);
+          });
+          append($$anchor3, button_1);
+        };
+        var d_2 = user_derived(() => get(brokenOut).has(lane().startHash) && item().hash === lane().startHash);
+        if_block(node_2, ($$render) => {
+          if (get(d_2)) $$render(consequent_2);
+        });
+      }
+      template_effect(
+        ($0) => {
+          classes = set_class(div_1, 1, "pcr-viewer-lineage-node svelte-5cciiw", null, classes, {
+            current: item().hash === get(displayedHash),
+            orphaned: item().orphaned === 1,
+            "compare-candidate": get(compareDropdownOpen) && item().hash !== get(displayedHash),
+            "compare-left": get(compareMode) && item().hash === get(displayedHash),
+            "compare-right": get(compareMode) && item().hash === get(compareTargetHash)
+          });
+          set_attribute(div_1, "data-hash", item().hash);
+          set_attribute(img_1, "src", $0);
+          classes_1 = set_class(div_2, 1, "pcr-viewer-lineage-dot svelte-5cciiw", null, classes_1, {
+            "dot-root": item().hash === get(laneRender).rootHash,
+            "dot-current": item().hash === get(displayedHash),
+            "dot-tip": item().hash === lane().nodes[lane().nodes.length - 1].hash && item().hash !== get(displayedHash)
+          });
+        },
+        [() => thumbUrl(item().hash)]
+      );
+      delegated("click", div_1, () => {
+        if (get(compareDropdownOpen)) {
+          if (item().hash !== get(displayedHash)) enterCompareWith(item().hash, item().filename || item().hash.slice(0, 8));
+          return;
+        }
+        lineageJump(item().hash);
+        exitCompare();
+      });
+      event("mouseenter", div_1, (e) => showTip(e, item()));
+      event("mouseleave", div_1, hideTip);
+      delegated("contextmenu", div_1, (e) => {
+        hideTip();
+        openLineageMenu(e, item());
+      });
+      event("load", img_1, scheduleMeasure);
       append($$anchor2, div_1);
     };
-    if_block(node, ($$render) => {
-      if (get(newGenBanner)) $$render(consequent);
-    });
-  }
-  var node_1 = sibling(node, 2);
-  {
-    var consequent_5 = ($$anchor2) => {
-      var div_2 = root_2();
-      var div_3 = child(div_2);
-      var text_1 = child(div_3);
-      var div_4 = sibling(div_3, 2);
-      each(div_4, 23, () => get(lineageDisplay), (d) => d.kind === "node" ? d.item.hash : `${d.kind}:${d.at}`, ($$anchor3, d, i) => {
-        var fragment_1 = comment();
-        var node_2 = first_child(fragment_1);
+    var node_3 = child(div);
+    {
+      var consequent_9 = ($$anchor2) => {
+        var div_4 = root_6();
+        let classes_2;
+        var div_5 = child(div_4);
+        var span = child(div_5);
+        var text_2 = child(span);
+        var node_4 = sibling(span, 2);
         {
-          var consequent_2 = ($$anchor4) => {
-            const item = user_derived(() => get(d).item);
-            var div_5 = root_4();
-            let classes;
-            var img_1 = child(div_5);
-            var div_6 = sibling(img_1, 2);
-            let classes_1;
-            var node_3 = sibling(div_6, 2);
+          var consequent_3 = ($$anchor3) => {
+            var button_2 = root_7();
+            let classes_3;
+            var text_3 = child(button_2);
+            template_effect(() => {
+              classes_3 = set_class(button_2, 1, "pcr-lin-toggle svelte-5cciiw", null, classes_3, { on: get(lanesActive) });
+              set_attribute(button_2, "title", get(lanesActive) ? "Collapse the subway back to the strip" : "Expand every branch into a subway map");
+              set_text(text_3, get(lanesActive) ? "⊟" : "⊞");
+            });
+            delegated("click", button_2, () => get(lanesActive) ? collapseAllLanes() : expandAll());
+            append($$anchor3, button_2);
+          };
+          if_block(node_4, ($$render) => {
+            if (get(hasBranches)) $$render(consequent_3);
+          });
+        }
+        var node_5 = sibling(div_5, 2);
+        {
+          var consequent_4 = ($$anchor3) => {
+            var div_6 = root_8();
+            var svg = child(div_6);
+            each(svg, 21, () => get(connectorGeom), (g) => g.key, ($$anchor4, g) => {
+              var path_1 = root_9();
+              template_effect(() => set_attribute(path_1, "d", get(g).d));
+              append($$anchor4, path_1);
+            });
+            var node_6 = sibling(svg, 2);
+            each(node_6, 17, () => get(laneRender).columns, (lane) => lane.startHash, ($$anchor4, lane) => {
+              var div_7 = root_10();
+              each(div_7, 21, () => get(lane).nodes, (item) => item.hash, ($$anchor5, item) => {
+                lineageNode($$anchor5, () => get(item), () => get(lane));
+              });
+              template_effect(() => set_style(div_7, `margin-top: ${get(lane).topRow * LANE_ROW_H}px`));
+              append($$anchor4, div_7);
+            });
+            bind_this(div_6, ($$value) => set(lanesWrapEl, $$value), () => get(lanesWrapEl));
+            template_effect(() => {
+              set_attribute(svg, "width", get(connectorBox).w);
+              set_attribute(svg, "height", get(connectorBox).h);
+            });
+            append($$anchor3, div_6);
+          };
+          var alternate_2 = ($$anchor3) => {
+            var fragment_2 = root_12();
+            var div_8 = first_child(fragment_2);
+            each(div_8, 23, () => get(lineageDisplay), (d) => d.kind === "node" ? d.item.hash : `${d.kind}:${d.at}`, ($$anchor4, d, i) => {
+              var fragment_3 = comment();
+              var node_7 = first_child(fragment_3);
+              {
+                var consequent_6 = ($$anchor5) => {
+                  const item = user_derived(() => get(d).item);
+                  var div_9 = root_14();
+                  let classes_4;
+                  var img_2 = child(div_9);
+                  var div_10 = sibling(img_2, 2);
+                  let classes_5;
+                  var node_8 = sibling(div_10, 2);
+                  {
+                    var consequent_5 = ($$anchor6) => {
+                      var div_11 = root_15();
+                      append($$anchor6, div_11);
+                    };
+                    if_block(node_8, ($$render) => {
+                      if (get(editDocLayers)[get(item).hash]) $$render(consequent_5);
+                    });
+                  }
+                  template_effect(
+                    ($0) => {
+                      var _a2;
+                      classes_4 = set_class(div_9, 1, "pcr-viewer-lineage-node svelte-5cciiw", null, classes_4, {
+                        current: get(i) === get(lineageDisplayCurrentIdx),
+                        ancestor: get(i) < get(lineageDisplayCurrentIdx),
+                        descendant: get(i) > get(lineageDisplayCurrentIdx),
+                        branch: get(d).branch,
+                        orphaned: get(item).orphaned === 1,
+                        "compare-candidate": get(compareDropdownOpen) && get(item).hash !== get(displayedHash),
+                        "compare-left": get(compareMode) && get(item).hash === get(displayedHash),
+                        "compare-right": get(compareMode) && get(item).hash === get(compareTargetHash)
+                      });
+                      set_attribute(img_2, "src", $0);
+                      classes_5 = set_class(div_10, 1, "pcr-viewer-lineage-dot svelte-5cciiw", null, classes_5, {
+                        "dot-root": get(item).hash === ((_a2 = get(lineageList)[0]) == null ? void 0 : _a2.hash),
+                        "dot-current": get(i) === get(lineageDisplayCurrentIdx),
+                        "dot-tip": get(i) === get(lineageDisplay).length - 1 && get(i) !== get(lineageDisplayCurrentIdx)
+                      });
+                    },
+                    [() => thumbUrl(get(item).hash)]
+                  );
+                  delegated("click", div_9, () => {
+                    if (get(compareDropdownOpen)) {
+                      if (get(item).hash !== get(displayedHash)) enterCompareWith(get(item).hash, get(item).filename || get(item).hash.slice(0, 8));
+                      return;
+                    }
+                    lineageJump(get(item).hash);
+                    exitCompare();
+                  });
+                  event("mouseenter", div_9, (e) => showTip(e, get(item)));
+                  event("mouseleave", div_9, hideTip);
+                  delegated("contextmenu", div_9, (e) => {
+                    hideTip();
+                    openLineageMenu(e, get(item));
+                  });
+                  append($$anchor5, div_9);
+                };
+                var alternate_1 = ($$anchor5) => {
+                  var div_12 = root_16();
+                  let classes_6;
+                  var node_9 = child(div_12);
+                  {
+                    var consequent_7 = ($$anchor6) => {
+                      var fragment_4 = root_17();
+                      var div_13 = first_child(fragment_4);
+                      each(div_13, 21, () => get(d).preview, (p) => p.hash, ($$anchor7, p) => {
+                        var img_3 = root_18();
+                        template_effect(($0) => set_attribute(img_3, "src", $0), [() => thumbUrl(get(p).hash)]);
+                        append($$anchor7, img_3);
+                      });
+                      var span_1 = sibling(div_13, 2);
+                      var text_4 = child(span_1);
+                      template_effect(() => set_text(text_4, `+${get(d).count ?? ""}`));
+                      append($$anchor6, fragment_4);
+                    };
+                    var alternate = ($$anchor6) => {
+                      var span_2 = root_19();
+                      append($$anchor6, span_2);
+                    };
+                    if_block(node_9, ($$render) => {
+                      if (get(d).kind === "bundle") $$render(consequent_7);
+                      else $$render(alternate, -1);
+                    });
+                  }
+                  template_effect(() => {
+                    classes_6 = set_class(div_12, 1, "pcr-viewer-lineage-bundle svelte-5cciiw", null, classes_6, { expanded: get(d).kind === "collapse" });
+                    set_attribute(div_12, "title", get(d).kind === "collapse" ? "Collapse this branch" : `${get(d).count} other generation${get(d).count > 1 ? "s" : ""} branch off here — click to expand`);
+                  });
+                  delegated("click", div_12, () => toggleBundle(get(d).at));
+                  append($$anchor5, div_12);
+                };
+                if_block(node_7, ($$render) => {
+                  if (get(d).kind === "node") $$render(consequent_6);
+                  else $$render(alternate_1, -1);
+                });
+              }
+              append($$anchor4, fragment_3);
+            });
+            var node_10 = sibling(div_8, 2);
             {
-              var consequent_1 = ($$anchor5) => {
-                var div_7 = root_5();
-                append($$anchor5, div_7);
+              var consequent_8 = ($$anchor4) => {
+                var div_14 = root_20();
+                var text_5 = child(div_14);
+                template_effect(() => set_text(text_5, `${get(lineageHiddenCount) ?? ""} hidden`));
+                append($$anchor4, div_14);
               };
-              if_block(node_3, ($$render) => {
-                if (get(editDocLayers)[get(item).hash]) $$render(consequent_1);
+              if_block(node_10, ($$render) => {
+                if (get(lineageHiddenCount) > 0) $$render(consequent_8);
               });
             }
-            template_effect(
-              ($0) => {
-                var _a2;
-                classes = set_class(div_5, 1, "pcr-viewer-lineage-node svelte-5cciiw", null, classes, {
-                  current: get(i) === get(lineageDisplayCurrentIdx),
-                  ancestor: get(i) < get(lineageDisplayCurrentIdx),
-                  descendant: get(i) > get(lineageDisplayCurrentIdx),
-                  branch: get(d).branch,
-                  orphaned: get(item).orphaned === 1,
-                  "compare-candidate": get(compareDropdownOpen) && get(item).hash !== get(displayedHash),
-                  "compare-left": get(compareMode) && get(item).hash === get(displayedHash),
-                  "compare-right": get(compareMode) && get(item).hash === get(compareTargetHash)
-                });
-                set_attribute(img_1, "src", $0);
-                classes_1 = set_class(div_6, 1, "pcr-viewer-lineage-dot svelte-5cciiw", null, classes_1, {
-                  "dot-root": get(item).hash === ((_a2 = get(lineageList)[0]) == null ? void 0 : _a2.hash),
-                  "dot-current": get(i) === get(lineageDisplayCurrentIdx),
-                  "dot-tip": get(i) === get(lineageDisplay).length - 1 && get(i) !== get(lineageDisplayCurrentIdx)
-                });
-              },
-              [() => thumbUrl(get(item).hash)]
-            );
-            delegated("click", div_5, () => {
-              if (get(compareDropdownOpen)) {
-                if (get(item).hash !== get(displayedHash)) enterCompareWith(get(item).hash, get(item).filename || get(item).hash.slice(0, 8));
-                return;
-              }
-              lineageJump(get(item).hash);
-              exitCompare();
-            });
-            event("mouseenter", div_5, (e) => showTip(e, get(item)));
-            event("mouseleave", div_5, hideTip);
-            delegated("contextmenu", div_5, (e) => {
-              hideTip();
-              openLineageMenu(e, get(item));
-            });
-            append($$anchor4, div_5);
+            append($$anchor3, fragment_2);
           };
-          var alternate_1 = ($$anchor4) => {
-            var div_8 = root_6();
-            let classes_2;
-            var node_4 = child(div_8);
+          if_block(node_5, ($$render) => {
+            if (get(lanesActive)) $$render(consequent_4);
+            else $$render(alternate_2, -1);
+          });
+        }
+        template_effect(() => {
+          classes_2 = set_class(div_4, 1, "pcr-viewer-lineage pcr-viewer-lineage-visible svelte-5cciiw", null, classes_2, { lanes: get(lanesActive) });
+          set_text(text_2, `${get(lineageCurrentIdx) + 1} / ${get(lineageList).length ?? ""}`);
+        });
+        append($$anchor2, div_4);
+      };
+      var alternate_3 = ($$anchor2) => {
+        var div_15 = root_21();
+        append($$anchor2, div_15);
+      };
+      if_block(node_3, ($$render) => {
+        if (get(lineageList).length > 1) $$render(consequent_9);
+        else $$render(alternate_3, -1);
+      });
+    }
+    var node_11 = sibling(node_3, 2);
+    {
+      var consequent_13 = ($$anchor2) => {
+        var div_16 = root_22();
+        var div_17 = child(div_16);
+        var text_6 = child(div_17);
+        var node_12 = sibling(div_17, 2);
+        {
+          var consequent_10 = ($$anchor3) => {
+            var div_18 = root_23();
+            var text_7 = child(div_18);
+            template_effect(($0) => set_text(text_7, $0), [() => timeAgo(get(hoverTip).item.created_at)]);
+            append($$anchor3, div_18);
+          };
+          if_block(node_12, ($$render) => {
+            if (get(hoverTip).item.created_at) $$render(consequent_10);
+          });
+        }
+        var node_13 = sibling(node_12, 2);
+        {
+          var consequent_11 = ($$anchor3) => {
+            var div_19 = root_24();
+            var text_8 = child(div_19);
+            template_effect(() => set_text(text_8, `${get(hoverTip).item.width ?? ""}×${get(hoverTip).item.height ?? ""}`));
+            append($$anchor3, div_19);
+          };
+          if_block(node_13, ($$render) => {
+            if (get(hoverTip).item.width && get(hoverTip).item.height) $$render(consequent_11);
+          });
+        }
+        var node_14 = sibling(node_13, 2);
+        {
+          var consequent_12 = ($$anchor3) => {
+            var div_20 = root_25();
+            var text_9 = child(div_20);
+            template_effect(() => set_text(text_9, `▦ ${get(editDocLayers)[get(hoverTip).item.hash] ?? ""} layers — opens layered in Edit`));
+            append($$anchor3, div_20);
+          };
+          if_block(node_14, ($$render) => {
+            if (get(editDocLayers)[get(hoverTip).item.hash]) $$render(consequent_12);
+          });
+        }
+        template_effect(
+          ($0) => {
+            set_style(div_16, `top:${get(hoverTip).top ?? ""}px; left:${get(hoverTip).left ?? ""}px;`);
+            set_text(text_6, $0);
+          },
+          [
+            () => {
+              var _a2;
+              return get(hoverTip).item.filename || ((_a2 = get(hoverTip).item.hash) == null ? void 0 : _a2.slice(0, 12));
+            }
+          ]
+        );
+        append($$anchor2, div_16);
+      };
+      if_block(node_11, ($$render) => {
+        if (get(hoverTip)) $$render(consequent_13);
+      });
+    }
+    var div_21 = sibling(node_11, 2);
+    var node_15 = child(div_21);
+    {
+      var consequent_14 = ($$anchor2) => {
+        var div_22 = root_26();
+        var text_10 = child(div_22);
+        template_effect(() => set_text(text_10, `✨ ${get(newGenBanner) ?? ""}`));
+        append($$anchor2, div_22);
+      };
+      if_block(node_15, ($$render) => {
+        if (get(newGenBanner)) $$render(consequent_14);
+      });
+    }
+    var node_16 = sibling(node_15, 2);
+    {
+      var consequent_15 = ($$anchor2) => {
+        var div_23 = root_27();
+        append($$anchor2, div_23);
+      };
+      if_block(node_16, ($$render) => {
+        if (get(copyPathToast)) $$render(consequent_15);
+      });
+    }
+    var node_17 = sibling(node_16, 2);
+    {
+      var consequent_24 = ($$anchor2) => {
+        var fragment_5 = root_28();
+        var node_18 = first_child(fragment_5);
+        {
+          var consequent_16 = ($$anchor3) => {
+            var div_24 = root_29();
+            append($$anchor3, div_24);
+          };
+          if_block(node_18, ($$render) => {
+            if (!get(imageLoaded) && !get(imageError)) $$render(consequent_16);
+          });
+        }
+        var img_4 = sibling(node_18, 2);
+        let classes_7;
+        bind_this(img_4, ($$value) => set(mainImageEl, $$value), () => get(mainImageEl));
+        var node_19 = sibling(img_4, 2);
+        {
+          var consequent_17 = ($$anchor3) => {
+            var img_5 = root_30();
+            template_effect(() => {
+              set_attribute(img_5, "src", get(compareImageUrl));
+              set_style(img_5, `transform: translate(${get(panX) ?? ""}px, ${get(panY) ?? ""}px) scale(${get(zoom) ?? ""}); clip-path: inset(0 0 0 ${get(compareClipPercent) ?? ""}%);`);
+            });
+            append($$anchor3, img_5);
+          };
+          if_block(node_19, ($$render) => {
+            if (get(compareMode) && get(compareImageUrl)) $$render(consequent_17);
+          });
+        }
+        var node_20 = sibling(node_19, 2);
+        {
+          var consequent_20 = ($$anchor3) => {
+            var div_25 = root_31();
+            var div_26 = child(div_25);
+            var text_11 = child(div_26);
+            var node_21 = sibling(div_26, 2);
             {
-              var consequent_3 = ($$anchor5) => {
-                var fragment_2 = root_7();
-                var div_9 = first_child(fragment_2);
-                each(div_9, 21, () => get(d).preview, (p) => p.hash, ($$anchor6, p) => {
-                  var img_2 = root_8();
-                  template_effect(($0) => set_attribute(img_2, "src", $0), [() => thumbUrl(get(p).hash)]);
-                  append($$anchor6, img_2);
+              var consequent_19 = ($$anchor4) => {
+                var fragment_6 = root_32();
+                var button_3 = sibling(first_child(fragment_6), 2);
+                var text_12 = child(button_3);
+                var node_22 = sibling(button_3, 2);
+                {
+                  var consequent_18 = ($$anchor5) => {
+                    var div_27 = root_33();
+                    var text_13 = child(div_27);
+                    template_effect(() => set_text(text_13, get(reattachMsg)));
+                    append($$anchor5, div_27);
+                  };
+                  if_block(node_22, ($$render) => {
+                    if (get(reattachMsg)) $$render(consequent_18);
+                  });
+                }
+                var input = sibling(node_22, 2);
+                bind_this(input, ($$value) => set(reattachInputEl, $$value), () => get(reattachInputEl));
+                template_effect(() => {
+                  button_3.disabled = get(reattaching);
+                  set_text(text_12, get(reattaching) ? "Verifying…" : "Locate file…");
                 });
-                var span = sibling(div_9, 2);
-                var text_2 = child(span);
-                template_effect(() => set_text(text_2, `+${get(d).count ?? ""}`));
-                append($$anchor5, fragment_2);
+                delegated("click", button_3, () => {
+                  var _a2;
+                  return (_a2 = get(reattachInputEl)) == null ? void 0 : _a2.click();
+                });
+                delegated("change", input, handleReattachPick);
+                append($$anchor4, fragment_6);
               };
-              var alternate = ($$anchor5) => {
-                var span_1 = root_9();
-                append($$anchor5, span_1);
+              if_block(node_21, ($$render) => {
+                if (get(canReattach)) $$render(consequent_19);
+              });
+            }
+            template_effect(() => set_text(text_11, get(isOrphaned) ? "Source file deleted" : "Image not found"));
+            append($$anchor3, div_25);
+          };
+          if_block(node_20, ($$render) => {
+            if (get(imageError)) $$render(consequent_20);
+          });
+        }
+        var node_23 = sibling(node_20, 2);
+        {
+          var consequent_23 = ($$anchor3) => {
+            var fragment_7 = root_34();
+            var div_28 = first_child(fragment_7);
+            var div_29 = sibling(div_28, 2);
+            var text_14 = child(div_29);
+            var node_24 = sibling(text_14);
+            {
+              var consequent_21 = ($$anchor4) => {
+                var div_30 = root_35();
+                var text_15 = child(div_30);
+                template_effect(($0) => set_text(text_15, $0), [() => timeAgo(get(imageInfo).created_at)]);
+                append($$anchor4, div_30);
               };
-              if_block(node_4, ($$render) => {
-                if (get(d).kind === "bundle") $$render(consequent_3);
-                else $$render(alternate, -1);
+              if_block(node_24, ($$render) => {
+                var _a2;
+                if ((_a2 = get(imageInfo)) == null ? void 0 : _a2.created_at) $$render(consequent_21);
+              });
+            }
+            var div_31 = sibling(div_29, 2);
+            var text_16 = child(div_31);
+            var node_25 = sibling(text_16);
+            {
+              var consequent_22 = ($$anchor4) => {
+                var div_32 = root_36();
+                var text_17 = child(div_32);
+                template_effect(($0) => set_text(text_17, $0), [() => timeAgo(get(compareTargetItem).created_at)]);
+                append($$anchor4, div_32);
+              };
+              if_block(node_25, ($$render) => {
+                var _a2;
+                if ((_a2 = get(compareTargetItem)) == null ? void 0 : _a2.created_at) $$render(consequent_22);
               });
             }
             template_effect(() => {
-              classes_2 = set_class(div_8, 1, "pcr-viewer-lineage-bundle svelte-5cciiw", null, classes_2, { expanded: get(d).kind === "collapse" });
-              set_attribute(div_8, "title", get(d).kind === "collapse" ? "Collapse this branch" : `${get(d).count} other generation${get(d).count > 1 ? "s" : ""} branch off here — click to expand`);
+              var _a2;
+              set_style(div_28, `left: ${get(compareSliderPos) ?? ""}%;`);
+              set_text(text_14, `${(((_a2 = get(imageInfo)) == null ? void 0 : _a2.filename) || "Current") ?? ""} `);
+              set_text(text_16, `${(get(compareTargetLabel) || "Compare") ?? ""} `);
             });
-            delegated("click", div_8, () => toggleBundle(get(d).at));
-            append($$anchor4, div_8);
+            delegated("mousedown", div_28, handleSliderDown);
+            append($$anchor3, fragment_7);
           };
-          if_block(node_2, ($$render) => {
-            if (get(d).kind === "node") $$render(consequent_2);
-            else $$render(alternate_1, -1);
+          if_block(node_23, ($$render) => {
+            if (get(compareMode)) $$render(consequent_23);
           });
         }
-        append($$anchor3, fragment_1);
-      });
-      var node_5 = sibling(div_4, 2);
-      {
-        var consequent_4 = ($$anchor3) => {
-          var div_10 = root_10();
-          var text_3 = child(div_10);
-          template_effect(() => set_text(text_3, `${get(lineageHiddenCount) ?? ""} hidden`));
-          append($$anchor3, div_10);
-        };
-        if_block(node_5, ($$render) => {
-          if (get(lineageHiddenCount) > 0) $$render(consequent_4);
-        });
-      }
-      template_effect(() => set_text(text_1, `${get(lineageCurrentIdx) + 1} / ${get(lineageList).length ?? ""}`));
-      append($$anchor2, div_2);
-    };
-    var alternate_2 = ($$anchor2) => {
-      var div_11 = root_11();
-      append($$anchor2, div_11);
-    };
-    if_block(node_1, ($$render) => {
-      if (get(lineageList).length > 1) $$render(consequent_5);
-      else $$render(alternate_2, -1);
-    });
-  }
-  var node_6 = sibling(node_1, 2);
-  {
-    var consequent_9 = ($$anchor2) => {
-      var div_12 = root_12();
-      var div_13 = child(div_12);
-      var text_4 = child(div_13);
-      var node_7 = sibling(div_13, 2);
-      {
-        var consequent_6 = ($$anchor3) => {
-          var div_14 = root_13();
-          var text_5 = child(div_14);
-          template_effect(($0) => set_text(text_5, $0), [() => timeAgo(get(hoverTip).item.created_at)]);
-          append($$anchor3, div_14);
-        };
-        if_block(node_7, ($$render) => {
-          if (get(hoverTip).item.created_at) $$render(consequent_6);
-        });
-      }
-      var node_8 = sibling(node_7, 2);
-      {
-        var consequent_7 = ($$anchor3) => {
-          var div_15 = root_14();
-          var text_6 = child(div_15);
-          template_effect(() => set_text(text_6, `${get(hoverTip).item.width ?? ""}×${get(hoverTip).item.height ?? ""}`));
-          append($$anchor3, div_15);
-        };
-        if_block(node_8, ($$render) => {
-          if (get(hoverTip).item.width && get(hoverTip).item.height) $$render(consequent_7);
-        });
-      }
-      var node_9 = sibling(node_8, 2);
-      {
-        var consequent_8 = ($$anchor3) => {
-          var div_16 = root_15();
-          var text_7 = child(div_16);
-          template_effect(() => set_text(text_7, `▦ ${get(editDocLayers)[get(hoverTip).item.hash] ?? ""} layers — opens layered in Edit`));
-          append($$anchor3, div_16);
-        };
-        if_block(node_9, ($$render) => {
-          if (get(editDocLayers)[get(hoverTip).item.hash]) $$render(consequent_8);
-        });
-      }
-      template_effect(
-        ($0) => {
-          set_style(div_12, `top:${get(hoverTip).top ?? ""}px; left:${get(hoverTip).left ?? ""}px;`);
-          set_text(text_4, $0);
-        },
-        [
-          () => {
-            var _a2;
-            return get(hoverTip).item.filename || ((_a2 = get(hoverTip).item.hash) == null ? void 0 : _a2.slice(0, 12));
-          }
-        ]
-      );
-      append($$anchor2, div_12);
-    };
-    if_block(node_6, ($$render) => {
-      if (get(hoverTip)) $$render(consequent_9);
-    });
-  }
-  var div_17 = sibling(node_6, 2);
-  var node_10 = child(div_17);
-  {
-    var consequent_18 = ($$anchor2) => {
-      var fragment_3 = root_16();
-      var node_11 = first_child(fragment_3);
-      {
-        var consequent_10 = ($$anchor3) => {
-          var div_18 = root_17();
-          append($$anchor3, div_18);
-        };
-        if_block(node_11, ($$render) => {
-          if (!get(imageLoaded) && !get(imageError)) $$render(consequent_10);
-        });
-      }
-      var img_3 = sibling(node_11, 2);
-      let classes_3;
-      bind_this(img_3, ($$value) => set(mainImageEl, $$value), () => get(mainImageEl));
-      var node_12 = sibling(img_3, 2);
-      {
-        var consequent_11 = ($$anchor3) => {
-          var img_4 = root_18();
-          template_effect(() => {
-            set_attribute(img_4, "src", get(compareImageUrl));
-            set_style(img_4, `transform: translate(${get(panX) ?? ""}px, ${get(panY) ?? ""}px) scale(${get(zoom) ?? ""}); clip-path: inset(0 0 0 ${get(compareClipPercent) ?? ""}%);`);
-          });
-          append($$anchor3, img_4);
-        };
-        if_block(node_12, ($$render) => {
-          if (get(compareMode) && get(compareImageUrl)) $$render(consequent_11);
-        });
-      }
-      var node_13 = sibling(node_12, 2);
-      {
-        var consequent_14 = ($$anchor3) => {
-          var div_19 = root_19();
-          var div_20 = child(div_19);
-          var text_8 = child(div_20);
-          var node_14 = sibling(div_20, 2);
-          {
-            var consequent_13 = ($$anchor4) => {
-              var fragment_4 = root_20();
-              var button = sibling(first_child(fragment_4), 2);
-              var text_9 = child(button);
-              var node_15 = sibling(button, 2);
-              {
-                var consequent_12 = ($$anchor5) => {
-                  var div_21 = root_21();
-                  var text_10 = child(div_21);
-                  template_effect(() => set_text(text_10, get(reattachMsg)));
-                  append($$anchor5, div_21);
-                };
-                if_block(node_15, ($$render) => {
-                  if (get(reattachMsg)) $$render(consequent_12);
-                });
-              }
-              var input = sibling(node_15, 2);
-              bind_this(input, ($$value) => set(reattachInputEl, $$value), () => get(reattachInputEl));
-              template_effect(() => {
-                button.disabled = get(reattaching);
-                set_text(text_9, get(reattaching) ? "Verifying…" : "Locate file…");
-              });
-              delegated("click", button, () => {
-                var _a2;
-                return (_a2 = get(reattachInputEl)) == null ? void 0 : _a2.click();
-              });
-              delegated("change", input, handleReattachPick);
-              append($$anchor4, fragment_4);
-            };
-            if_block(node_14, ($$render) => {
-              if (get(canReattach)) $$render(consequent_13);
-            });
-          }
-          template_effect(() => set_text(text_8, get(isOrphaned) ? "Source file deleted" : "Image not found"));
-          append($$anchor3, div_19);
-        };
-        if_block(node_13, ($$render) => {
-          if (get(imageError)) $$render(consequent_14);
-        });
-      }
-      var node_16 = sibling(node_13, 2);
-      {
-        var consequent_17 = ($$anchor3) => {
-          var fragment_5 = root_22();
-          var div_22 = first_child(fragment_5);
-          var div_23 = sibling(div_22, 2);
-          var text_11 = child(div_23);
-          var node_17 = sibling(text_11);
-          {
-            var consequent_15 = ($$anchor4) => {
-              var div_24 = root_23();
-              var text_12 = child(div_24);
-              template_effect(($0) => set_text(text_12, $0), [() => timeAgo(get(imageInfo).created_at)]);
-              append($$anchor4, div_24);
-            };
-            if_block(node_17, ($$render) => {
-              var _a2;
-              if ((_a2 = get(imageInfo)) == null ? void 0 : _a2.created_at) $$render(consequent_15);
-            });
-          }
-          var div_25 = sibling(div_23, 2);
-          var text_13 = child(div_25);
-          var node_18 = sibling(text_13);
-          {
-            var consequent_16 = ($$anchor4) => {
-              var div_26 = root_24();
-              var text_14 = child(div_26);
-              template_effect(($0) => set_text(text_14, $0), [() => timeAgo(get(compareTargetItem).created_at)]);
-              append($$anchor4, div_26);
-            };
-            if_block(node_18, ($$render) => {
-              var _a2;
-              if ((_a2 = get(compareTargetItem)) == null ? void 0 : _a2.created_at) $$render(consequent_16);
-            });
-          }
-          template_effect(() => {
-            var _a2;
-            set_style(div_22, `left: ${get(compareSliderPos) ?? ""}%;`);
-            set_text(text_11, `${(((_a2 = get(imageInfo)) == null ? void 0 : _a2.filename) || "Current") ?? ""} `);
-            set_text(text_13, `${(get(compareTargetLabel) || "Compare") ?? ""} `);
-          });
-          delegated("mousedown", div_22, handleSliderDown);
-          append($$anchor3, fragment_5);
-        };
-        if_block(node_16, ($$render) => {
-          if (get(compareMode)) $$render(consequent_17);
-        });
-      }
-      template_effect(
-        ($0) => {
-          set_attribute(img_3, "src", $0);
-          classes_3 = set_class(img_3, 1, "pcr-viewer-image svelte-5cciiw", null, classes_3, { hidden: !get(imageLoaded) });
-          set_style(img_3, `transform: translate(${get(panX) ?? ""}px, ${get(panY) ?? ""}px) scale(${get(zoom) ?? ""})`);
-        },
-        [() => mainImageSrc(get(displayedHash))]
-      );
-      event("load", img_3, () => {
-        set(imageLoaded, true);
-      });
-      event("error", img_3, () => {
-        set(imageError, true);
-        set(imageLoaded, false);
-      });
-      append($$anchor2, fragment_3);
-    };
-    if_block(node_10, ($$render) => {
-      if (get(displayedHash)) $$render(consequent_18);
-    });
-  }
-  var node_19 = sibling(node_10, 2);
-  {
-    var consequent_19 = ($$anchor2) => {
-      var div_27 = root_25();
-      delegated("pointerdown", div_27, (e) => e.stopPropagation());
-      delegated("click", div_27, (e) => {
-        e.stopPropagation();
-        navigate(-1);
-      });
-      append($$anchor2, div_27);
-    };
-    if_block(node_19, ($$render) => {
-      if (get(currentIndex) > 0) $$render(consequent_19);
-    });
-  }
-  var node_20 = sibling(node_19, 2);
-  {
-    var consequent_20 = ($$anchor2) => {
-      var div_28 = root_26();
-      delegated("pointerdown", div_28, (e) => e.stopPropagation());
-      delegated("click", div_28, (e) => {
-        e.stopPropagation();
-        navigate(1);
-      });
-      append($$anchor2, div_28);
-    };
-    if_block(node_20, ($$render) => {
-      if (get(currentIndex) < images().length - 1) $$render(consequent_20);
-    });
-  }
-  bind_this(div_17, ($$value) => containerEl = $$value, () => containerEl);
-  var div_29 = sibling(div_17, 2);
-  var div_30 = child(div_29);
-  var span_2 = child(div_30);
-  var text_15 = child(span_2);
-  var div_31 = sibling(span_2, 2);
-  var node_21 = sibling(div_30, 2);
-  {
-    var consequent_23 = ($$anchor2) => {
-      var div_32 = root_27();
-      let classes_4;
-      var div_33 = child(div_32);
-      var div_34 = child(div_33);
-      var node_22 = child(div_34);
-      each(node_22, 17, () => get(visibleThumbs), (thumb) => thumb.hash, ($$anchor3, thumb) => {
-        var div_35 = root_28();
-        let classes_5;
-        var img_5 = child(div_35);
         template_effect(
           ($0) => {
-            classes_5 = set_class(div_35, 1, "pcr-viewer-history-thumb svelte-5cciiw", null, classes_5, { current: get(thumb).globalIndex === get(currentIndex) });
-            set_attribute(img_5, "src", $0);
+            set_attribute(img_4, "src", $0);
+            classes_7 = set_class(img_4, 1, "pcr-viewer-image svelte-5cciiw", null, classes_7, { hidden: !get(imageLoaded) });
+            set_style(img_4, `transform: translate(${get(panX) ?? ""}px, ${get(panY) ?? ""}px) scale(${get(zoom) ?? ""})`);
           },
-          [() => thumbUrl(get(thumb).hash)]
+          [() => mainImageSrc(get(displayedHash))]
         );
-        delegated("click", div_35, () => jumpTo(get(thumb).globalIndex));
-        append($$anchor3, div_35);
-      });
-      var div_36 = sibling(div_34, 2);
-      var svg = child(div_36);
-      var node_23 = child(svg);
-      {
-        var consequent_21 = ($$anchor3) => {
-          var path_1 = root_29();
-          append($$anchor3, path_1);
-        };
-        var alternate_3 = ($$anchor3) => {
-          var path_2 = root_30();
-          append($$anchor3, path_2);
-        };
-        if_block(node_23, ($$render) => {
-          if (get(historyExpanded)) $$render(consequent_21);
-          else $$render(alternate_3, -1);
+        event("load", img_4, () => {
+          set(imageLoaded, true);
         });
-      }
-      var div_37 = sibling(div_33, 2);
-      var div_38 = child(div_37);
-      var div_39 = sibling(div_38, 2);
-      var node_24 = sibling(div_37, 2);
-      {
-        var consequent_22 = ($$anchor3) => {
-          var div_40 = root_31();
-          each(div_40, 23, images, (img) => img.hash, ($$anchor4, img, idx) => {
-            var div_41 = root_32();
-            let classes_6;
-            var img_6 = child(div_41);
-            template_effect(
-              ($0) => {
-                classes_6 = set_class(div_41, 1, "pcr-viewer-grid-thumb svelte-5cciiw", null, classes_6, { current: get(idx) === get(currentIndex) });
-                set_attribute(img_6, "src", $0);
-              },
-              [() => thumbUrl(get(img).hash)]
-            );
-            delegated("click", div_41, () => jumpTo(get(idx)));
-            append($$anchor4, div_41);
-          });
-          bind_this(div_40, ($$value) => set(historyGridEl, $$value), () => get(historyGridEl));
-          append($$anchor3, div_40);
-        };
-        if_block(node_24, ($$render) => {
-          if (get(historyExpanded)) $$render(consequent_22);
+        event("error", img_4, () => {
+          set(imageError, true);
+          set(imageLoaded, false);
         });
-      }
-      template_effect(() => {
-        classes_4 = set_class(div_32, 1, "pcr-viewer-history svelte-5cciiw", null, classes_4, { expanded: get(historyExpanded) });
-        set_attribute(div_36, "title", get(historyExpanded) ? "Collapse" : "Expand");
-        set_style(div_38, `width: ${get(scrubberPercent) ?? ""}%`);
-        set_style(div_39, `left: ${get(scrubberPercent) ?? ""}%`);
+        append($$anchor2, fragment_5);
+      };
+      if_block(node_17, ($$render) => {
+        if (get(displayedHash)) $$render(consequent_24);
       });
-      delegated("click", div_36, toggleGrid);
-      delegated("mousedown", div_37, handleScrubberTrackDown);
-      delegated("mousedown", div_39, handleScrubberHandleDown);
-      append($$anchor2, div_32);
-    };
-    if_block(node_21, ($$render) => {
-      if (images().length > 1) $$render(consequent_23);
-    });
-  }
-  var div_42 = sibling(node_21, 2);
-  var div_43 = child(div_42);
-  var div_44 = child(div_43);
-  var div_45 = child(div_44);
-  var span_3 = sibling(child(div_45), 2);
-  var text_16 = child(span_3);
-  var node_25 = sibling(div_45, 2);
-  {
-    var consequent_24 = ($$anchor2) => {
-      var div_46 = root_33();
-      each(div_46, 21, () => ZOOM_PRESETS, index, ($$anchor3, level) => {
-        var div_47 = root_34();
-        var text_17 = child(div_47);
-        template_effect(() => set_text(text_17, `${get(level) ?? ""}%`));
-        delegated("click", div_47, () => setZoomLevel(get(level)));
-        append($$anchor3, div_47);
+    }
+    var node_26 = sibling(node_17, 2);
+    {
+      var consequent_25 = ($$anchor2) => {
+        var div_33 = root_37();
+        delegated("pointerdown", div_33, (e) => e.stopPropagation());
+        delegated("click", div_33, (e) => {
+          e.stopPropagation();
+          navigate(-1);
+        });
+        append($$anchor2, div_33);
+      };
+      if_block(node_26, ($$render) => {
+        if (get(currentIndex) > 0) $$render(consequent_25);
       });
-      append($$anchor2, div_46);
-    };
-    if_block(node_25, ($$render) => {
-      if (get(zoomDropdownOpen)) $$render(consequent_24);
-    });
-  }
-  var input_1 = sibling(div_44, 2);
-  var node_26 = sibling(div_43, 2);
-  {
-    var consequent_27 = ($$anchor2) => {
-      var div_48 = root_35();
-      var div_49 = child(div_48);
-      let classes_7;
-      var node_27 = sibling(div_49, 2);
-      {
-        var consequent_26 = ($$anchor3) => {
-          var div_50 = root_36();
-          var node_28 = child(div_50);
-          each(node_28, 17, () => get(compareTargets), index, ($$anchor4, target) => {
-            var div_51 = root_37();
-            let classes_8;
-            var text_18 = child(div_51);
-            template_effect(
-              ($0) => {
-                classes_8 = set_class(div_51, 1, "pcr-viewer-compare-dropdown-item svelte-5cciiw", null, classes_8, { active: get(compareTargetHash) === get(target).hash });
-                set_text(text_18, $0);
-              },
-              [
-                () => get(target).filename || get(target).hash.slice(0, 8)
-              ]
-            );
-            delegated("click", div_51, () => enterCompareWith(get(target).hash, get(target).filename || get(target).hash.slice(0, 8)));
-            append($$anchor4, div_51);
+    }
+    var node_27 = sibling(node_26, 2);
+    {
+      var consequent_26 = ($$anchor2) => {
+        var div_34 = root_38();
+        delegated("pointerdown", div_34, (e) => e.stopPropagation());
+        delegated("click", div_34, (e) => {
+          e.stopPropagation();
+          navigate(1);
+        });
+        append($$anchor2, div_34);
+      };
+      if_block(node_27, ($$render) => {
+        if (get(currentIndex) < images().length - 1) $$render(consequent_26);
+      });
+    }
+    bind_this(div_21, ($$value) => containerEl = $$value, () => containerEl);
+    var div_35 = sibling(div_21, 2);
+    var div_36 = child(div_35);
+    var span_3 = child(div_36);
+    var text_18 = child(span_3);
+    var div_37 = sibling(span_3, 2);
+    var node_28 = sibling(div_36, 2);
+    {
+      var consequent_29 = ($$anchor2) => {
+        var div_38 = root_39();
+        let classes_8;
+        var div_39 = child(div_38);
+        var div_40 = child(div_39);
+        var node_29 = child(div_40);
+        each(node_29, 17, () => get(visibleThumbs), (thumb) => thumb.hash, ($$anchor3, thumb) => {
+          var div_41 = root_40();
+          let classes_9;
+          var img_6 = child(div_41);
+          template_effect(
+            ($0) => {
+              classes_9 = set_class(div_41, 1, "pcr-viewer-history-thumb svelte-5cciiw", null, classes_9, { current: get(thumb).globalIndex === get(currentIndex) });
+              set_attribute(img_6, "src", $0);
+            },
+            [() => thumbUrl(get(thumb).hash)]
+          );
+          delegated("click", div_41, () => jumpTo(get(thumb).globalIndex));
+          append($$anchor3, div_41);
+        });
+        var div_42 = sibling(div_40, 2);
+        var svg_1 = child(div_42);
+        var node_30 = child(svg_1);
+        {
+          var consequent_27 = ($$anchor3) => {
+            var path_2 = root_41();
+            append($$anchor3, path_2);
+          };
+          var alternate_4 = ($$anchor3) => {
+            var path_3 = root_42();
+            append($$anchor3, path_3);
+          };
+          if_block(node_30, ($$render) => {
+            if (get(historyExpanded)) $$render(consequent_27);
+            else $$render(alternate_4, -1);
           });
-          var node_29 = sibling(node_28, 2);
-          {
-            var consequent_25 = ($$anchor4) => {
-              var fragment_6 = root_38();
-              var div_52 = sibling(first_child(fragment_6), 2);
-              delegated("click", div_52, exitCompare);
-              append($$anchor4, fragment_6);
-            };
-            if_block(node_29, ($$render) => {
-              if (get(compareMode)) $$render(consequent_25);
+        }
+        var div_43 = sibling(div_39, 2);
+        var div_44 = child(div_43);
+        var div_45 = sibling(div_44, 2);
+        var node_31 = sibling(div_43, 2);
+        {
+          var consequent_28 = ($$anchor3) => {
+            var div_46 = root_43();
+            each(div_46, 23, images, (img) => img.hash, ($$anchor4, img, idx) => {
+              var div_47 = root_44();
+              let classes_10;
+              var img_7 = child(div_47);
+              template_effect(
+                ($0) => {
+                  classes_10 = set_class(div_47, 1, "pcr-viewer-grid-thumb svelte-5cciiw", null, classes_10, { current: get(idx) === get(currentIndex) });
+                  set_attribute(img_7, "src", $0);
+                },
+                [() => thumbUrl(get(img).hash)]
+              );
+              delegated("click", div_47, () => jumpTo(get(idx)));
+              append($$anchor4, div_47);
             });
-          }
-          append($$anchor3, div_50);
-        };
-        if_block(node_27, ($$render) => {
-          if (get(compareDropdownOpen)) $$render(consequent_26);
-        });
-      }
-      template_effect(() => classes_7 = set_class(div_49, 1, "pcr-viewer-toolbar-btn svelte-5cciiw", null, classes_7, { active: get(compareMode) || get(compareDropdownOpen) }));
-      delegated("click", div_49, () => {
-        set(compareDropdownOpen, !get(compareDropdownOpen));
-      });
-      append($$anchor2, div_48);
-    };
-    if_block(node_26, ($$render) => {
-      if (get(hasCompareTargets)) $$render(consequent_27);
-    });
-  }
-  var node_30 = sibling(node_26, 2);
-  {
-    if_block(node_30, ($$render) => {
-    });
-  }
-  var node_31 = sibling(node_30, 2);
-  {
-    if_block(node_31, ($$render) => {
-    });
-  }
-  var node_32 = sibling(node_31, 2);
-  {
-    var consequent_31 = ($$anchor2) => {
-      var div_57 = root_41();
-      var div_58 = child(div_57);
-      var span_6 = sibling(child(div_58), 2);
-      var text_21 = child(span_6);
-      var node_33 = sibling(span_6, 2);
-      {
-        var consequent_30 = ($$anchor3) => {
-          var span_7 = root_42();
-          var text_22 = sibling(child(span_7));
-          template_effect(() => {
-            set_attribute(span_7, "title", `This image has ${get(editDocLayers)[get(displayedHash)] ?? ""} saved layers — Edit opens it layered, un-flattened`);
-            set_text(text_22, ` ${get(editDocLayers)[get(displayedHash)] ?? ""}`);
+            bind_this(div_46, ($$value) => set(historyGridEl, $$value), () => get(historyGridEl));
+            append($$anchor3, div_46);
+          };
+          if_block(node_31, ($$render) => {
+            if (get(historyExpanded)) $$render(consequent_28);
           });
-          append($$anchor3, span_7);
-        };
-        if_block(node_33, ($$render) => {
-          if (get(editDocLayers)[get(displayedHash)]) $$render(consequent_30);
+        }
+        template_effect(() => {
+          classes_8 = set_class(div_38, 1, "pcr-viewer-history svelte-5cciiw", null, classes_8, { expanded: get(historyExpanded) });
+          set_attribute(div_42, "title", get(historyExpanded) ? "Collapse" : "Expand");
+          set_style(div_44, `width: ${get(scrubberPercent) ?? ""}%`);
+          set_style(div_45, `left: ${get(scrubberPercent) ?? ""}%`);
         });
-      }
-      template_effect(() => set_text(text_21, get(editPreparing) ? "Reading..." : "Edit"));
-      delegated("click", div_58, () => {
-        if (!get(editPreparing)) openEdit();
+        delegated("click", div_42, toggleGrid);
+        delegated("mousedown", div_43, handleScrubberTrackDown);
+        delegated("mousedown", div_45, handleScrubberHandleDown);
+        append($$anchor2, div_38);
+      };
+      if_block(node_28, ($$render) => {
+        if (images().length > 1) $$render(consequent_29);
       });
-      append($$anchor2, div_57);
-    };
-    if_block(node_32, ($$render) => {
-      if (onEditSave()) $$render(consequent_31);
-    });
-  }
-  var div_59 = sibling(node_32, 2);
-  var node_34 = child(div_59);
-  {
-    var consequent_32 = ($$anchor2) => {
-      var div_60 = root_43();
-      var span_8 = sibling(child(div_60), 2);
-      var text_23 = child(span_8);
-      template_effect(() => set_text(text_23, get(deleting) ? "Deleting..." : "Delete"));
-      delegated("click", div_60, requestDelete);
-      append($$anchor2, div_60);
-    };
-    if_block(node_34, ($$render) => {
-      if (onDelete()) $$render(consequent_32);
-    });
-  }
-  var node_35 = sibling(node_34, 2);
-  {
-    var consequent_33 = ($$anchor2) => {
-      var div_61 = root_44();
-      delegated("click", div_61, openFolder);
-      append($$anchor2, div_61);
-    };
-    if_block(node_35, ($$render) => {
-      if (isLocalClient) $$render(consequent_33);
-    });
-  }
-  var div_62 = sibling(node_35, 2);
-  let classes_9;
-  var span_9 = sibling(child(div_62), 2);
-  var text_24 = child(span_9);
-  var div_63 = sibling(div_42, 2);
-  var node_36 = child(div_63);
-  {
-    var consequent_51 = ($$anchor2) => {
-      var fragment_7 = root_45();
-      var div_64 = sibling(first_child(fragment_7), 2);
-      var div_65 = child(div_64);
-      var node_37 = child(div_65);
-      {
-        var consequent_34 = ($$anchor3) => {
-          var div_66 = root_46();
-          var span_10 = sibling(child(div_66), 2);
-          var text_25 = child(span_10);
-          template_effect(() => set_text(text_25, `${get(imageInfo).width ?? ""} × ${get(imageInfo).height ?? ""}`));
-          append($$anchor3, div_66);
-        };
-        if_block(node_37, ($$render) => {
-          if (get(imageInfo).width && get(imageInfo).height) $$render(consequent_34);
+    }
+    var div_48 = sibling(node_28, 2);
+    var div_49 = child(div_48);
+    var div_50 = child(div_49);
+    var div_51 = child(div_50);
+    var span_4 = sibling(child(div_51), 2);
+    var text_19 = child(span_4);
+    var node_32 = sibling(div_51, 2);
+    {
+      var consequent_30 = ($$anchor2) => {
+        var div_52 = root_45();
+        each(div_52, 21, () => ZOOM_PRESETS, index, ($$anchor3, level) => {
+          var div_53 = root_46();
+          var text_20 = child(div_53);
+          template_effect(() => set_text(text_20, `${get(level) ?? ""}%`));
+          delegated("click", div_53, () => setZoomLevel(get(level)));
+          append($$anchor3, div_53);
         });
-      }
-      var node_38 = sibling(node_37, 2);
-      {
-        var consequent_35 = ($$anchor3) => {
-          var div_67 = root_47();
-          var span_11 = sibling(child(div_67), 2);
-          var text_26 = child(span_11);
-          template_effect(($0) => set_text(text_26, $0), [
-            () => get(imageInfo).file_size > 1048576 ? (get(imageInfo).file_size / 1048576).toFixed(1) + " MB" : Math.round(get(imageInfo).file_size / 1024) + " KB"
-          ]);
-          append($$anchor3, div_67);
-        };
-        if_block(node_38, ($$render) => {
-          if (get(imageInfo).file_size) $$render(consequent_35);
-        });
-      }
-      var node_39 = sibling(div_65, 2);
-      {
-        var consequent_36 = ($$anchor3) => {
-          var div_68 = root_48();
-          var span_12 = sibling(child(div_68), 2);
-          var text_27 = child(span_12);
-          template_effect(($0) => set_text(text_27, $0), [
-            () => new Date(get(imageInfo).created_at * 1e3).toLocaleDateString()
-          ]);
-          append($$anchor3, div_68);
-        };
-        if_block(node_39, ($$render) => {
-          if (get(imageInfo).created_at) $$render(consequent_36);
-        });
-      }
-      var node_40 = sibling(node_39, 2);
-      {
-        var consequent_37 = ($$anchor3) => {
-          var div_69 = root_49();
-          var span_13 = sibling(child(div_69), 2);
-          var text_28 = child(span_13);
-          template_effect(() => set_text(text_28, get(imageInfo).filename));
-          append($$anchor3, div_69);
-        };
-        if_block(node_40, ($$render) => {
-          if (get(imageInfo).filename) $$render(consequent_37);
-        });
-      }
-      var node_41 = sibling(node_40, 2);
-      {
-        var consequent_38 = ($$anchor3) => {
-          var div_70 = root_50();
-          append($$anchor3, div_70);
-        };
-        if_block(node_41, ($$render) => {
-          if (get(isOrphaned)) $$render(consequent_38);
-        });
-      }
-      var node_42 = sibling(div_64, 2);
-      {
-        var consequent_43 = ($$anchor3) => {
-          const regionData = user_derived(() => parseRegions(get(imageInfo).regions));
-          var fragment_8 = root_51();
-          var div_71 = sibling(first_child(fragment_8), 2);
-          var node_43 = child(div_71);
-          {
-            var consequent_40 = ($$anchor4) => {
-              var fragment_9 = root_52();
-              var node_44 = first_child(fragment_9);
-              each(node_44, 17, () => get(regionData).regions, (region) => region.id, ($$anchor5, region) => {
-                var div_72 = root_53();
-                var span_14 = child(div_72);
-                var text_29 = child(span_14);
-                var p_1 = sibling(span_14, 2);
-                var text_30 = child(p_1);
-                template_effect(() => {
-                  set_text(text_29, `$${get(region).name ?? ""}`);
-                  set_text(text_30, get(region).text);
-                });
-                append($$anchor5, div_72);
+        append($$anchor2, div_52);
+      };
+      if_block(node_32, ($$render) => {
+        if (get(zoomDropdownOpen)) $$render(consequent_30);
+      });
+    }
+    var input_1 = sibling(div_50, 2);
+    var node_33 = sibling(div_49, 2);
+    {
+      var consequent_33 = ($$anchor2) => {
+        var div_54 = root_47();
+        var div_55 = child(div_54);
+        let classes_11;
+        var node_34 = sibling(div_55, 2);
+        {
+          var consequent_32 = ($$anchor3) => {
+            var div_56 = root_48();
+            var node_35 = child(div_56);
+            each(node_35, 17, () => get(compareTargets), index, ($$anchor4, target) => {
+              var div_57 = root_49();
+              let classes_12;
+              var text_21 = child(div_57);
+              template_effect(
+                ($0) => {
+                  classes_12 = set_class(div_57, 1, "pcr-viewer-compare-dropdown-item svelte-5cciiw", null, classes_12, { active: get(compareTargetHash) === get(target).hash });
+                  set_text(text_21, $0);
+                },
+                [
+                  () => get(target).filename || get(target).hash.slice(0, 8)
+                ]
+              );
+              delegated("click", div_57, () => enterCompareWith(get(target).hash, get(target).filename || get(target).hash.slice(0, 8)));
+              append($$anchor4, div_57);
+            });
+            var node_36 = sibling(node_35, 2);
+            {
+              var consequent_31 = ($$anchor4) => {
+                var fragment_8 = root_50();
+                var div_58 = sibling(first_child(fragment_8), 2);
+                delegated("click", div_58, exitCompare);
+                append($$anchor4, fragment_8);
+              };
+              if_block(node_36, ($$render) => {
+                if (get(compareMode)) $$render(consequent_31);
               });
-              var node_45 = sibling(node_44, 2);
-              {
-                var consequent_39 = ($$anchor5) => {
-                  var div_73 = root_54();
-                  var p_2 = sibling(child(div_73), 2);
-                  var text_31 = child(p_2);
-                  template_effect(() => set_text(text_31, get(regionData).global));
-                  append($$anchor5, div_73);
-                };
-                if_block(node_45, ($$render) => {
-                  if (get(regionData).global) $$render(consequent_39);
+            }
+            append($$anchor3, div_56);
+          };
+          if_block(node_34, ($$render) => {
+            if (get(compareDropdownOpen)) $$render(consequent_32);
+          });
+        }
+        template_effect(() => classes_11 = set_class(div_55, 1, "pcr-viewer-toolbar-btn svelte-5cciiw", null, classes_11, { active: get(compareMode) || get(compareDropdownOpen) }));
+        delegated("click", div_55, () => {
+          set(compareDropdownOpen, !get(compareDropdownOpen));
+        });
+        append($$anchor2, div_54);
+      };
+      if_block(node_33, ($$render) => {
+        if (get(hasCompareTargets)) $$render(consequent_33);
+      });
+    }
+    var node_37 = sibling(node_33, 2);
+    {
+      if_block(node_37, ($$render) => {
+      });
+    }
+    var node_38 = sibling(node_37, 2);
+    {
+      if_block(node_38, ($$render) => {
+      });
+    }
+    var node_39 = sibling(node_38, 2);
+    {
+      var consequent_37 = ($$anchor2) => {
+        var div_63 = root_53();
+        var div_64 = child(div_63);
+        var span_7 = sibling(child(div_64), 2);
+        var text_24 = child(span_7);
+        var node_40 = sibling(span_7, 2);
+        {
+          var consequent_36 = ($$anchor3) => {
+            var span_8 = root_54();
+            var text_25 = sibling(child(span_8));
+            template_effect(() => {
+              set_attribute(span_8, "title", `This image has ${get(editDocLayers)[get(displayedHash)] ?? ""} saved layers — Edit opens it layered, un-flattened`);
+              set_text(text_25, ` ${get(editDocLayers)[get(displayedHash)] ?? ""}`);
+            });
+            append($$anchor3, span_8);
+          };
+          if_block(node_40, ($$render) => {
+            if (get(editDocLayers)[get(displayedHash)]) $$render(consequent_36);
+          });
+        }
+        template_effect(() => set_text(text_24, get(editPreparing) ? "Reading..." : "Edit"));
+        delegated("click", div_64, () => {
+          if (!get(editPreparing)) openEdit();
+        });
+        append($$anchor2, div_63);
+      };
+      if_block(node_39, ($$render) => {
+        if (onEditSave()) $$render(consequent_37);
+      });
+    }
+    var div_65 = sibling(node_39, 2);
+    var node_41 = child(div_65);
+    {
+      var consequent_38 = ($$anchor2) => {
+        var div_66 = root_55();
+        var span_9 = sibling(child(div_66), 2);
+        var text_26 = child(span_9);
+        template_effect(() => set_text(text_26, get(deleting) ? "Deleting..." : "Delete"));
+        delegated("click", div_66, requestDelete);
+        append($$anchor2, div_66);
+      };
+      if_block(node_41, ($$render) => {
+        if (onDelete()) $$render(consequent_38);
+      });
+    }
+    var node_42 = sibling(node_41, 2);
+    {
+      var consequent_39 = ($$anchor2) => {
+        var div_67 = root_56();
+        delegated("click", div_67, openFolder);
+        append($$anchor2, div_67);
+      };
+      if_block(node_42, ($$render) => {
+        if (isLocalClient) $$render(consequent_39);
+      });
+    }
+    var div_68 = sibling(node_42, 2);
+    let classes_13;
+    var span_10 = sibling(child(div_68), 2);
+    var text_27 = child(span_10);
+    var div_69 = sibling(div_48, 2);
+    var node_43 = child(div_69);
+    {
+      var consequent_57 = ($$anchor2) => {
+        var fragment_9 = root_57();
+        var div_70 = sibling(first_child(fragment_9), 2);
+        var div_71 = child(div_70);
+        var node_44 = child(div_71);
+        {
+          var consequent_40 = ($$anchor3) => {
+            var div_72 = root_58();
+            var span_11 = sibling(child(div_72), 2);
+            var text_28 = child(span_11);
+            template_effect(() => set_text(text_28, `${get(imageInfo).width ?? ""} × ${get(imageInfo).height ?? ""}`));
+            append($$anchor3, div_72);
+          };
+          if_block(node_44, ($$render) => {
+            if (get(imageInfo).width && get(imageInfo).height) $$render(consequent_40);
+          });
+        }
+        var node_45 = sibling(node_44, 2);
+        {
+          var consequent_41 = ($$anchor3) => {
+            var div_73 = root_59();
+            var span_12 = sibling(child(div_73), 2);
+            var text_29 = child(span_12);
+            template_effect(($0) => set_text(text_29, $0), [
+              () => get(imageInfo).file_size > 1048576 ? (get(imageInfo).file_size / 1048576).toFixed(1) + " MB" : Math.round(get(imageInfo).file_size / 1024) + " KB"
+            ]);
+            append($$anchor3, div_73);
+          };
+          if_block(node_45, ($$render) => {
+            if (get(imageInfo).file_size) $$render(consequent_41);
+          });
+        }
+        var node_46 = sibling(div_71, 2);
+        {
+          var consequent_42 = ($$anchor3) => {
+            var div_74 = root_60();
+            var span_13 = sibling(child(div_74), 2);
+            var text_30 = child(span_13);
+            template_effect(($0) => set_text(text_30, $0), [
+              () => new Date(get(imageInfo).created_at * 1e3).toLocaleDateString()
+            ]);
+            append($$anchor3, div_74);
+          };
+          if_block(node_46, ($$render) => {
+            if (get(imageInfo).created_at) $$render(consequent_42);
+          });
+        }
+        var node_47 = sibling(node_46, 2);
+        {
+          var consequent_43 = ($$anchor3) => {
+            var div_75 = root_61();
+            var span_14 = sibling(child(div_75), 2);
+            var text_31 = child(span_14);
+            template_effect(() => set_text(text_31, get(imageInfo).filename));
+            append($$anchor3, div_75);
+          };
+          if_block(node_47, ($$render) => {
+            if (get(imageInfo).filename) $$render(consequent_43);
+          });
+        }
+        var node_48 = sibling(node_47, 2);
+        {
+          var consequent_44 = ($$anchor3) => {
+            var div_76 = root_62();
+            append($$anchor3, div_76);
+          };
+          if_block(node_48, ($$render) => {
+            if (get(isOrphaned)) $$render(consequent_44);
+          });
+        }
+        var node_49 = sibling(div_70, 2);
+        {
+          var consequent_49 = ($$anchor3) => {
+            const regionData = user_derived(() => parseRegions(get(imageInfo).regions));
+            var fragment_10 = root_63();
+            var div_77 = sibling(first_child(fragment_10), 2);
+            var node_50 = child(div_77);
+            {
+              var consequent_46 = ($$anchor4) => {
+                var fragment_11 = root_64();
+                var node_51 = first_child(fragment_11);
+                each(node_51, 17, () => get(regionData).regions, (region) => region.id, ($$anchor5, region) => {
+                  var div_78 = root_65();
+                  var span_15 = child(div_78);
+                  var text_32 = child(span_15);
+                  var p_1 = sibling(span_15, 2);
+                  var text_33 = child(p_1);
+                  template_effect(() => {
+                    set_text(text_32, `$${get(region).name ?? ""}`);
+                    set_text(text_33, get(region).text);
+                  });
+                  append($$anchor5, div_78);
                 });
-              }
-              append($$anchor4, fragment_9);
-            };
-            var consequent_41 = ($$anchor4) => {
-              var div_74 = root_55();
-              var p_3 = sibling(child(div_74), 2);
-              var text_32 = child(p_3);
-              template_effect(() => set_text(text_32, get(imageInfo).prompt));
-              append($$anchor4, div_74);
-            };
-            if_block(node_43, ($$render) => {
-              if (get(regionData)) $$render(consequent_40);
-              else if (get(imageInfo).prompt) $$render(consequent_41, 1);
-            });
-          }
-          var node_46 = sibling(node_43, 2);
-          {
-            var consequent_42 = ($$anchor4) => {
-              var div_75 = root_56();
-              var p_4 = sibling(child(div_75), 2);
-              var text_33 = child(p_4);
-              template_effect(() => set_text(text_33, get(imageInfo).negative));
-              append($$anchor4, div_75);
-            };
-            if_block(node_46, ($$render) => {
-              if (get(imageInfo).negative) $$render(consequent_42);
-            });
-          }
-          append($$anchor3, fragment_8);
-        };
-        if_block(node_42, ($$render) => {
-          if (get(imageInfo).prompt || get(imageInfo).negative) $$render(consequent_43);
-        });
-      }
-      var node_47 = sibling(node_42, 2);
-      {
-        var consequent_50 = ($$anchor3) => {
-          var fragment_10 = root_57();
-          var div_76 = sibling(first_child(fragment_10), 2);
-          var node_48 = child(div_76);
-          {
-            var consequent_44 = ($$anchor4) => {
-              var div_77 = root_58();
-              var span_15 = sibling(child(div_77), 2);
-              var text_34 = child(span_15);
-              template_effect(() => set_text(text_34, get(imageInfo).model));
-              append($$anchor4, div_77);
-            };
-            if_block(node_48, ($$render) => {
-              if (get(imageInfo).model) $$render(consequent_44);
-            });
-          }
-          var node_49 = sibling(node_48, 2);
-          {
-            var consequent_45 = ($$anchor4) => {
-              var div_78 = root_59();
-              var span_16 = sibling(child(div_78), 2);
-              var text_35 = child(span_16);
-              template_effect(($0) => set_text(text_35, $0), [() => formatSeed(get(imageInfo).seed)]);
-              delegated("click", div_78, copySeed);
-              append($$anchor4, div_78);
-            };
-            if_block(node_49, ($$render) => {
-              if (get(imageInfo).seed != null) $$render(consequent_45);
-            });
-          }
-          var div_79 = sibling(node_49, 2);
-          var node_50 = child(div_79);
-          {
-            var consequent_46 = ($$anchor4) => {
-              var div_80 = root_60();
-              var span_17 = sibling(child(div_80), 2);
-              var text_36 = child(span_17);
-              template_effect(() => set_text(text_36, get(imageInfo).steps));
-              append($$anchor4, div_80);
-            };
-            if_block(node_50, ($$render) => {
-              if (get(imageInfo).steps) $$render(consequent_46);
-            });
-          }
-          var node_51 = sibling(node_50, 2);
-          {
-            var consequent_47 = ($$anchor4) => {
-              var div_81 = root_61();
-              var span_18 = sibling(child(div_81), 2);
-              var text_37 = child(span_18);
-              template_effect(() => set_text(text_37, get(imageInfo).cfg));
-              append($$anchor4, div_81);
-            };
-            if_block(node_51, ($$render) => {
-              if (get(imageInfo).cfg) $$render(consequent_47);
-            });
-          }
-          var node_52 = sibling(node_51, 2);
-          {
-            var consequent_48 = ($$anchor4) => {
-              var div_82 = root_62();
-              var span_19 = sibling(child(div_82), 2);
-              var text_38 = child(span_19);
-              template_effect(() => set_text(text_38, get(imageInfo).sampler));
-              append($$anchor4, div_82);
-            };
-            if_block(node_52, ($$render) => {
-              if (get(imageInfo).sampler) $$render(consequent_48);
-            });
-          }
-          var node_53 = sibling(node_52, 2);
-          {
-            var consequent_49 = ($$anchor4) => {
-              var div_83 = root_63();
-              var span_20 = sibling(child(div_83), 2);
-              var text_39 = child(span_20);
-              template_effect(() => set_text(text_39, get(imageInfo).denoise));
-              append($$anchor4, div_83);
-            };
-            if_block(node_53, ($$render) => {
-              if (get(imageInfo).denoise != null) $$render(consequent_49);
-            });
-          }
-          append($$anchor3, fragment_10);
-        };
-        if_block(node_47, ($$render) => {
-          if (get(imageInfo).model || get(imageInfo).seed != null || get(imageInfo).steps) $$render(consequent_50);
-        });
-      }
-      append($$anchor2, fragment_7);
-    };
-    var consequent_52 = ($$anchor2) => {
-      var div_84 = root_64();
-      append($$anchor2, div_84);
-    };
-    if_block(node_36, ($$render) => {
-      if (get(imageInfo)) $$render(consequent_51);
-      else if (get(currentImage)) $$render(consequent_52, 1);
+                var node_52 = sibling(node_51, 2);
+                {
+                  var consequent_45 = ($$anchor5) => {
+                    var div_79 = root_66();
+                    var p_2 = sibling(child(div_79), 2);
+                    var text_34 = child(p_2);
+                    template_effect(() => set_text(text_34, get(regionData).global));
+                    append($$anchor5, div_79);
+                  };
+                  if_block(node_52, ($$render) => {
+                    if (get(regionData).global) $$render(consequent_45);
+                  });
+                }
+                append($$anchor4, fragment_11);
+              };
+              var consequent_47 = ($$anchor4) => {
+                var div_80 = root_67();
+                var p_3 = sibling(child(div_80), 2);
+                var text_35 = child(p_3);
+                template_effect(() => set_text(text_35, get(imageInfo).prompt));
+                append($$anchor4, div_80);
+              };
+              if_block(node_50, ($$render) => {
+                if (get(regionData)) $$render(consequent_46);
+                else if (get(imageInfo).prompt) $$render(consequent_47, 1);
+              });
+            }
+            var node_53 = sibling(node_50, 2);
+            {
+              var consequent_48 = ($$anchor4) => {
+                var div_81 = root_68();
+                var p_4 = sibling(child(div_81), 2);
+                var text_36 = child(p_4);
+                template_effect(() => set_text(text_36, get(imageInfo).negative));
+                append($$anchor4, div_81);
+              };
+              if_block(node_53, ($$render) => {
+                if (get(imageInfo).negative) $$render(consequent_48);
+              });
+            }
+            append($$anchor3, fragment_10);
+          };
+          if_block(node_49, ($$render) => {
+            if (get(imageInfo).prompt || get(imageInfo).negative) $$render(consequent_49);
+          });
+        }
+        var node_54 = sibling(node_49, 2);
+        {
+          var consequent_56 = ($$anchor3) => {
+            var fragment_12 = root_69();
+            var div_82 = sibling(first_child(fragment_12), 2);
+            var node_55 = child(div_82);
+            {
+              var consequent_50 = ($$anchor4) => {
+                var div_83 = root_70();
+                var span_16 = sibling(child(div_83), 2);
+                var text_37 = child(span_16);
+                template_effect(() => set_text(text_37, get(imageInfo).model));
+                append($$anchor4, div_83);
+              };
+              if_block(node_55, ($$render) => {
+                if (get(imageInfo).model) $$render(consequent_50);
+              });
+            }
+            var node_56 = sibling(node_55, 2);
+            {
+              var consequent_51 = ($$anchor4) => {
+                var div_84 = root_71();
+                var span_17 = sibling(child(div_84), 2);
+                var text_38 = child(span_17);
+                template_effect(($0) => set_text(text_38, $0), [() => formatSeed(get(imageInfo).seed)]);
+                delegated("click", div_84, copySeed);
+                append($$anchor4, div_84);
+              };
+              if_block(node_56, ($$render) => {
+                if (get(imageInfo).seed != null) $$render(consequent_51);
+              });
+            }
+            var div_85 = sibling(node_56, 2);
+            var node_57 = child(div_85);
+            {
+              var consequent_52 = ($$anchor4) => {
+                var div_86 = root_72();
+                var span_18 = sibling(child(div_86), 2);
+                var text_39 = child(span_18);
+                template_effect(() => set_text(text_39, get(imageInfo).steps));
+                append($$anchor4, div_86);
+              };
+              if_block(node_57, ($$render) => {
+                if (get(imageInfo).steps) $$render(consequent_52);
+              });
+            }
+            var node_58 = sibling(node_57, 2);
+            {
+              var consequent_53 = ($$anchor4) => {
+                var div_87 = root_73();
+                var span_19 = sibling(child(div_87), 2);
+                var text_40 = child(span_19);
+                template_effect(() => set_text(text_40, get(imageInfo).cfg));
+                append($$anchor4, div_87);
+              };
+              if_block(node_58, ($$render) => {
+                if (get(imageInfo).cfg) $$render(consequent_53);
+              });
+            }
+            var node_59 = sibling(node_58, 2);
+            {
+              var consequent_54 = ($$anchor4) => {
+                var div_88 = root_74();
+                var span_20 = sibling(child(div_88), 2);
+                var text_41 = child(span_20);
+                template_effect(() => set_text(text_41, get(imageInfo).sampler));
+                append($$anchor4, div_88);
+              };
+              if_block(node_59, ($$render) => {
+                if (get(imageInfo).sampler) $$render(consequent_54);
+              });
+            }
+            var node_60 = sibling(node_59, 2);
+            {
+              var consequent_55 = ($$anchor4) => {
+                var div_89 = root_75();
+                var span_21 = sibling(child(div_89), 2);
+                var text_42 = child(span_21);
+                template_effect(() => set_text(text_42, get(imageInfo).denoise));
+                append($$anchor4, div_89);
+              };
+              if_block(node_60, ($$render) => {
+                if (get(imageInfo).denoise != null) $$render(consequent_55);
+              });
+            }
+            append($$anchor3, fragment_12);
+          };
+          if_block(node_54, ($$render) => {
+            if (get(imageInfo).model || get(imageInfo).seed != null || get(imageInfo).steps) $$render(consequent_56);
+          });
+        }
+        append($$anchor2, fragment_9);
+      };
+      var consequent_58 = ($$anchor2) => {
+        var div_90 = root_76();
+        append($$anchor2, div_90);
+      };
+      if_block(node_43, ($$render) => {
+        if (get(imageInfo)) $$render(consequent_57);
+        else if (get(currentImage)) $$render(consequent_58, 1);
+      });
+    }
+    bind_this(div, ($$value) => viewerEl = $$value, () => viewerEl);
+    template_effect(() => {
+      set_style(div_21, `cursor: ${get(isPanning) ? "grabbing" : "grab"}`);
+      set_text(text_18, `${get(currentIndex) + 1} / ${images().length ?? ""}`);
+      set_text(text_19, get(zoomDisplayText));
+      set_value(input_1, get(zoomSliderValue));
+      classes_13 = set_class(div_68, 1, "pcr-viewer-toolbar-btn svelte-5cciiw", null, classes_13, { active: get(linkCopied) });
+      set_text(text_27, get(linkCopied) ? "Copied!" : "Copy Link");
     });
+    event("wheel", div_21, handleWheel);
+    delegated("pointerdown", div_21, handlePointerDown);
+    delegated("pointermove", div_21, handlePointerMove);
+    delegated("pointerup", div_21, handlePointerUp);
+    delegated("dblclick", div_21, handleDblClick);
+    delegated("click", div_37, function(...$$args) {
+      var _a2;
+      (_a2 = onClose()) == null ? void 0 : _a2.apply(this, $$args);
+    });
+    delegated("click", div_51, () => {
+      set(zoomDropdownOpen, !get(zoomDropdownOpen));
+    });
+    delegated("input", input_1, handleZoomSlider);
+    delegated("click", div_68, copyLink);
   }
-  bind_this(div, ($$value) => viewerEl = $$value, () => viewerEl);
-  var node_54 = sibling(div, 2);
+  var node_61 = sibling(div, 2);
   {
     let $0 = user_derived(() => get(displayedHash) || "");
     let $1 = user_derived(() => {
@@ -14487,7 +14980,7 @@ ${negative}` : ""));
       var _a2;
       return get(upscaleFromEdit) ? ((_a2 = get(upscaleEditCtx)) == null ? void 0 : _a2.docHeight) || 0 : 0;
     });
-    UpscaleOptionsModal(node_54, {
+    UpscaleOptionsModal(node_61, {
       get open() {
         return get(upscaleModalOpen);
       },
@@ -14539,7 +15032,7 @@ ${negative}` : ""));
       }
     });
   }
-  var node_55 = sibling(node_54, 2);
+  var node_62 = sibling(node_61, 2);
   {
     let $0 = user_derived(() => get(displayedHash) || "");
     let $1 = user_derived(() => {
@@ -14580,7 +15073,7 @@ ${get(imageInfo).negative}` : "") : "");
     let $9 = user_derived(() => get(inpaintFromEdit) ? get(inpaintMovedContent) : false);
     let $10 = user_derived(() => get(inpaintFromEdit) ? get(inpaintEditMask) : null);
     let $11 = user_derived(() => get(inpaintFromEdit) ? handleInpaintToEdit : null);
-    InpaintModal(node_55, {
+    InpaintModal(node_62, {
       get open() {
         return get(inpaintModalOpen);
       },
@@ -14659,7 +15152,7 @@ ${get(imageInfo).negative}` : "") : "");
       }
     });
   }
-  var node_56 = sibling(node_55, 2);
+  var node_63 = sibling(node_62, 2);
   {
     let $0 = user_derived(() => {
       var _a2;
@@ -14687,7 +15180,7 @@ ${get(imageInfo).negative}` : "") : "");
     let $8 = user_derived(() => onReposeCaps() && onReposeRun() && onMountPoser() && onInpaintUploadReference() ? openReposeFromEdit : null);
     let $9 = user_derived(() => get(inpaintFromEdit) && get(inpaintModalOpen) || get(upscaleFromEdit) && get(upscaleModalOpen) || get(reposeModalOpen));
     bind_this(
-      EditModal(node_56, {
+      EditModal(node_63, {
         get open() {
           return get(editModalOpen);
         },
@@ -14742,7 +15235,7 @@ ${get(imageInfo).negative}` : "") : "");
       () => get(editModalRef)
     );
   }
-  var node_57 = sibling(node_56, 2);
+  var node_64 = sibling(node_63, 2);
   {
     let $0 = user_derived(() => get(displayedHash) || "");
     let $1 = user_derived(() => {
@@ -14761,7 +15254,7 @@ ${get(imageInfo).negative}` : "") : "");
       var _a2;
       return (_a2 = get(reposePrepared)) == null ? void 0 : _a2.caps;
     });
-    RePoseModal(node_57, {
+    RePoseModal(node_64, {
       get open() {
         return get(reposeModalOpen);
       },
@@ -14804,8 +15297,8 @@ ${get(imageInfo).negative}` : "") : "");
       }
     });
   }
-  var node_58 = sibling(node_57, 2);
-  ConfirmModal(node_58, {
+  var node_65 = sibling(node_64, 2);
+  ConfirmModal(node_65, {
     get open() {
       return get(confirmDeleteOpen);
     },
@@ -14815,13 +15308,14 @@ ${get(imageInfo).negative}` : "") : "");
     onConfirm: handleDelete,
     onCancel: cancelDelete
   });
-  var node_59 = sibling(node_58, 2);
+  var node_66 = sibling(node_65, 2);
   {
-    var consequent_53 = ($$anchor2) => {
+    var consequent_59 = ($$anchor2) => {
       {
-        let $0 = user_derived(() => !!onEditSave());
-        let $1 = user_derived(() => !!onDelete());
-        let $2 = user_derived(() => {
+        let $0 = user_derived(() => get(lineageMenu).item ? canExpand(get(lineageMenu).item) : false);
+        let $1 = user_derived(() => !!onEditSave());
+        let $2 = user_derived(() => !!onDelete());
+        let $3 = user_derived(() => {
           var _a2;
           return ((_a2 = get(lineageMenu).item) == null ? void 0 : _a2.orphaned) === 1;
         });
@@ -14832,11 +15326,14 @@ ${get(imageInfo).negative}` : "") : "");
           get y() {
             return get(lineageMenu).y;
           },
-          get canEdit() {
+          get canExpand() {
             return get($0);
           },
-          get canDelete() {
+          get canEdit() {
             return get($1);
+          },
+          get canDelete() {
+            return get($2);
           },
           get isLocal() {
             return isLocalClient;
@@ -14845,7 +15342,7 @@ ${get(imageInfo).negative}` : "") : "");
             return isWindows;
           },
           get orphaned() {
-            return get($2);
+            return get($3);
           },
           onAction: (action2) => lineageMenuAction(action2, get(lineageMenu).item),
           onClose: () => {
@@ -14854,33 +15351,11 @@ ${get(imageInfo).negative}` : "") : "");
         });
       }
     };
-    if_block(node_59, ($$render) => {
-      if (get(lineageMenu)) $$render(consequent_53);
+    if_block(node_66, ($$render) => {
+      if (get(lineageMenu)) $$render(consequent_59);
     });
   }
-  template_effect(() => {
-    set_style(div, `transform: translateY(${get(viewerTransformY) ?? ""}px); opacity: ${get(viewerOpacity) ?? ""}`);
-    set_style(div_17, `cursor: ${get(isPanning) ? "grabbing" : "grab"}`);
-    set_text(text_15, `${get(currentIndex) + 1} / ${images().length ?? ""}`);
-    set_text(text_16, get(zoomDisplayText));
-    set_value(input_1, get(zoomSliderValue));
-    classes_9 = set_class(div_62, 1, "pcr-viewer-toolbar-btn svelte-5cciiw", null, classes_9, { active: get(linkCopied) });
-    set_text(text_24, get(linkCopied) ? "Copied!" : "Copy Link");
-  });
-  event("wheel", div_17, handleWheel);
-  delegated("pointerdown", div_17, handlePointerDown);
-  delegated("pointermove", div_17, handlePointerMove);
-  delegated("pointerup", div_17, handlePointerUp);
-  delegated("dblclick", div_17, handleDblClick);
-  delegated("click", div_31, function(...$$args) {
-    var _a2;
-    (_a2 = onClose()) == null ? void 0 : _a2.apply(this, $$args);
-  });
-  delegated("click", div_45, () => {
-    set(zoomDropdownOpen, !get(zoomDropdownOpen));
-  });
-  delegated("input", input_1, handleZoomSlider);
-  delegated("click", div_62, copyLink);
+  template_effect(() => set_style(div, `transform: translateY(${get(viewerTransformY) ?? ""}px); opacity: ${get(viewerOpacity) ?? ""}`));
   append($$anchor, fragment);
   pop();
 }

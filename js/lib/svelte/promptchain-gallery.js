@@ -1,5 +1,5 @@
-import { L as unmount, K as mount } from "./disclose-version-BjTnIIw0.js";
-import { G as GeneratedGallery } from "./GeneratedGallery-D27T_RcN.js";
+import { M as unmount, L as mount } from "./disclose-version-uq4tn5Y6.js";
+import { G as GeneratedGallery } from "./GeneratedGallery-Dw0CC3-N.js";
 function mountGallery(target, props) {
   return mount(GeneratedGallery, { target, props });
 }

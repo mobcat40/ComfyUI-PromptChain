@@ -6,6 +6,7 @@
   import RePoseModal from "./RePoseModal.svelte";
   import ConfirmModal from "./sidebar/ConfirmModal.svelte";
   import LineageContextMenu from "./LineageContextMenu.svelte";
+  import { buildRender, ancestry } from "../lib/lineage-lanes.js";
   import { buildFigureRegions, matchRegionByOverlap } from "../lib/region-binding.js";
 
   let {
@@ -247,14 +248,17 @@
     displayedHash = hash;
   }
 
-  let lineageDisplay = $derived((() => {
-    const asNodes = (list) => list.map(item => ({ kind: "node", item }));
-    if (lineageList.length < 2) return asNodes(lineageList);
-    const byHash = new Map(lineageList.map(f => [f.hash, f]));
-    if (!byHash.has(displayedHash)) return asNodes(lineageList);
-
+  // Topology primitives for the family tree, hoisted out of lineageDisplay so the
+  // strip, the context-menu "expand branches" gate, and the subway lane builder
+  // all read ONE source. byHash/childrenOf rebuild parent→children edges from each
+  // node's parent_hash (a content sha256, so acyclic by construction). roots is the
+  // true root plus any node orphaned by a deleted-and-absent parent, so the lane
+  // builder can surface it as its own root rather than dropping it.
+  let lineageTree = $derived((() => {
+    const list = lineageList;
+    const byHash = new Map(list.map(f => [f.hash, f]));
     const childrenOf = new Map();
-    for (const f of lineageList) {
+    for (const f of list) {
       if (!f.parent_hash || !byHash.has(f.parent_hash)) continue;
       if (!childrenOf.has(f.parent_hash)) childrenOf.set(f.parent_hash, []);
       childrenOf.get(f.parent_hash).push(f);
@@ -262,6 +266,15 @@
     for (const kids of childrenOf.values()) {
       kids.sort((a, b) => (a.created_at || 0) - (b.created_at || 0));
     }
+    const roots = list.filter(f => !f.parent_hash || !byHash.has(f.parent_hash)).map(f => f.hash);
+    return { byHash, childrenOf, roots };
+  })());
+
+  let lineageDisplay = $derived((() => {
+    const asNodes = (list) => list.map(item => ({ kind: "node", item }));
+    if (lineageList.length < 2) return asNodes(lineageList);
+    const { byHash, childrenOf } = lineageTree;
+    if (!byHash.has(displayedHash)) return asNodes(lineageList);
 
     // parent_hash is a content sha256, so the family is acyclic by
     // construction — the visited set is cheap defense against malformed data
@@ -341,6 +354,159 @@
   );
   let lineageHiddenCount = $derived(lineageList.length - lineageVisible.length);
 
+  // ── subway lanes (right-click "Expand branches") ──
+  // brokenOut holds CHILD-SUBTREE ROOT hashes the user has peeled into their own
+  // vertical column. The rail switches from the compact strip to the lane view
+  // whenever anything is broken out. subwayAnchor reuses the stable lineageFocusHash
+  // so navigating between nodes never re-partitions the lanes, and the displayed
+  // image is always on column 0 (anchored on the anchor's root→tip spine).
+  let brokenOut = $state(new Set());
+  let subwayAnchor = $derived(
+    lineageFocusHash && lineageTree.byHash.has(lineageFocusHash) ? lineageFocusHash : displayedHash
+  );
+  let laneRender = $derived(buildRender(lineageTree, subwayAnchor, brokenOut));
+  let lanesActive = $derived(brokenOut.size > 0 && lineageList.length > 1);
+
+  // The child that CONTINUES a node's lane — "expand branches" peels the SIBLINGS,
+  // never this. Matches buildLane's primary rule (spine-ward child, else oldest).
+  function primaryChildHash(item) {
+    const kids = lineageTree.childrenOf.get(item?.hash) || [];
+    if (!kids.length) return null;
+    const a = ancestry(lineageTree, subwayAnchor);
+    return (kids.find(k => a.set.has(k.hash)) || kids[0]).hash;
+  }
+  function canExpand(item) {
+    const primary = primaryChildHash(item);
+    return (lineageTree.childrenOf.get(item?.hash) || [])
+      .some(k => k.hash !== primary && !brokenOut.has(k.hash));
+  }
+  function expandBranches(item) {
+    const primary = primaryChildHash(item);
+    const next = new Set(brokenOut);
+    for (const k of lineageTree.childrenOf.get(item?.hash) || [])
+      if (k.hash !== primary) next.add(k.hash);
+    brokenOut = next;
+  }
+  function foldLane(childRoot) {
+    // folding a column folds its whole broken-out subtree with it
+    const next = new Set(brokenOut);
+    const stack = [childRoot];
+    while (stack.length) {
+      const h = stack.pop();
+      next.delete(h);
+      for (const k of lineageTree.childrenOf.get(h) || []) stack.push(k.hash);
+    }
+    brokenOut = next;
+  }
+  function collapseAllLanes() { brokenOut = new Set(); }
+  // the family has at least one fork worth fanning out
+  let hasBranches = $derived((() => {
+    for (const kids of lineageTree.childrenOf.values()) if (kids.length > 1) return true;
+    return false;
+  })());
+  // header "expand" affordance — fan EVERY branch out at once (the full subway):
+  // add every off-primary child across the whole family to brokenOut.
+  function expandAll() {
+    const a = ancestry(lineageTree, subwayAnchor);
+    const next = new Set(brokenOut);
+    for (const kids of lineageTree.childrenOf.values()) {
+      if (kids.length < 2) continue;
+      const primary = (kids.find(k => a.set.has(k.hash)) || kids[0]).hash;
+      for (const k of kids) if (k.hash !== primary) next.add(k.hash);
+    }
+    brokenOut = next;
+  }
+
+  // Keep the displayed image materialized if it sits inside a folded branch: peel
+  // the chain of off-primary roots from the anchor spine down to it. Guarded so it
+  // only ever ADDS new roots (never loops).
+  $effect(() => {
+    if (!lanesActive) return;
+    if (laneRender.columns.some(c => c.nodes.some(n => n.hash === displayedHash))) return;
+    const { byHash, childrenOf } = lineageTree;
+    const a = ancestry(lineageTree, subwayAnchor);
+    const toBreak = [];
+    let cur = displayedHash;
+    const guard = new Set();
+    while (cur && byHash.has(cur) && !guard.has(cur) && !a.set.has(cur)) {
+      guard.add(cur);
+      const parent = byHash.get(cur).parent_hash;
+      if (!parent || !byHash.has(parent)) break;
+      const kids = childrenOf.get(parent) || [];
+      const primary = (kids.find(k => a.set.has(k.hash)) || kids[0])?.hash;
+      if (cur !== primary) toBreak.push(cur);
+      cur = parent;
+    }
+    const additions = toBreak.filter(h => !brokenOut.has(h));
+    if (additions.length) {
+      const next = new Set(brokenOut);
+      for (const h of additions) next.add(h);
+      brokenOut = next;
+    }
+  });
+
+  // SVG connector geometry — edges are DATA from laneRender; the rAF only MEASURES
+  // pixel positions of known nodes (never infers topology from the DOM). The SVG
+  // lives inside the scrolling wrapper so it translates with scroll for free; we
+  // recompute only on expand/fold/resize/thumbnail-load — never on scroll, never on
+  // a timer (event/observer-driven per CLAUDE.md).
+  let lanesWrapEl = $state(null);
+  let connectorGeom = $state([]);
+  let connectorBox = $state({ w: 0, h: 0 });
+  let measureScheduled = false;
+  // Row pitch for vertically offsetting broken-out columns so children sit one
+  // generation below their parent. MUST match .pcr-viewer-lineage-node height (64px)
+  // + .pcr-lin-col gap (22px).
+  const LANE_ROW_H = 86;
+  // Layout coords relative to a content root — independent of scroll AND of CSS
+  // transform, so the same measurement serves the P3 zoom panel unchanged.
+  function contentXY(el, root) {
+    let x = 0, y = 0;
+    for (let n = el; n && n !== root; n = n.offsetParent) { x += n.offsetLeft; y += n.offsetTop; }
+    return { x, y, w: el.offsetWidth, h: el.offsetHeight };
+  }
+  function measureConnectors() {
+    const wrap = lanesWrapEl;
+    if (!wrap) return;
+    const geom = [];
+    for (const e of laneRender.edges) {
+      const a = wrap.querySelector(`[data-hash="${e.from}"]`);
+      const b = wrap.querySelector(`[data-hash="${e.to}"]`);
+      if (!a || !b) continue;
+      const ra = contentXY(a, wrap), rb = contentXY(b, wrap);
+      const px = ra.x + ra.w / 2, pb = ra.y + ra.h;   // parent bottom-center
+      const cx = rb.x + rb.w / 2, ct = rb.y;           // child top-center
+      // key by edge identity, not array index — when the edge set changes, a
+      // keyed {#each} won't reuse a stale path d-string under a shifted index
+      // (that was the one-frame connector "points at the old node" jitter).
+      const key = `${e.from}>${e.to}`;
+      if (Math.abs(px - cx) < 1) {
+        geom.push({ key, d: `M ${px} ${pb} L ${cx} ${ct}` });                     // spine: straight down
+      } else {
+        const my = (pb + ct) / 2;                                                  // branch: smooth S-curve
+        geom.push({ key, d: `M ${px} ${pb} C ${px} ${my}, ${cx} ${my}, ${cx} ${ct}` });
+      }
+    }
+    connectorGeom = geom;
+    connectorBox = { w: wrap.scrollWidth, h: wrap.scrollHeight };
+  }
+  function scheduleMeasure() {
+    if (measureScheduled) return;
+    measureScheduled = true;
+    requestAnimationFrame(() => { measureScheduled = false; measureConnectors(); });
+  }
+  $effect(() => {
+    if (!lanesActive) return;
+    const cols = laneRender.columns;   // read → track expand/fold/family changes
+    if (cols) scheduleMeasure();
+  });
+  $effect(() => {
+    if (!lanesWrapEl) return;
+    const ro = new ResizeObserver(() => scheduleMeasure());
+    ro.observe(lanesWrapEl);
+    return () => ro.disconnect();
+  });
+
   let compareTargets = $derived(
     lineageList.filter(item => item?.hash !== displayedHash)
   );
@@ -408,12 +574,24 @@
         .then(r => r.ok ? r.json() : null)
         .then(data => { imageInfo = data; })
         .catch(onMetaError("image meta"));
-      fetchApi(`/promptchain/lineage/${displayedHash}`)
+      // Capture the hash this fetch was issued for: displayedHash can change
+      // (fast navigation / save-then-navigate) before the response lands, and a
+      // late loser must NOT overwrite the current family — same staleness guard
+      // the browse branch above uses. Deliberately not nulling lineageData first:
+      // in-family navigation keeps the same family, so blanking it would flicker
+      // the tree on every step.
+      const reqHash = displayedHash;
+      fetchApi(`/promptchain/lineage/${reqHash}`)
         .then(r => r.ok ? r.json() : null)
-        .then(data => { lineageData = data; })
+        .then(data => {
+          if (displayedHash !== reqHash) return; // stale response — a newer hash is shown
+          lineageData = data;
+          reportLineageAnomaly(reqHash, data);
+        })
         .catch((e) => {
+          if (displayedHash !== reqHash) return;
           lineageData = null;
-          console.error(`[PromptChain] lineage fetch failed for ${displayedHash}:`, e);
+          console.error(`[PromptChain] lineage fetch failed for ${reqHash}:`, e);
         });
     }
   });
@@ -1068,6 +1246,26 @@
     } catch { /* diagnostics must never break the handback */ }
   }
 
+  // A healthy lineage response contains the queried node WITH its parent present
+  // in the same family. If the node is absent, or its parent_hash points outside
+  // the returned family (so the tree renders it as a stray root), log it via
+  // comfyui.log — that is the data signature behind a node appearing
+  // "mis-attributed" until a refresh. Event-driven (fires only on a landed
+  // response), no timers. We couldn't capture the live case, so this catches the
+  // next one. A true root (parent_hash null) is healthy and never logs.
+  function reportLineageAnomaly(reqHash, data) {
+    const fam = data?.family;
+    if (!Array.isArray(fam) || fam.length === 0) return;
+    const me = fam.find(f => f?.hash === reqHash);
+    const parentOrphaned = !!(me?.parent_hash && !fam.some(f => f?.hash === me.parent_hash));
+    if (me && !parentOrphaned) return; // healthy
+    const fams = fam.map(f => (f?.hash || "").slice(0, 8)).join(",");
+    reportHandback(
+      "lineage-tree-anomaly",
+      `node ${(reqHash || "").slice(0, 8)} ${me ? "orphaned: parent " + (me.parent_hash || "").slice(0, 8) + " absent" : "ABSENT"} from its own family [${fams}]`
+    );
+  }
+
   async function handleUpscaleToEdit(doneState) {
     const ctx = upscaleEditCtx;
     const viewUrl = (img) => apiURL(`/view?filename=${encodeURIComponent(img.filename)}&subfolder=${encodeURIComponent(img.subfolder || "")}&type=${img.type || "output"}&rand=${Math.random()}`);
@@ -1270,10 +1468,47 @@
     lineageMenu = { x: e.clientX, y: e.clientY, item };
   }
 
+  let copyPathTimer = null;
+  let copyPathToast = $state(false);
+  async function copyTextToClipboard(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch {}
+    // The async clipboard API can refuse after an awaited fetch (transient
+    // activation expires); a hidden textarea + execCommand still copies.
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.top = "-1000px";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    } catch { return false; }
+  }
+  async function copyPath(hash) {
+    try {
+      const r = await fetchApi?.(`/promptchain/file-path?hash=${encodeURIComponent(hash)}`);
+      const d = r && r.ok ? await r.json() : null;
+      if (!d?.path) return;
+      if (await copyTextToClipboard(d.path)) {
+        copyPathToast = true;
+        clearTimeout(copyPathTimer);
+        copyPathTimer = setTimeout(() => { copyPathToast = false; }, 1800);
+      }
+    } catch {}
+  }
+
   function lineageMenuAction(action, item) {
     const hash = item?.hash;
     if (!hash) return;
-    if (action === "edit") {
+    if (action === "expand-branches") {
+      expandBranches(item);
+    } else if (action === "copy-path") {
+      copyPath(hash);
+    } else if (action === "edit") {
       lineageJump(hash); // bring it on screen so editDocHash matches what we edit
       openEdit(hash);
     } else if (action === "delete") {
@@ -1404,86 +1639,154 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="pcr-viewer" bind:this={viewerEl} style="transform: translateY({viewerTransformY}px); opacity: {viewerOpacity}">
-  {#if newGenBanner}
-    <div class="pcr-viewer-newgen-banner">✨ {newGenBanner}</div>
-  {/if}
   <!-- left: lineage panel -->
+  {#snippet lineageNode(item, lane)}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <div
+      class="pcr-viewer-lineage-node"
+      data-hash={item.hash}
+      class:current={item.hash === displayedHash}
+      class:orphaned={item.orphaned === 1}
+      class:compare-candidate={compareDropdownOpen && item.hash !== displayedHash}
+      class:compare-left={compareMode && item.hash === displayedHash}
+      class:compare-right={compareMode && item.hash === compareTargetHash}
+      onclick={() => {
+        if (compareDropdownOpen) {
+          if (item.hash !== displayedHash) enterCompareWith(item.hash, item.filename || item.hash.slice(0, 8));
+          return;
+        }
+        lineageJump(item.hash); exitCompare();
+      }}
+      onmouseenter={(e) => showTip(e, item)}
+      onmouseleave={hideTip}
+      oncontextmenu={(e) => { hideTip(); openLineageMenu(e, item); }}
+    >
+      <img src={thumbUrl(item.hash)} alt="" draggable="false" loading="lazy" onload={scheduleMeasure} />
+      <div class="pcr-viewer-lineage-dot"
+        class:dot-root={item.hash === laneRender.rootHash}
+        class:dot-current={item.hash === displayedHash}
+        class:dot-tip={item.hash === lane.nodes[lane.nodes.length - 1].hash && item.hash !== displayedHash}
+      ></div>
+      {#if editDocLayers[item.hash]}
+        <div class="pcr-viewer-lineage-layers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M12 2 2 7l10 5 10-5-10-5Z" /><path d="m2 17 10 5 10-5" /><path d="m2 12 10 5 10-5" />
+          </svg>
+        </div>
+      {/if}
+      {#if laneRender.junctionsByNode.get(item.hash)?.hidden.length}
+        <button class="pcr-lin-expander" title="Break this node's {laneRender.junctionsByNode.get(item.hash).hidden.length} other branch(es) into their own columns"
+          onclick={(e) => { e.stopPropagation(); expandBranches(item); }}
+        >⊞{laneRender.junctionsByNode.get(item.hash).hidden.length}</button>
+      {/if}
+      {#if brokenOut.has(lane.startHash) && item.hash === lane.startHash}
+        <button class="pcr-lin-fold" title="Fold this column back into its branch"
+          onclick={(e) => { e.stopPropagation(); foldLane(lane.startHash); }}
+        >⊟</button>
+      {/if}
+    </div>
+  {/snippet}
+
   {#if lineageList.length > 1}
-    <div class="pcr-viewer-lineage pcr-viewer-lineage-visible">
+    <div class="pcr-viewer-lineage pcr-viewer-lineage-visible" class:lanes={lanesActive}>
       <div class="pcr-viewer-lineage-header">
-        {lineageCurrentIdx + 1} / {lineageList.length}
+        <span class="pcr-lin-count">{lineageCurrentIdx + 1} / {lineageList.length}</span>
+        {#if hasBranches}
+          <button
+            class="pcr-lin-toggle"
+            class:on={lanesActive}
+            onclick={() => (lanesActive ? collapseAllLanes() : expandAll())}
+            title={lanesActive ? "Collapse the subway back to the strip" : "Expand every branch into a subway map"}
+          >{lanesActive ? "⊟" : "⊞"}</button>
+        {/if}
       </div>
-      <div class="pcr-viewer-lineage-strip">
-        {#each lineageDisplay as d, i (d.kind === "node" ? d.item.hash : `${d.kind}:${d.at}`)}
-          {#if d.kind === "node"}
-            {@const item = d.item}
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <!-- svelte-ignore a11y_click_events_have_key_events -->
-            <div
-              class="pcr-viewer-lineage-node"
-              class:current={i === lineageDisplayCurrentIdx}
-              class:ancestor={i < lineageDisplayCurrentIdx}
-              class:descendant={i > lineageDisplayCurrentIdx}
-              class:branch={d.branch}
-              class:orphaned={item.orphaned === 1}
-              class:compare-candidate={compareDropdownOpen && item.hash !== displayedHash}
-              class:compare-left={compareMode && item.hash === displayedHash}
-              class:compare-right={compareMode && item.hash === compareTargetHash}
-              onclick={() => {
-                // With the compare dropdown open, the strip doubles as the
-                // target picker — clicking a thumbnail compares against it
-                // instead of navigating away.
-                if (compareDropdownOpen) {
-                  if (item.hash !== displayedHash) enterCompareWith(item.hash, item.filename || item.hash.slice(0, 8));
-                  return;
-                }
-                lineageJump(item.hash); exitCompare();
-              }}
-              onmouseenter={(e) => showTip(e, item)}
-              onmouseleave={hideTip}
-              oncontextmenu={(e) => { hideTip(); openLineageMenu(e, item); }}
-            >
-              <img src={thumbUrl(item.hash)} alt="" draggable="false" loading="lazy" />
-              <div class="pcr-viewer-lineage-dot"
-                class:dot-root={item.hash === lineageList[0]?.hash}
-                class:dot-current={i === lineageDisplayCurrentIdx}
-                class:dot-tip={i === lineageDisplay.length - 1 && i !== lineageDisplayCurrentIdx}
-              ></div>
-              {#if editDocLayers[item.hash]}
-                <div class="pcr-viewer-lineage-layers">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
-                    <path d="M12 2 2 7l10 5 10-5-10-5Z" /><path d="m2 17 10 5 10-5" /><path d="m2 12 10 5 10-5" />
-                  </svg>
-                </div>
-              {/if}
+      {#if lanesActive}
+        <div class="pcr-lin-lanes" bind:this={lanesWrapEl}>
+          <svg class="pcr-lin-connectors" width={connectorBox.w} height={connectorBox.h} aria-hidden="true">
+            {#each connectorGeom as g (g.key)}<path d={g.d} />{/each}
+          </svg>
+          {#each laneRender.columns as lane (lane.startHash)}
+            <div class="pcr-lin-col" style="margin-top: {lane.topRow * LANE_ROW_H}px">
+              {#each lane.nodes as item (item.hash)}
+                {@render lineageNode(item, lane)}
+              {/each}
             </div>
-          {:else}
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <!-- svelte-ignore a11y_click_events_have_key_events -->
-            <div
-              class="pcr-viewer-lineage-bundle"
-              class:expanded={d.kind === "collapse"}
-              onclick={() => toggleBundle(d.at)}
-              title={d.kind === "collapse"
-                ? "Collapse this branch"
-                : `${d.count} other generation${d.count > 1 ? "s" : ""} branch off here — click to expand`}
-            >
-              {#if d.kind === "bundle"}
-                <div class="pcr-viewer-lineage-bundle-stack">
-                  {#each d.preview as p (p.hash)}
-                    <img src={thumbUrl(p.hash)} alt="" draggable="false" loading="lazy" />
-                  {/each}
-                </div>
-                <span class="pcr-viewer-lineage-bundle-count">+{d.count}</span>
-              {:else}
-                <span class="pcr-viewer-lineage-bundle-count">▴</span>
-              {/if}
-            </div>
-          {/if}
-        {/each}
-      </div>
-      {#if lineageHiddenCount > 0}
-        <div class="pcr-viewer-lineage-hidden">{lineageHiddenCount} hidden</div>
+          {/each}
+        </div>
+      {:else}
+        <div class="pcr-viewer-lineage-strip">
+          {#each lineageDisplay as d, i (d.kind === "node" ? d.item.hash : `${d.kind}:${d.at}`)}
+            {#if d.kind === "node"}
+              {@const item = d.item}
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <!-- svelte-ignore a11y_click_events_have_key_events -->
+              <div
+                class="pcr-viewer-lineage-node"
+                class:current={i === lineageDisplayCurrentIdx}
+                class:ancestor={i < lineageDisplayCurrentIdx}
+                class:descendant={i > lineageDisplayCurrentIdx}
+                class:branch={d.branch}
+                class:orphaned={item.orphaned === 1}
+                class:compare-candidate={compareDropdownOpen && item.hash !== displayedHash}
+                class:compare-left={compareMode && item.hash === displayedHash}
+                class:compare-right={compareMode && item.hash === compareTargetHash}
+                onclick={() => {
+                  // With the compare dropdown open, the strip doubles as the
+                  // target picker — clicking a thumbnail compares against it
+                  // instead of navigating away.
+                  if (compareDropdownOpen) {
+                    if (item.hash !== displayedHash) enterCompareWith(item.hash, item.filename || item.hash.slice(0, 8));
+                    return;
+                  }
+                  lineageJump(item.hash); exitCompare();
+                }}
+                onmouseenter={(e) => showTip(e, item)}
+                onmouseleave={hideTip}
+                oncontextmenu={(e) => { hideTip(); openLineageMenu(e, item); }}
+              >
+                <img src={thumbUrl(item.hash)} alt="" draggable="false" loading="lazy" />
+                <div class="pcr-viewer-lineage-dot"
+                  class:dot-root={item.hash === lineageList[0]?.hash}
+                  class:dot-current={i === lineageDisplayCurrentIdx}
+                  class:dot-tip={i === lineageDisplay.length - 1 && i !== lineageDisplayCurrentIdx}
+                ></div>
+                {#if editDocLayers[item.hash]}
+                  <div class="pcr-viewer-lineage-layers">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+                      <path d="M12 2 2 7l10 5 10-5-10-5Z" /><path d="m2 17 10 5 10-5" /><path d="m2 12 10 5 10-5" />
+                    </svg>
+                  </div>
+                {/if}
+              </div>
+            {:else}
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <!-- svelte-ignore a11y_click_events_have_key_events -->
+              <div
+                class="pcr-viewer-lineage-bundle"
+                class:expanded={d.kind === "collapse"}
+                onclick={() => toggleBundle(d.at)}
+                title={d.kind === "collapse"
+                  ? "Collapse this branch"
+                  : `${d.count} other generation${d.count > 1 ? "s" : ""} branch off here — click to expand`}
+              >
+                {#if d.kind === "bundle"}
+                  <div class="pcr-viewer-lineage-bundle-stack">
+                    {#each d.preview as p (p.hash)}
+                      <img src={thumbUrl(p.hash)} alt="" draggable="false" loading="lazy" />
+                    {/each}
+                  </div>
+                  <span class="pcr-viewer-lineage-bundle-count">+{d.count}</span>
+                {:else}
+                  <span class="pcr-viewer-lineage-bundle-count">▴</span>
+                {/if}
+              </div>
+            {/if}
+          {/each}
+        </div>
+        {#if lineageHiddenCount > 0}
+          <div class="pcr-viewer-lineage-hidden">{lineageHiddenCount} hidden</div>
+        {/if}
       {/if}
     </div>
   {:else}
@@ -1511,6 +1814,15 @@
     ondblclick={handleDblClick}
     style="cursor: {isPanning ? 'grabbing' : 'grab'}"
   >
+    <!-- Transient notices live over the image, not the corners: top-left is the
+    lineage header and top-right is the close/counter. The native ComfyUI toast
+    can't be used here — it caps at z-index 10000, one below this viewer. -->
+    {#if newGenBanner}
+      <div class="pcr-viewer-newgen-banner">✨ {newGenBanner}</div>
+    {/if}
+    {#if copyPathToast}
+      <div class="pcr-viewer-newgen-banner">📋 Path copied to clipboard</div>
+    {/if}
     {#if displayedHash}
       {#if !imageLoaded && !imageError}
         <div class="pcr-viewer-spinner"></div>
@@ -2061,6 +2373,7 @@
   <LineageContextMenu
     x={lineageMenu.x}
     y={lineageMenu.y}
+    canExpand={lineageMenu.item ? canExpand(lineageMenu.item) : false}
     canEdit={!!onEditSave}
     canDelete={!!onDelete}
     isLocal={isLocalClient}
@@ -2098,12 +2411,16 @@
     height: 36px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 0 8px;
+    box-sizing: border-box;
     font-size: 11px;
     color: #888;
     border-bottom: 1px solid #222;
     flex-shrink: 0;
   }
+  .pcr-lin-count { white-space: nowrap; }
   .pcr-viewer-lineage-strip {
     flex: 1;
     overflow-y: auto;
@@ -2237,6 +2554,129 @@
     color: #666;
     flex-shrink: 0;
   }
+
+  /* ── subway lanes: the rail grows horizontally into parallel vertical lanes ── */
+  .pcr-viewer-lineage-visible.lanes {
+    width: auto;
+    max-width: 62vw;
+  }
+  .pcr-lin-lanes {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 22px;
+    padding: 8px 12px;
+    overflow: auto;
+  }
+  .pcr-lin-lanes::-webkit-scrollbar { width: 7px; height: 7px; }
+  .pcr-lin-lanes::-webkit-scrollbar-track { background: transparent; }
+  .pcr-lin-lanes::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+  /* both axes scroll here, so kill the default white corner where they meet */
+  .pcr-lin-lanes::-webkit-scrollbar-corner { background: transparent; }
+  .pcr-lin-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+    flex: 0 0 auto;
+  }
+  /* SVG overlay lives inside the scroll content, so it translates with scroll for
+     free — geometry is only recomputed on expand/fold/resize/img-load. */
+  .pcr-lin-connectors {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    overflow: visible;
+  }
+  .pcr-lin-connectors path {
+    stroke: #4a4a4a;
+    stroke-width: 2;
+    fill: none;
+  }
+  .pcr-lin-expander {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 3px;
+    box-sizing: border-box;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    border-radius: 4px;
+    border: 1px solid rgba(120, 120, 120, 0.6);
+    background: rgba(20, 20, 20, 0.82);
+    color: #cdd6e0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+  .pcr-lin-expander:hover {
+    background: rgba(60, 60, 60, 0.95);
+    border-color: #888;
+  }
+  .pcr-lin-fold {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    font-size: 11px;
+    line-height: 1;
+    border-radius: 4px;
+    border: 1px solid rgba(120, 120, 120, 0.6);
+    background: rgba(20, 20, 20, 0.82);
+    color: #cdd6e0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+  .pcr-lin-fold:hover {
+    background: rgba(60, 60, 60, 0.95);
+    border-color: #888;
+  }
+  /* ⊞/⊟ are actions, not status — keep them off the thumb until the node is
+     hovered so the strip isn't cluttered at rest (dot + layers badge stay). */
+  .pcr-lin-expander,
+  .pcr-lin-fold {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s;
+  }
+  .pcr-viewer-lineage-node:hover .pcr-lin-expander,
+  .pcr-viewer-lineage-node:hover .pcr-lin-fold {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .pcr-lin-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    flex-shrink: 0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    background: #1a1a1a;
+    color: #9bb4c7;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .pcr-lin-toggle:hover { background: #262626; border-color: #555; color: #cfe2f0; }
+  .pcr-lin-toggle.on { background: rgba(79, 195, 247, 0.15); border-color: #4fc3f7; color: #4fc3f7; }
+
   /* compare-picking: dropdown open → strip thumbnails are click targets */
   .pcr-viewer-lineage-node.compare-candidate {
     border-color: rgba(255, 221, 114, 0.6);
@@ -2273,7 +2713,8 @@
   .pcr-viewer-newgen-banner {
     position: absolute;
     top: 14px;
-    left: 14px;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 30;
     padding: 7px 13px;
     font-size: 12.5px;
@@ -2286,8 +2727,8 @@
     pointer-events: none;
   }
   @keyframes pcr-newgen-in {
-    from { opacity: 0; transform: translateY(-8px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translate(-50%, -8px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
   }
   @keyframes pcr-newgen-out {
     to { opacity: 0; }

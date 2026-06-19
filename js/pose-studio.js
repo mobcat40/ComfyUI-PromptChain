@@ -8240,11 +8240,17 @@ async function mountViewport(node, container) {
   // Svelte bundle's CSS isn't present.
   let exportModal = null; // built lazily on first export (after the teardown chain is in place)
   const closeExport = () => { if (exportModal) exportModal.backdrop.style.display = "none"; };
+  // Remember the last name the author exported as (device-local), so the next
+  // export defaults to it instead of the generic placeholder. The browser still
+  // auto-suffixes " (1)" etc. on its own if that file already exists on disk.
+  const EXPORT_NAME_KEY = "pcr.pose-export-name";
   const attemptExport = () => {
     const raw = exportModal.input.value.trim();
     if (!raw) return; // confirm is disabled while empty; guard the Enter path too
     closeExport();
-    downloadScene(sanitizeSceneFilename(raw));
+    const name = sanitizeSceneFilename(raw);
+    try { localStorage.setItem(EXPORT_NAME_KEY, name); } catch { /* localStorage blocked */ }
+    downloadScene(name);
   };
   const buildExportModal = () => {
     const backdrop = document.createElement("div");
@@ -8328,7 +8334,8 @@ async function mountViewport(node, container) {
   const openExportScene = () => {
     if (!exportModal) buildExportModal();
     exportModal.backdrop.style.zIndex = String((node.properties?.pcrFullscreenZ || 10001) + 10); // above this poser's flyout menus
-    const defaultName = "promptchain-pose-scene.json";
+    let defaultName = "promptchain-pose-scene.json";
+    try { const saved = localStorage.getItem(EXPORT_NAME_KEY); if (saved) defaultName = saved; } catch { /* localStorage blocked */ }
     exportModal.input.value = defaultName;
     exportModal.refreshConfirm();
     exportModal.backdrop.style.display = "flex";

@@ -1374,12 +1374,16 @@
     height: 36px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 0 8px;
+    box-sizing: border-box;
     font-size: 11px;
     color: #888;
     border-bottom: 1px solid #222;
     flex-shrink: 0;
   }
+  .pcr-lin-count.svelte-5cciiw { white-space: nowrap; }
   .pcr-viewer-lineage-strip.svelte-5cciiw {
     flex: 1;
     overflow-y: auto;
@@ -1513,6 +1517,129 @@
     color: #666;
     flex-shrink: 0;
   }
+
+  /* ── subway lanes: the rail grows horizontally into parallel vertical lanes ── */
+  .pcr-viewer-lineage-visible.lanes.svelte-5cciiw {
+    width: auto;
+    max-width: 62vw;
+  }
+  .pcr-lin-lanes.svelte-5cciiw {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 22px;
+    padding: 8px 12px;
+    overflow: auto;
+  }
+  .pcr-lin-lanes.svelte-5cciiw::-webkit-scrollbar { width: 7px; height: 7px; }
+  .pcr-lin-lanes.svelte-5cciiw::-webkit-scrollbar-track { background: transparent; }
+  .pcr-lin-lanes.svelte-5cciiw::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+  /* both axes scroll here, so kill the default white corner where they meet */
+  .pcr-lin-lanes.svelte-5cciiw::-webkit-scrollbar-corner { background: transparent; }
+  .pcr-lin-col.svelte-5cciiw {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+    flex: 0 0 auto;
+  }
+  /* SVG overlay lives inside the scroll content, so it translates with scroll for
+     free — geometry is only recomputed on expand/fold/resize/img-load. */
+  .pcr-lin-connectors.svelte-5cciiw {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    overflow: visible;
+  }
+  .pcr-lin-connectors.svelte-5cciiw path:where(.svelte-5cciiw) {
+    stroke: #4a4a4a;
+    stroke-width: 2;
+    fill: none;
+  }
+  .pcr-lin-expander.svelte-5cciiw {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 3px;
+    box-sizing: border-box;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    border-radius: 4px;
+    border: 1px solid rgba(120, 120, 120, 0.6);
+    background: rgba(20, 20, 20, 0.82);
+    color: #cdd6e0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+  .pcr-lin-expander.svelte-5cciiw:hover {
+    background: rgba(60, 60, 60, 0.95);
+    border-color: #888;
+  }
+  .pcr-lin-fold.svelte-5cciiw {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    font-size: 11px;
+    line-height: 1;
+    border-radius: 4px;
+    border: 1px solid rgba(120, 120, 120, 0.6);
+    background: rgba(20, 20, 20, 0.82);
+    color: #cdd6e0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+  .pcr-lin-fold.svelte-5cciiw:hover {
+    background: rgba(60, 60, 60, 0.95);
+    border-color: #888;
+  }
+  /* ⊞/⊟ are actions, not status — keep them off the thumb until the node is
+     hovered so the strip isn't cluttered at rest (dot + layers badge stay). */
+  .pcr-lin-expander.svelte-5cciiw,
+  .pcr-lin-fold.svelte-5cciiw {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s;
+  }
+  .pcr-viewer-lineage-node.svelte-5cciiw:hover .pcr-lin-expander:where(.svelte-5cciiw),
+  .pcr-viewer-lineage-node.svelte-5cciiw:hover .pcr-lin-fold:where(.svelte-5cciiw) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .pcr-lin-toggle.svelte-5cciiw {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    flex-shrink: 0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    background: #1a1a1a;
+    color: #9bb4c7;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .pcr-lin-toggle.svelte-5cciiw:hover { background: #262626; border-color: #555; color: #cfe2f0; }
+  .pcr-lin-toggle.on.svelte-5cciiw { background: rgba(79, 195, 247, 0.15); border-color: #4fc3f7; color: #4fc3f7; }
+
   /* compare-picking: dropdown open → strip thumbnails are click targets */
   .pcr-viewer-lineage-node.compare-candidate.svelte-5cciiw {
     border-color: rgba(255, 221, 114, 0.6);
@@ -1549,7 +1676,8 @@
   .pcr-viewer-newgen-banner.svelte-5cciiw {
     position: absolute;
     top: 14px;
-    left: 14px;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 30;
     padding: 7px 13px;
     font-size: 12.5px;
@@ -1562,8 +1690,8 @@
     pointer-events: none;
   }
   @keyframes svelte-5cciiw-pcr-newgen-in {
-    from { opacity: 0; transform: translateY(-8px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translate(-50%, -8px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
   }
   @keyframes svelte-5cciiw-pcr-newgen-out {
     to { opacity: 0; }

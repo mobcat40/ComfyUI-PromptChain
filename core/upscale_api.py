@@ -204,6 +204,23 @@ async def open_file(request):
     return web.json_response({"ok": True})
 
 
+@routes.get("/promptchain/file-path")
+async def file_path(request):
+    """Return the resolved absolute disk path for an image so the viewer can copy
+    it to the clipboard.
+
+    Loopback-only: the path is a SERVER-machine filesystem path — meaningless on a
+    remote client and not worth leaking. The frontend only offers Copy Path to
+    local clients; this is the backstop.
+    """
+    if request.remote not in ("127.0.0.1", "::1"):
+        return error_response("file path is only available from the server machine", 403)
+    path, err = _resolve_request_path(request)
+    if err:
+        return error_response(err, 404)
+    return web.json_response({"path": os.path.normpath(path)})
+
+
 def _show_file_properties_win(path):
     """Show the native Windows file-properties sheet for `path`.
 
