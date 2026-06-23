@@ -1,7 +1,7 @@
 import { p as push, a as prop, D as comment, v as first_child, i as if_block, g as get, k as append, l as pop, s as state, e as set, f as sibling, t as template_effect, r as event, A as from_html, n as child, y as set_text, x as set_attribute, d as delegate, c as proxy, u as user_effect, E as untrack, o as bind_this, j as delegated, C as tick, m as user_derived, w as each, z as index, h as set_class, F as update, M as unmount, L as mount } from "./disclose-version-uq4tn5Y6.js";
 import { s as set_style } from "./style-Boi27oOu.js";
 import { b as bind_value } from "./input-DFQhebEz.js";
-import { e as extractPrecisions, r as resolveFilesForPrecision } from "./model-constants-DOP7d958.js";
+import { e as extractPrecisions, r as resolveFilesForPrecision } from "./model-constants-cVxhUf51.js";
 import { api } from "/scripts/api.js";
 import { s as safeJson, H as HttpError } from "./api-context-BFKo1mCD.js";
 var root_2$4 = from_html(`<div class="pcr-hover-card-version svelte-oulz7g"> </div>`);
@@ -104,31 +104,34 @@ var root_1$3 = from_html(`<div class="pcr-model-panel-empty">Loading...</div>`);
 var root_3$3 = from_html(`<div class="pcr-picker-recognition svelte-ycwcax"> </div>`);
 var root_5$3 = from_html(`<span class="pcr-model-version-badge svelte-ycwcax"> </span>`);
 var root_6$3 = from_html(`<span class="pcr-picker-item-meta svelte-ycwcax"> </span>`);
-var root_4$2 = from_html(`<div><div class="pcr-picker-item-info svelte-ycwcax"><span class="pcr-picker-item-name svelte-ycwcax"> <!></span> <!></div> <span class="pcr-picker-item-arrow svelte-ycwcax">▸</span></div>`);
 var root_8$2 = from_html(`<span> </span>`);
-var root_7$2 = from_html(`<div class="pcr-picker-item pcr-picker-catalog-item svelte-ycwcax"><div class="pcr-picker-item-info svelte-ycwcax"><span class="pcr-picker-item-name svelte-ycwcax"> </span> <div class="pcr-picker-precision-row svelte-ycwcax"></div></div> <span class="pcr-picker-item-arrow svelte-ycwcax">›</span></div>`);
-var root_11$1 = from_html(`<span class="pcr-model-version-badge svelte-ycwcax"> </span>`);
-var root_12 = from_html(`<span class="pcr-picker-item-meta svelte-ycwcax"> </span>`);
-var root_10$2 = from_html(`<div><div class="pcr-picker-item-info svelte-ycwcax"><span class="pcr-picker-item-name svelte-ycwcax"> <!></span> <!></div> <span class="pcr-picker-item-arrow svelte-ycwcax"> </span></div>`);
-var root_9$2 = from_html(`<div class="pcr-picker-civitai-header svelte-ycwcax">AVAILABLE FOR DOWNLOAD</div> <!>`, 1);
-var root_14 = from_html(`<div class="pcr-picker-item pcr-picker-civitai-item svelte-ycwcax"><div class="pcr-picker-item-info svelte-ycwcax"><span class="pcr-picker-item-name svelte-ycwcax"> </span> <span class="pcr-picker-item-meta svelte-ycwcax"> </span></div> <span class="pcr-picker-item-arrow svelte-ycwcax">↓</span></div>`);
-var root_15 = from_html(`<div class="pcr-picker-civitai-loading svelte-ycwcax">Searching CivitAI…</div>`);
-var root_16 = from_html(`<div class="pcr-picker-civitai-loading svelte-ycwcax">Loading more…</div>`);
-var root_17 = from_html(`<div class="pcr-picker-civitai-empty svelte-ycwcax">No results on CivitAI</div>`);
-var root_13 = from_html(`<div class="pcr-picker-civitai-header svelte-ycwcax">CIVITAI</div> <div class="pcr-picker-civitai-section svelte-ycwcax"><!> <!></div>`, 1);
-var root_18 = from_html(`<div class="pcr-model-panel-empty">No matches</div>`);
+var root_7$2 = from_html(`<div class="pcr-picker-precision-row svelte-ycwcax"></div>`);
+var root_4$2 = from_html(`<div><div class="pcr-picker-item-info svelte-ycwcax"><span class="pcr-picker-item-name svelte-ycwcax"> <!></span> <!> <!></div> <span class="pcr-picker-item-arrow svelte-ycwcax">▸</span></div>`);
+var root_10$2 = from_html(`<span> </span>`);
+var root_9$2 = from_html(`<div><div class="pcr-picker-item-info svelte-ycwcax"><span class="pcr-picker-item-name svelte-ycwcax"> </span> <div class="pcr-picker-precision-row svelte-ycwcax"></div></div> <span class="pcr-picker-item-arrow svelte-ycwcax">›</span></div>`);
+var root_13 = from_html(`<span class="pcr-model-version-badge svelte-ycwcax"> </span>`);
+var root_15 = from_html(` <span class="pcr-picker-resume-hint svelte-ycwcax">resume ↻</span>`, 1);
+var root_14 = from_html(`<span class="pcr-picker-item-meta svelte-ycwcax"> <!></span>`);
+var root_12 = from_html(`<div><div class="pcr-picker-item-info svelte-ycwcax"><span class="pcr-picker-item-name svelte-ycwcax"> <!></span> <!></div> <span class="pcr-picker-item-arrow svelte-ycwcax"> </span></div>`);
+var root_11$1 = from_html(`<div class="pcr-picker-civitai-header svelte-ycwcax">AVAILABLE FOR DOWNLOAD</div> <!>`, 1);
+var root_17 = from_html(`<div class="pcr-picker-item pcr-picker-civitai-item svelte-ycwcax"><div class="pcr-picker-item-info svelte-ycwcax"><span class="pcr-picker-item-name svelte-ycwcax"> </span> <span class="pcr-picker-item-meta svelte-ycwcax"> </span></div> <span class="pcr-picker-item-arrow svelte-ycwcax">↓</span></div>`);
+var root_18 = from_html(`<div class="pcr-picker-civitai-loading svelte-ycwcax">Searching CivitAI…</div>`);
+var root_19 = from_html(`<div class="pcr-picker-civitai-loading svelte-ycwcax">Loading more…</div>`);
+var root_20 = from_html(`<div class="pcr-picker-civitai-empty svelte-ycwcax">No results on CivitAI</div>`);
+var root_16 = from_html(`<div class="pcr-picker-civitai-header svelte-ycwcax">CIVITAI</div> <div class="pcr-picker-civitai-section svelte-ycwcax"><!> <!></div>`, 1);
+var root_21 = from_html(`<div class="pcr-model-panel-empty">No matches</div>`);
 var root_2$3 = from_html(`<div class="pcr-picker-header svelte-ycwcax"><input class="pcr-picker-search svelte-ycwcax" type="text" placeholder="Search models..."/> <!></div> <div><!> <!> <!> <!> <!></div>`, 1);
-var root_20 = from_html(`<div><span> </span> <span class="pcr-picker-version-arrow svelte-ycwcax">▶</span></div>`);
-var root_19 = from_html(`<div class="pcr-picker-submenu svelte-ycwcax"><div class="pcr-picker-submenu-header svelte-ycwcax">SELECT VERSION</div> <!></div>`);
-var root_22 = from_html(`<div class="pcr-picker-version-item svelte-ycwcax"><span> </span> <span class="pcr-picker-version-arrow svelte-ycwcax">↓</span></div>`);
-var root_21 = from_html(`<div class="pcr-picker-submenu svelte-ycwcax"><div class="pcr-picker-submenu-header svelte-ycwcax">SELECT VERSION</div> <!></div>`);
-var root_25 = from_html(`<div class="pcr-picker-category-header svelte-ycwcax">TEMPLATES</div>`);
-var root_24 = from_html(`<div class="pcr-picker-submenu-item pcr-picker-current-workflow svelte-ycwcax" title="Swap this checkpoint into your current graph and reapply its settings — keeps your wiring (regional couple, etc.)">(Current Workflow)</div> <!>`, 1);
-var root_29 = from_html(`<div class="pcr-picker-category-header svelte-ycwcax"> </div>`);
-var root_30 = from_html(`<div class="pcr-picker-submenu-item svelte-ycwcax"> </div>`);
-var root_28 = from_html(`<!> <!>`, 1);
-var root_31 = from_html(`<div class="pcr-picker-submenu-item pcr-picker-submenu-hint svelte-ycwcax">No templates available</div>`);
-var root_23 = from_html(`<div class="pcr-picker-submenu svelte-ycwcax"><div class="pcr-picker-submenu-header svelte-ycwcax"> </div> <!> <!></div>`);
+var root_23 = from_html(`<div><span> </span> <span class="pcr-picker-version-arrow svelte-ycwcax">▶</span></div>`);
+var root_22 = from_html(`<div class="pcr-picker-submenu svelte-ycwcax"><div class="pcr-picker-submenu-header svelte-ycwcax">SELECT VERSION</div> <!></div>`);
+var root_25 = from_html(`<div class="pcr-picker-version-item svelte-ycwcax"><span> </span> <span class="pcr-picker-version-arrow svelte-ycwcax">↓</span></div>`);
+var root_24 = from_html(`<div class="pcr-picker-submenu svelte-ycwcax"><div class="pcr-picker-submenu-header svelte-ycwcax">SELECT VERSION</div> <!></div>`);
+var root_28 = from_html(`<div class="pcr-picker-category-header svelte-ycwcax">TEMPLATES</div>`);
+var root_27 = from_html(`<div class="pcr-picker-submenu-item pcr-picker-current-workflow svelte-ycwcax" title="Swap this checkpoint into your current graph and reapply its settings — keeps your wiring (regional couple, etc.)">(Current Workflow)</div> <!>`, 1);
+var root_32 = from_html(`<div class="pcr-picker-category-header svelte-ycwcax"> </div>`);
+var root_33 = from_html(`<div class="pcr-picker-submenu-item svelte-ycwcax"> </div>`);
+var root_31 = from_html(`<!> <!>`, 1);
+var root_34 = from_html(`<div class="pcr-picker-submenu-item pcr-picker-submenu-hint svelte-ycwcax">No templates available</div>`);
+var root_26 = from_html(`<div class="pcr-picker-submenu svelte-ycwcax"><div class="pcr-picker-submenu-header svelte-ycwcax"> </div> <!> <!></div>`);
 var root$3 = from_html(`<div class="pcr-model-picker svelte-ycwcax"><!></div> <!> <!> <!> <!>`, 1);
 function ModelPicker($$anchor, $$props) {
   push($$props, true);
@@ -177,7 +180,11 @@ function ModelPicker($$anchor, $$props) {
   let listEl;
   let searchEl;
   let panelStyle = state("");
-  let catalogPrecisionStatus = state(proxy({}));
+  let catalogPrecisionStatus = user_derived(() => {
+    const out = {};
+    for (const c of get(catalog)) out[c.hash] = c.precision_status || {};
+    return out;
+  });
   async function loadData() {
     try {
       const [modelsRes, templatesRes, catalogRes] = await Promise.all([
@@ -198,7 +205,6 @@ function ModelPicker($$anchor, $$props) {
         }).then((r) => r.json());
         set(modelSettings, settingsRes.settings || {}, true);
       }
-      await checkCatalogPrecisions();
       set(loading, false);
       requestAnimationFrame(() => searchEl == null ? void 0 : searchEl.focus());
       focusDownloadedModel();
@@ -233,43 +239,6 @@ function ModelPicker($$anchor, $$props) {
     }
     await tick();
     (_b = listEl == null ? void 0 : listEl.querySelector(".pcr-picker-item-highlight")) == null ? void 0 : _b.scrollIntoView({ block: "center" });
-  }
-  async function checkCatalogPrecisions() {
-    if (!get(catalog).length) return;
-    const filesToCheck = [];
-    const fileMap = [];
-    const status = {};
-    for (const entry of get(catalog)) {
-      status[entry.hash] = {};
-      for (const f of entry.files || []) {
-        if (!f.variants) continue;
-        for (const v of f.variants) {
-          if (f.folder === "diffusion_models" || f.folder === "unet") {
-            filesToCheck.push({ filename: v.filename, folder: f.folder });
-            fileMap.push({ entryHash: entry.hash, precision: v.precision });
-          }
-        }
-      }
-    }
-    if (!filesToCheck.length) {
-      set(catalogPrecisionStatus, status, true);
-      return;
-    }
-    try {
-      const checkRes = await fetch("/promptchain/models/check-files", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ files: filesToCheck })
-      });
-      const checkData = await checkRes.json();
-      for (let i = 0; i < (checkData.results || []).length; i++) {
-        if (checkData.results[i].exists) {
-          status[fileMap[i].entryHash][fileMap[i].precision] = true;
-        }
-      }
-    } catch {
-    }
-    set(catalogPrecisionStatus, status, true);
   }
   let groupedModels = user_derived(() => {
     const sorted = get(models).slice().sort((a, b) => {
@@ -327,7 +296,7 @@ function ModelPicker($$anchor, $$props) {
     const terms = q ? q.split(/\s+/) : [];
     return get(catalog).filter((c) => {
       const status = get(catalogPrecisionStatus)[c.hash] || {};
-      if (!Object.values(status).some((v) => v)) return false;
+      if (!Object.values(status).some((v) => v === "installed" || v === "partial")) return false;
       if (!terms.length) return true;
       const text = [
         c.display_name,
@@ -343,7 +312,7 @@ function ModelPicker($$anchor, $$props) {
     const q = get(searchQuery).toLowerCase().trim();
     let items = get(catalog).filter((c) => {
       const status = get(catalogPrecisionStatus)[c.hash] || {};
-      return !Object.values(status).some((v) => v);
+      return !Object.values(status).some((v) => v === "installed" || v === "partial");
     });
     if (q) {
       const terms = q.split(/\s+/);
@@ -363,10 +332,13 @@ function ModelPicker($$anchor, $$props) {
           name: entry.model_name || entry.display_name || "",
           architecture: entry.architecture || "",
           family: entry.family || "",
+          partial: false,
           versions: []
         });
       }
-      groups.get(key).versions.push(entry);
+      const g = groups.get(key);
+      g.versions.push(entry);
+      if (entry.partial) g.partial = true;
     }
     for (const g of groups.values()) {
       g.versions.sort((a, b) => (b.version || "").localeCompare(a.version || "", void 0, { numeric: true }));
@@ -484,16 +456,15 @@ function ModelPicker($$anchor, $$props) {
       return scope.architecture === arch;
     });
   }
-  async function handleCatalogPrecisionClick(entry, prec, installed) {
+  async function handleCatalogPrecisionClick(entry, prec, state2) {
     var _a;
-    if (!installed) {
-      $$props.onShowCatalogDownload(entry);
+    if (state2 !== "installed") {
+      $$props.onShowCatalogDownload(entry, prec);
       return;
     }
     const resolved = resolveFilesForPrecision(entry.files, prec);
     const diffFile = resolved.find((f) => f.folder === "diffusion_models" || f.folder === "unet");
-    if (!diffFile) return;
-    const localModel = get(models).find((m) => m.filename === diffFile.filename);
+    const localModel = diffFile && get(models).find((m) => m.filename === diffFile.filename);
     if (localModel && templatesForModel(localModel).length > 0) {
       set(
         activeSubmenu,
@@ -506,8 +477,66 @@ function ModelPicker($$anchor, $$props) {
       );
       set(activeNestedSubmenu, null);
     } else {
+      $$props.onShowCatalogDownload(entry, prec);
+    }
+  }
+  function primaryFileEntry(settings) {
+    const files = (settings == null ? void 0 : settings.files) || [];
+    const isPrimaryFolder = (f) => f.folder === "diffusion_models" || f.folder === "unet" || f.folder === "checkpoints";
+    return files.find((f) => f.primary && isPrimaryFolder(f)) || files.find(isPrimaryFolder) || null;
+  }
+  function groupPrecisions(group) {
+    var _a, _b;
+    const settings = get(modelSettings)[(_a = group.versions[0]) == null ? void 0 : _a.hash];
+    const variants = ((_b = primaryFileEntry(settings)) == null ? void 0 : _b.variants) || [];
+    if (variants.length < 2) return [];
+    return variants.map((v) => {
+      const fnameLower = (v.filename || "").toLowerCase();
+      const localModel = get(models).find((m) => (m.filename || "").toLowerCase() === fnameLower);
+      return {
+        precision: v.precision,
+        filename: v.filename,
+        installed: !!localModel,
+        model: localModel || null
+      };
+    });
+  }
+  function entryForGroup(group) {
+    var _a, _b;
+    const s = get(modelSettings)[(_a = group.versions[0]) == null ? void 0 : _a.hash] || {};
+    const entry = {
+      hash: (_b = group.versions[0]) == null ? void 0 : _b.hash,
+      display_name: s.display_name || group.name,
+      model_name: s.model_name || group.name,
+      version: s.version || "",
+      architecture: s.architecture || group.architecture || "",
+      family: s.family || group.family || "",
+      description: s.description || "",
+      files: s.files || []
+    };
+    if (s.civitai_model_id) entry.civitai_model_id = s.civitai_model_id;
+    if (s.thumbnail) entry.thumbnail = s.thumbnail;
+    return entry;
+  }
+  function handleInstalledPrecisionClick(prec) {
+    var _a;
+    if (prec.model && templatesForModel(prec.model).length > 0) {
+      set(activeNestedSubmenu, null);
+      set(
+        activeSubmenu,
+        {
+          type: "template",
+          model: prec.model,
+          displayName: ((_a = get(modelSettings)[prec.model.hash]) == null ? void 0 : _a.display_name) || prec.model.filename
+        },
+        true
+      );
+    } else {
       $$props.onClose();
     }
+  }
+  function handleMissingPrecisionClick(group, prec) {
+    $$props.onShowCatalogDownload(entryForGroup(group), prec.precision);
   }
   function sortCategories(cats) {
     const known = (get(categoryOrder) || []).filter((c) => cats.includes(c));
@@ -522,6 +551,26 @@ function ModelPicker($$anchor, $$props) {
     if (settings == null ? void 0 : settings.version_label) return settings.version_label;
     const version = (settings == null ? void 0 : settings.version) || "";
     const filename = (model.filename || "").toLowerCase();
+    const precision = declaredPrecision(settings, filename) || sniffPrecision(filename);
+    if (precision && version) {
+      const esc = precision.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (version.toLowerCase().includes(precision.toLowerCase())) {
+        return version.replace(new RegExp(`\\s*${esc}`, "i"), ` (${precision})`);
+      }
+      return `${version} (${precision})`;
+    }
+    return version || model.filename || "";
+  }
+  function declaredPrecision(settings, filenameLower) {
+    for (const f of (settings == null ? void 0 : settings.files) || []) {
+      if ((f.filename || "").toLowerCase() === filenameLower) return f.precision || null;
+      for (const v of f.variants || []) {
+        if ((v.filename || "").toLowerCase() === filenameLower) return v.precision || null;
+      }
+    }
+    return null;
+  }
+  function sniffPrecision(filenameLower) {
     const precisionPatterns = [
       [/bf16/i, "BF16"],
       [/fp16/i, "FP16"],
@@ -531,20 +580,10 @@ function ModelPicker($$anchor, $$props) {
       [/fp4/i, "FP4"],
       [/\.gguf$/i, "GGUF"]
     ];
-    let precision = null;
     for (const [pattern, label] of precisionPatterns) {
-      if (pattern.test(filename)) {
-        precision = label;
-        break;
-      }
+      if (pattern.test(filenameLower)) return label;
     }
-    if (precision && version) {
-      if (version.toLowerCase().includes(precision.toLowerCase())) {
-        return version.replace(new RegExp(`\\s*${precision}`, "i"), ` (${precision})`);
-      }
-      return `${version} (${precision})`;
-    }
-    return version || model.filename || "";
+    return null;
   }
   function buildCatalogVersionLabel(entry) {
     var _a, _b;
@@ -724,6 +763,7 @@ function ModelPicker($$anchor, $$props) {
         const model = user_derived(() => get(group).versions[0]);
         const displayName = user_derived(() => get(group).name);
         const meta = user_derived(() => [get(group).architecture, get(group).family].filter(Boolean).join(" · "));
+        const precs = user_derived(() => groupPrecisions(get(group)));
         var div_5 = root_4$2();
         let classes_1;
         var div_6 = child(div_5);
@@ -738,7 +778,7 @@ function ModelPicker($$anchor, $$props) {
             append($$anchor4, span_1);
           };
           if_block(node_3, ($$render) => {
-            if (get(group).versions.length > 1) $$render(consequent_2);
+            if (get(group).versions.length > 1 && !get(precs).length) $$render(consequent_2);
           });
         }
         var node_4 = sibling(span, 2);
@@ -751,6 +791,40 @@ function ModelPicker($$anchor, $$props) {
           };
           if_block(node_4, ($$render) => {
             if (get(meta)) $$render(consequent_3);
+          });
+        }
+        var node_5 = sibling(node_4, 2);
+        {
+          var consequent_4 = ($$anchor4) => {
+            var div_7 = root_7$2();
+            each(div_7, 21, () => get(precs), index, ($$anchor5, p) => {
+              var span_3 = root_8$2();
+              let classes_2;
+              var text_5 = child(span_3);
+              template_effect(
+                ($0, $1) => {
+                  classes_2 = set_class(span_3, 1, "pcr-picker-precision-tag svelte-ycwcax", null, classes_2, {
+                    "pcr-precision-installed": get(p).installed,
+                    "pcr-precision-missing": !get(p).installed
+                  });
+                  set_attribute(span_3, "title", $0);
+                  set_text(text_5, `${$1 ?? ""}${get(p).installed ? "" : " ↓"}`);
+                },
+                [
+                  () => get(p).installed ? `${get(p).precision.toUpperCase()} installed — use it` : `Download ${get(p).precision.toUpperCase()}`,
+                  () => get(p).precision.toUpperCase()
+                ]
+              );
+              delegated("click", span_3, (e) => {
+                e.stopPropagation();
+                get(p).installed ? handleInstalledPrecisionClick(get(p)) : handleMissingPrecisionClick(get(group), get(p));
+              });
+              append($$anchor5, span_3);
+            });
+            append($$anchor4, div_7);
+          };
+          if_block(node_5, ($$render) => {
+            if (get(precs).length) $$render(consequent_4);
           });
         }
         template_effect(() => {
@@ -775,123 +849,148 @@ function ModelPicker($$anchor, $$props) {
         event("pointerleave", div_5, onItemLeave);
         append($$anchor3, div_5);
       });
-      var node_5 = sibling(node_2, 2);
-      each(node_5, 17, () => get(catalogInstalled), index, ($$anchor3, entry) => {
+      var node_6 = sibling(node_2, 2);
+      each(node_6, 17, () => get(catalogInstalled), index, ($$anchor3, entry) => {
         const precisions = user_derived(() => extractPrecisions(get(entry).files || []));
         const status = user_derived(() => get(catalogPrecisionStatus)[get(entry).hash] || {});
-        var div_7 = root_7$2();
-        var div_8 = child(div_7);
-        var span_3 = child(div_8);
-        var text_5 = child(span_3);
-        var div_9 = sibling(span_3, 2);
-        each(div_9, 21, () => get(precisions), index, ($$anchor4, prec) => {
-          const installed = user_derived(() => !!get(status)[get(prec)]);
-          var span_4 = root_8$2();
-          let classes_2;
-          var text_6 = child(span_4);
+        var div_8 = root_9$2();
+        let classes_3;
+        var div_9 = child(div_8);
+        var span_4 = child(div_9);
+        var text_6 = child(span_4);
+        var div_10 = sibling(span_4, 2);
+        each(div_10, 21, () => get(precisions), index, ($$anchor4, prec) => {
+          const st = user_derived(() => get(status)[get(prec)] || "missing");
+          var span_5 = root_10$2();
+          let classes_4;
+          var text_7 = child(span_5);
           template_effect(
             ($0, $1) => {
-              classes_2 = set_class(span_4, 1, "pcr-picker-precision-tag svelte-ycwcax", null, classes_2, {
-                "pcr-precision-installed": get(installed),
-                "pcr-precision-missing": !get(installed)
+              classes_4 = set_class(span_5, 1, "pcr-picker-precision-tag svelte-ycwcax", null, classes_4, {
+                "pcr-precision-installed": get(st) === "installed",
+                "pcr-precision-partial": get(st) === "partial",
+                "pcr-precision-missing": get(st) === "missing"
               });
-              set_attribute(span_4, "title", $0);
-              set_text(text_6, `${$1 ?? ""}${get(installed) ? "" : " ↓"}`);
+              set_attribute(span_5, "title", $0);
+              set_text(text_7, `${$1 ?? ""}${get(st) === "installed" ? "" : get(st) === "partial" ? " ↻" : " ↓"}`);
             },
             [
-              () => get(installed) ? `${get(prec).toUpperCase()} installed` : `Download ${get(prec).toUpperCase()}`,
+              () => get(st) === "installed" ? `${get(prec).toUpperCase()} installed` : get(st) === "partial" ? `${get(prec).toUpperCase()} download unfinished — click to resume` : `Download ${get(prec).toUpperCase()}`,
               () => get(prec).toUpperCase()
             ]
           );
-          delegated("click", span_4, (e) => {
+          delegated("click", span_5, (e) => {
             e.stopPropagation();
-            handleCatalogPrecisionClick(get(entry), get(prec), get(installed));
+            handleCatalogPrecisionClick(get(entry), get(prec), get(st));
           });
-          append($$anchor4, span_4);
+          append($$anchor4, span_5);
         });
-        template_effect(() => set_text(text_5, get(entry).display_name || get(entry).model_name));
-        delegated("click", div_7, (e) => {
+        template_effect(
+          ($0) => {
+            classes_3 = set_class(div_8, 1, "pcr-picker-item pcr-picker-catalog-item svelte-ycwcax", null, classes_3, $0);
+            set_text(text_6, get(entry).display_name || get(entry).model_name);
+          },
+          [
+            () => ({
+              "pcr-picker-catalog-partial": get(precisions).some((p) => get(status)[p] === "partial")
+            })
+          ]
+        );
+        delegated("click", div_8, (e) => {
           e.stopPropagation();
-          const installedPrec = get(precisions).find((p) => get(status)[p]);
-          if (installedPrec) handleCatalogPrecisionClick(get(entry), installedPrec, true);
+          const prec = get(precisions).find((p) => get(status)[p] === "installed") || get(precisions).find((p) => get(status)[p] === "partial");
+          if (prec) handleCatalogPrecisionClick(get(entry), prec, get(status)[prec]);
         });
-        append($$anchor3, div_7);
+        append($$anchor3, div_8);
       });
-      var node_6 = sibling(node_5, 2);
+      var node_7 = sibling(node_6, 2);
       {
-        var consequent_6 = ($$anchor3) => {
-          var fragment_2 = root_9$2();
-          var node_7 = sibling(first_child(fragment_2), 2);
-          each(node_7, 17, () => get(catalogGroups), (group) => group.name, ($$anchor4, group) => {
+        var consequent_8 = ($$anchor3) => {
+          var fragment_2 = root_11$1();
+          var node_8 = sibling(first_child(fragment_2), 2);
+          each(node_8, 17, () => get(catalogGroups), (group) => group.name, ($$anchor4, group) => {
             const meta = user_derived(() => [get(group).architecture, get(group).family].filter(Boolean).join(" · "));
-            var div_10 = root_10$2();
-            let classes_3;
-            var div_11 = child(div_10);
-            var span_5 = child(div_11);
-            var text_7 = child(span_5);
-            var node_8 = sibling(text_7);
-            {
-              var consequent_4 = ($$anchor5) => {
-                var span_6 = root_11$1();
-                var text_8 = child(span_6);
-                template_effect(() => set_text(text_8, get(group).versions.length));
-                append($$anchor5, span_6);
-              };
-              if_block(node_8, ($$render) => {
-                if (get(group).versions.length > 1) $$render(consequent_4);
-              });
-            }
-            var node_9 = sibling(span_5, 2);
+            var div_11 = root_12();
+            let classes_5;
+            var div_12 = child(div_11);
+            var span_6 = child(div_12);
+            var text_8 = child(span_6);
+            var node_9 = sibling(text_8);
             {
               var consequent_5 = ($$anchor5) => {
-                var span_7 = root_12();
+                var span_7 = root_13();
                 var text_9 = child(span_7);
-                template_effect(() => set_text(text_9, get(meta)));
+                template_effect(() => set_text(text_9, get(group).versions.length));
                 append($$anchor5, span_7);
               };
               if_block(node_9, ($$render) => {
-                if (get(meta)) $$render(consequent_5);
+                if (get(group).versions.length > 1) $$render(consequent_5);
               });
             }
-            var span_8 = sibling(div_11, 2);
-            var text_10 = child(span_8);
+            var node_10 = sibling(span_6, 2);
+            {
+              var consequent_7 = ($$anchor5) => {
+                var span_8 = root_14();
+                var text_10 = child(span_8);
+                var node_11 = sibling(text_10);
+                {
+                  var consequent_6 = ($$anchor6) => {
+                    var fragment_3 = root_15();
+                    var text_11 = first_child(fragment_3, true);
+                    template_effect(() => set_text(text_11, get(meta) ? " · " : ""));
+                    append($$anchor6, fragment_3);
+                  };
+                  if_block(node_11, ($$render) => {
+                    if (get(group).partial) $$render(consequent_6);
+                  });
+                }
+                template_effect(() => set_text(text_10, get(meta)));
+                append($$anchor5, span_8);
+              };
+              if_block(node_10, ($$render) => {
+                if (get(meta) || get(group).partial) $$render(consequent_7);
+              });
+            }
+            var span_9 = sibling(div_12, 2);
+            var text_12 = child(span_9);
             template_effect(() => {
               var _a, _b;
-              classes_3 = set_class(div_10, 1, "pcr-picker-item pcr-picker-catalog-item svelte-ycwcax", null, classes_3, {
-                "pcr-picker-item-active": ((_a = get(activeSubmenu)) == null ? void 0 : _a.type) === "catalogVersion" && ((_b = get(activeSubmenu)) == null ? void 0 : _b.group) === get(group)
+              classes_5 = set_class(div_11, 1, "pcr-picker-item pcr-picker-catalog-item svelte-ycwcax", null, classes_5, {
+                "pcr-picker-item-active": ((_a = get(activeSubmenu)) == null ? void 0 : _a.type) === "catalogVersion" && ((_b = get(activeSubmenu)) == null ? void 0 : _b.group) === get(group),
+                "pcr-picker-catalog-partial": get(group).partial
               });
-              set_text(text_7, `${get(group).name ?? ""} `);
-              set_text(text_10, get(group).versions.length > 1 ? "▸" : "↓");
+              set_text(text_8, `${get(group).name ?? ""} `);
+              set_text(text_12, get(group).versions.length > 1 ? "▸" : get(group).partial ? "↻" : "↓");
             });
-            delegated("click", div_10, (e) => {
+            delegated("click", div_11, (e) => {
               e.stopPropagation();
               handleCatalogGroupClick(get(group));
             });
-            append($$anchor4, div_10);
+            append($$anchor4, div_11);
           });
           append($$anchor3, fragment_2);
         };
-        if_block(node_6, ($$render) => {
-          if (get(catalogGroups).length) $$render(consequent_6);
+        if_block(node_7, ($$render) => {
+          if (get(catalogGroups).length) $$render(consequent_8);
         });
       }
-      var node_10 = sibling(node_6, 2);
+      var node_12 = sibling(node_7, 2);
       {
-        var consequent_10 = ($$anchor3) => {
-          var fragment_3 = root_13();
-          var div_12 = sibling(first_child(fragment_3), 2);
-          var node_11 = child(div_12);
-          each(node_11, 17, () => get(civitaiResults), index, ($$anchor4, result) => {
-            var div_13 = root_14();
-            var div_14 = child(div_13);
-            var span_9 = child(div_14);
-            var text_11 = child(span_9);
-            var span_10 = sibling(span_9, 2);
-            var text_12 = child(span_10);
+        var consequent_12 = ($$anchor3) => {
+          var fragment_4 = root_16();
+          var div_13 = sibling(first_child(fragment_4), 2);
+          var node_13 = child(div_13);
+          each(node_13, 17, () => get(civitaiResults), index, ($$anchor4, result) => {
+            var div_14 = root_17();
+            var div_15 = child(div_14);
+            var span_10 = child(div_15);
+            var text_13 = child(span_10);
+            var span_11 = sibling(span_10, 2);
+            var text_14 = child(span_11);
             template_effect(
               ($0) => {
-                set_text(text_11, get(result).model_name);
-                set_text(text_12, $0);
+                set_text(text_13, get(result).model_name);
+                set_text(text_14, $0);
               },
               [
                 () => {
@@ -905,8 +1004,8 @@ function ModelPicker($$anchor, $$props) {
                 }
               ]
             );
-            delegated("click", div_13, () => $$props.onShowDownload(get(result)));
-            event("pointerenter", div_13, (e) => onItemEnter(e, {
+            delegated("click", div_14, () => $$props.onShowDownload(get(result)));
+            event("pointerenter", div_14, (e) => onItemEnter(e, {
               thumbnail: get(result).thumbnail,
               name: get(result).model_name,
               version: get(result).version,
@@ -915,44 +1014,44 @@ function ModelPicker($$anchor, $$props) {
               downloads: get(result).downloads,
               tags: get(result).tags
             }));
-            event("pointerleave", div_13, onItemLeave);
-            append($$anchor4, div_13);
+            event("pointerleave", div_14, onItemLeave);
+            append($$anchor4, div_14);
           });
-          var node_12 = sibling(node_11, 2);
+          var node_14 = sibling(node_13, 2);
           {
-            var consequent_7 = ($$anchor4) => {
-              var div_15 = root_15();
-              append($$anchor4, div_15);
-            };
-            var consequent_8 = ($$anchor4) => {
-              var div_16 = root_16();
+            var consequent_9 = ($$anchor4) => {
+              var div_16 = root_18();
               append($$anchor4, div_16);
             };
-            var consequent_9 = ($$anchor4) => {
-              var div_17 = root_17();
+            var consequent_10 = ($$anchor4) => {
+              var div_17 = root_19();
               append($$anchor4, div_17);
             };
-            if_block(node_12, ($$render) => {
-              if (get(civitaiLoading) && !get(civitaiResults).length) $$render(consequent_7);
-              else if (get(civitaiLoading)) $$render(consequent_8, 1);
-              else if (get(civitaiHasSearched) && !get(civitaiResults).length) $$render(consequent_9, 2);
+            var consequent_11 = ($$anchor4) => {
+              var div_18 = root_20();
+              append($$anchor4, div_18);
+            };
+            if_block(node_14, ($$render) => {
+              if (get(civitaiLoading) && !get(civitaiResults).length) $$render(consequent_9);
+              else if (get(civitaiLoading)) $$render(consequent_10, 1);
+              else if (get(civitaiHasSearched) && !get(civitaiResults).length) $$render(consequent_11, 2);
             });
           }
-          append($$anchor3, fragment_3);
+          append($$anchor3, fragment_4);
         };
         var d = user_derived(() => get(searchQuery).trim() && (get(civitaiResults).length || get(civitaiLoading) || get(civitaiHasSearched)));
-        if_block(node_10, ($$render) => {
-          if (get(d)) $$render(consequent_10);
+        if_block(node_12, ($$render) => {
+          if (get(d)) $$render(consequent_12);
         });
       }
-      var node_13 = sibling(node_10, 2);
+      var node_15 = sibling(node_12, 2);
       {
-        var consequent_11 = ($$anchor3) => {
-          var div_18 = root_18();
-          append($$anchor3, div_18);
+        var consequent_13 = ($$anchor3) => {
+          var div_19 = root_21();
+          append($$anchor3, div_19);
         };
-        if_block(node_13, ($$render) => {
-          if (!get(filteredGroups).length && !get(catalogInstalled).length && !get(catalogUninstalled).length && !get(civitaiResults).length && !get(civitaiLoading) && !get(civitaiHasSearched) && !get(loading)) $$render(consequent_11);
+        if_block(node_15, ($$render) => {
+          if (!get(filteredGroups).length && !get(catalogInstalled).length && !get(catalogUninstalled).length && !get(civitaiResults).length && !get(civitaiLoading) && !get(civitaiHasSearched) && !get(loading)) $$render(consequent_13);
         });
       }
       bind_this(div_4, ($$value) => listEl = $$value, () => listEl);
@@ -972,61 +1071,61 @@ function ModelPicker($$anchor, $$props) {
     });
   }
   bind_this(div, ($$value) => pickerEl = $$value, () => pickerEl);
-  var node_14 = sibling(div, 2);
+  var node_16 = sibling(div, 2);
   {
-    var consequent_12 = ($$anchor2) => {
+    var consequent_14 = ($$anchor2) => {
       const group = user_derived(() => get(activeSubmenu).group);
-      var div_19 = root_19();
-      var node_15 = sibling(child(div_19), 2);
-      each(node_15, 17, () => get(group).versions, index, ($$anchor3, model) => {
+      var div_20 = root_22();
+      var node_17 = sibling(child(div_20), 2);
+      each(node_17, 17, () => get(group).versions, index, ($$anchor3, model) => {
         const label = user_derived(() => buildVersionLabel(get(model)));
-        var div_20 = root_20();
-        let classes_4;
-        var span_11 = child(div_20);
-        var text_13 = child(span_11);
+        var div_21 = root_23();
+        let classes_6;
+        var span_12 = child(div_21);
+        var text_15 = child(span_12);
         template_effect(() => {
           var _a, _b;
-          classes_4 = set_class(div_20, 1, "pcr-picker-version-item svelte-ycwcax", null, classes_4, {
+          classes_6 = set_class(div_21, 1, "pcr-picker-version-item svelte-ycwcax", null, classes_6, {
             "pcr-submenu-open": ((_b = (_a = get(activeNestedSubmenu)) == null ? void 0 : _a.model) == null ? void 0 : _b.hash) === get(model).hash
           });
-          set_text(text_13, get(label));
+          set_text(text_15, get(label));
         });
-        delegated("click", div_20, () => handleVersionClick(get(model), get(label)));
-        append($$anchor3, div_20);
+        delegated("click", div_21, () => handleVersionClick(get(model), get(label)));
+        append($$anchor3, div_21);
       });
-      template_effect(() => set_style(div_19, get(submenuStyle)));
-      append($$anchor2, div_19);
-    };
-    if_block(node_14, ($$render) => {
-      var _a;
-      if (((_a = get(activeSubmenu)) == null ? void 0 : _a.type) === "version") $$render(consequent_12);
-    });
-  }
-  var node_16 = sibling(node_14, 2);
-  {
-    var consequent_13 = ($$anchor2) => {
-      const group = user_derived(() => get(activeSubmenu).group);
-      var div_21 = root_21();
-      var node_17 = sibling(child(div_21), 2);
-      each(node_17, 17, () => get(group).versions, index, ($$anchor3, entry) => {
-        var div_22 = root_22();
-        var span_12 = child(div_22);
-        var text_14 = child(span_12);
-        template_effect(($0) => set_text(text_14, $0), [() => buildCatalogVersionLabel(get(entry))]);
-        delegated("click", div_22, () => handleCatalogVersionClick(get(entry)));
-        append($$anchor3, div_22);
-      });
-      template_effect(() => set_style(div_21, get(submenuStyle)));
-      append($$anchor2, div_21);
+      template_effect(() => set_style(div_20, get(submenuStyle)));
+      append($$anchor2, div_20);
     };
     if_block(node_16, ($$render) => {
       var _a;
-      if (((_a = get(activeSubmenu)) == null ? void 0 : _a.type) === "catalogVersion") $$render(consequent_13);
+      if (((_a = get(activeSubmenu)) == null ? void 0 : _a.type) === "version") $$render(consequent_14);
     });
   }
   var node_18 = sibling(node_16, 2);
   {
-    var consequent_19 = ($$anchor2) => {
+    var consequent_15 = ($$anchor2) => {
+      const group = user_derived(() => get(activeSubmenu).group);
+      var div_22 = root_24();
+      var node_19 = sibling(child(div_22), 2);
+      each(node_19, 17, () => get(group).versions, index, ($$anchor3, entry) => {
+        var div_23 = root_25();
+        var span_13 = child(div_23);
+        var text_16 = child(span_13);
+        template_effect(($0) => set_text(text_16, $0), [() => buildCatalogVersionLabel(get(entry))]);
+        delegated("click", div_23, () => handleCatalogVersionClick(get(entry)));
+        append($$anchor3, div_23);
+      });
+      template_effect(() => set_style(div_22, get(submenuStyle)));
+      append($$anchor2, div_22);
+    };
+    if_block(node_18, ($$render) => {
+      var _a;
+      if (((_a = get(activeSubmenu)) == null ? void 0 : _a.type) === "catalogVersion") $$render(consequent_15);
+    });
+  }
+  var node_20 = sibling(node_18, 2);
+  {
+    var consequent_21 = ($$anchor2) => {
       const model = user_derived(() => {
         var _a, _b;
         return ((_a = get(activeNestedSubmenu)) == null ? void 0 : _a.model) || ((_b = get(activeSubmenu)) == null ? void 0 : _b.model);
@@ -1036,106 +1135,106 @@ function ModelPicker($$anchor, $$props) {
         var _a, _b;
         return ((_a = get(activeNestedSubmenu)) == null ? void 0 : _a.versionLabel) || ((_b = get(activeSubmenu)) == null ? void 0 : _b.displayName) || "";
       });
-      var div_23 = root_23();
-      var div_24 = child(div_23);
-      var text_15 = child(div_24);
-      var node_19 = sibling(div_24, 2);
+      var div_24 = root_26();
+      var div_25 = child(div_24);
+      var text_17 = child(div_25);
+      var node_21 = sibling(div_25, 2);
       {
-        var consequent_15 = ($$anchor3) => {
-          var fragment_4 = root_24();
-          var div_25 = first_child(fragment_4);
-          var node_20 = sibling(div_25, 2);
+        var consequent_17 = ($$anchor3) => {
+          var fragment_5 = root_27();
+          var div_26 = first_child(fragment_5);
+          var node_22 = sibling(div_26, 2);
           {
-            var consequent_14 = ($$anchor4) => {
-              var div_26 = root_25();
-              append($$anchor4, div_26);
+            var consequent_16 = ($$anchor4) => {
+              var div_27 = root_28();
+              append($$anchor4, div_27);
             };
-            if_block(node_20, ($$render) => {
-              if (get(tpls).length) $$render(consequent_14);
+            if_block(node_22, ($$render) => {
+              if (get(tpls).length) $$render(consequent_16);
             });
           }
-          delegated("click", div_25, () => {
+          delegated("click", div_26, () => {
             var _a;
             onSwapInPlace()(get(model).filename, get(model).hash);
             (_a = $$props.onClose) == null ? void 0 : _a.call($$props);
           });
-          append($$anchor3, fragment_4);
-        };
-        var d_1 = user_derived(() => canSwapInPlace(get(model)));
-        if_block(node_19, ($$render) => {
-          if (get(d_1)) $$render(consequent_15);
-        });
-      }
-      var node_21 = sibling(node_19, 2);
-      {
-        var consequent_18 = ($$anchor3) => {
-          const cats = user_derived(() => [...new Set(get(tpls).map((t) => t.category || "General"))]);
-          const sortedCats = user_derived(() => sortCategories(get(cats)));
-          var fragment_5 = comment();
-          var node_22 = first_child(fragment_5);
-          each(node_22, 17, () => get(sortedCats), index, ($$anchor4, cat) => {
-            const catTpls = user_derived(() => get(tpls).filter((t) => (t.category || "General") === get(cat)));
-            var fragment_6 = comment();
-            var node_23 = first_child(fragment_6);
-            {
-              var consequent_17 = ($$anchor5) => {
-                var fragment_7 = root_28();
-                var node_24 = first_child(fragment_7);
-                {
-                  var consequent_16 = ($$anchor6) => {
-                    var div_27 = root_29();
-                    var text_16 = child(div_27);
-                    template_effect(($0) => set_text(text_16, $0), [() => get(cat).toUpperCase()]);
-                    append($$anchor6, div_27);
-                  };
-                  if_block(node_24, ($$render) => {
-                    if (get(sortedCats).length > 1) $$render(consequent_16);
-                  });
-                }
-                var node_25 = sibling(node_24, 2);
-                each(node_25, 17, () => get(catTpls), index, ($$anchor6, tpl) => {
-                  var div_28 = root_30();
-                  var text_17 = child(div_28);
-                  template_effect(() => {
-                    set_attribute(div_28, "title", get(tpl).description || "");
-                    set_text(text_17, get(tpl).name);
-                  });
-                  delegated("click", div_28, () => handleTemplateClick(get(tpl), get(model)));
-                  append($$anchor6, div_28);
-                });
-                append($$anchor5, fragment_7);
-              };
-              if_block(node_23, ($$render) => {
-                if (get(catTpls).length) $$render(consequent_17);
-              });
-            }
-            append($$anchor4, fragment_6);
-          });
           append($$anchor3, fragment_5);
         };
-        var alternate_1 = ($$anchor3) => {
-          var div_29 = root_31();
-          append($$anchor3, div_29);
-        };
+        var d_1 = user_derived(() => canSwapInPlace(get(model)));
         if_block(node_21, ($$render) => {
-          if (get(tpls).length) $$render(consequent_18);
+          if (get(d_1)) $$render(consequent_17);
+        });
+      }
+      var node_23 = sibling(node_21, 2);
+      {
+        var consequent_20 = ($$anchor3) => {
+          const cats = user_derived(() => [...new Set(get(tpls).map((t) => t.category || "General"))]);
+          const sortedCats = user_derived(() => sortCategories(get(cats)));
+          var fragment_6 = comment();
+          var node_24 = first_child(fragment_6);
+          each(node_24, 17, () => get(sortedCats), index, ($$anchor4, cat) => {
+            const catTpls = user_derived(() => get(tpls).filter((t) => (t.category || "General") === get(cat)));
+            var fragment_7 = comment();
+            var node_25 = first_child(fragment_7);
+            {
+              var consequent_19 = ($$anchor5) => {
+                var fragment_8 = root_31();
+                var node_26 = first_child(fragment_8);
+                {
+                  var consequent_18 = ($$anchor6) => {
+                    var div_28 = root_32();
+                    var text_18 = child(div_28);
+                    template_effect(($0) => set_text(text_18, $0), [() => get(cat).toUpperCase()]);
+                    append($$anchor6, div_28);
+                  };
+                  if_block(node_26, ($$render) => {
+                    if (get(sortedCats).length > 1) $$render(consequent_18);
+                  });
+                }
+                var node_27 = sibling(node_26, 2);
+                each(node_27, 17, () => get(catTpls), index, ($$anchor6, tpl) => {
+                  var div_29 = root_33();
+                  var text_19 = child(div_29);
+                  template_effect(() => {
+                    set_attribute(div_29, "title", get(tpl).description || "");
+                    set_text(text_19, get(tpl).name);
+                  });
+                  delegated("click", div_29, () => handleTemplateClick(get(tpl), get(model)));
+                  append($$anchor6, div_29);
+                });
+                append($$anchor5, fragment_8);
+              };
+              if_block(node_25, ($$render) => {
+                if (get(catTpls).length) $$render(consequent_19);
+              });
+            }
+            append($$anchor4, fragment_7);
+          });
+          append($$anchor3, fragment_6);
+        };
+        var alternate_1 = ($$anchor3) => {
+          var div_30 = root_34();
+          append($$anchor3, div_30);
+        };
+        if_block(node_23, ($$render) => {
+          if (get(tpls).length) $$render(consequent_20);
           else $$render(alternate_1, -1);
         });
       }
       template_effect(() => {
-        set_style(div_23, get(activeNestedSubmenu) ? get(nestedSubmenuStyle) : get(submenuStyle));
-        set_text(text_15, get(displayName));
+        set_style(div_24, get(activeNestedSubmenu) ? get(nestedSubmenuStyle) : get(submenuStyle));
+        set_text(text_17, get(displayName));
       });
-      append($$anchor2, div_23);
+      append($$anchor2, div_24);
     };
-    if_block(node_18, ($$render) => {
+    if_block(node_20, ($$render) => {
       var _a;
-      if (((_a = get(activeSubmenu)) == null ? void 0 : _a.type) === "template" || get(activeNestedSubmenu)) $$render(consequent_19);
+      if (((_a = get(activeSubmenu)) == null ? void 0 : _a.type) === "template" || get(activeNestedSubmenu)) $$render(consequent_21);
     });
   }
-  var node_26 = sibling(node_18, 2);
+  var node_28 = sibling(node_20, 2);
   bind_this(
-    HoverCard(node_26, {
+    HoverCard(node_28, {
       get pickerEl() {
         return pickerEl;
       }
@@ -1481,6 +1580,7 @@ var root_10$1 = from_html(`<button class="pcr-download-btn svelte-n0tzlo"> </but
 var root$1 = from_html(`<div class="pcr-download-overlay svelte-n0tzlo"><div class="pcr-download-modal svelte-n0tzlo"><div class="pcr-download-header svelte-n0tzlo"><div class="pcr-download-title svelte-n0tzlo"> </div> <div class="pcr-download-meta svelte-n0tzlo"> </div> <!></div> <!> <div class="pcr-download-body svelte-n0tzlo"></div> <!> <div class="pcr-download-footer svelte-n0tzlo"><div class="pcr-download-status svelte-n0tzlo"> </div> <div class="pcr-download-buttons svelte-n0tzlo"><!> <!></div></div></div></div>`);
 function CatalogDownloadModal($$anchor, $$props) {
   push($$props, true);
+  let initialPrecision = prop($$props, "initialPrecision", 3, null);
   function resolveFileDownloadUrl(file) {
     if (file.download_url) return file.download_url;
     const source = file.source;
@@ -1518,7 +1618,7 @@ function CatalogDownloadModal($$anchor, $$props) {
   }
   const rawFiles = $$props.catalogEntry.files || [];
   const precisions = extractPrecisions(rawFiles);
-  let selectedPrecision = state(proxy(precisions[0] || null));
+  let selectedPrecision = state(proxy(initialPrecision() && precisions.includes(initialPrecision()) ? initialPrecision() : precisions[0] || null));
   let resolvedFiles = user_derived(() => get(selectedPrecision) ? resolveFilesForPrecision(rawFiles, get(selectedPrecision)) : rawFiles);
   let fileStatuses = state(proxy({}));
   let downloading = state(false);

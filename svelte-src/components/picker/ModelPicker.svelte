@@ -71,8 +71,17 @@
   let searchEl;
   let panelStyle = $state("");
 
-  // Catalog precision installation status: { entryHash: { precision: bool } }
-  let catalogPrecisionStatus = $state({});
+  // Per-precision install state for every catalog entry, authoritative from the
+  // backend ("installed" | "partial" | "missing"). Derived straight from the
+  // catalog payload — no client-side file probing, so it can't drift from the
+  // real _all_files_installed check the way the old JS heuristic did (it only
+  // probed the diffusion file and flagged a precision installed while a
+  // companion encoder/VAE was still missing).
+  let catalogPrecisionStatus = $derived.by(() => {
+    const out = {};
+    for (const c of catalog) out[c.hash] = c.precision_status || {};
+    return out;
+  });
 
   // ── load data ──
   async function loadData() {
@@ -97,9 +106,6 @@
         }).then(r => r.json());
         modelSettings = settingsRes.settings || {};
       }
-
-      // Check catalog precision installation status
-      await checkCatalogPrecisions();
 
       loading = false;
       requestAnimationFrame(() => searchEl?.focus());
@@ -135,40 +141,6 @@
     }
     await tick();
     listEl?.querySelector(".pcr-picker-item-highlight")?.scrollIntoView({ block: "center" });
-  }
-
-  async function checkCatalogPrecisions() {
-    if (!catalog.length) return;
-    const filesToCheck = [];
-    const fileMap = [];
-    const status = {};
-    for (const entry of catalog) {
-      status[entry.hash] = {};
-      for (const f of entry.files || []) {
-        if (!f.variants) continue;
-        for (const v of f.variants) {
-          if (f.folder === "diffusion_models" || f.folder === "unet") {
-            filesToCheck.push({ filename: v.filename, folder: f.folder });
-            fileMap.push({ entryHash: entry.hash, precision: v.precision });
-          }
-        }
-      }
-    }
-    if (!filesToCheck.length) { catalogPrecisionStatus = status; return; }
-    try {
-      const checkRes = await fetch("/promptchain/models/check-files", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ files: filesToCheck }),
-      });
-      const checkData = await checkRes.json();
-      for (let i = 0; i < (checkData.results || []).length; i++) {
-        if (checkData.results[i].exists) {
-          status[fileMap[i].entryHash][fileMap[i].precision] = true;
-        }
-      }
-    } catch {}
-    catalogPrecisionStatus = status;
   }
 
   // ── grouped models ──
@@ -247,7 +219,10 @@
     const terms = q ? q.split(/\s+/) : [];
     return catalog.filter(c => {
       const status = catalogPrecisionStatus[c.hash] || {};
-      if (!Object.values(status).some(v => v)) return false;
+      // In the precision-tag strip when at least one precision has files on disk
+      // (installed, or a resumable partial). All-missing entries drop to the
+      // grouped "available for download" list below.
+      if (!Object.values(status).some(v => v === "installed" || v === "partial")) return false;
       if (!terms.length) return true;
       const text = [c.display_name, c.model_name, c.architecture, c.family, c.version].join(" ").toLowerCase();
       return terms.every(t => text.includes(t));
@@ -257,7 +232,7 @@
     const q = searchQuery.toLowerCase().trim();
     let items = catalog.filter(c => {
       const status = catalogPrecisionStatus[c.hash] || {};
-      return !Object.values(status).some(v => v);
+      return !Object.values(status).some(v => v === "installed" || v === "partial");
     });
     if (q) {
       const terms = q.split(/\s+/);
@@ -282,10 +257,13 @@
           name: entry.model_name || entry.display_name || "",
           architecture: entry.architecture || "",
           family: entry.family || "",
+          partial: false,
           versions: [],
         });
       }
-      groups.get(key).versions.push(entry);
+      const g = groups.get(key);
+      g.versions.push(entry);
+      if (entry.partial) g.partial = true;
     }
     for (const g of groups.values()) {
       g.versions.sort((a, b) => (b.version || "").localeCompare(a.version || "", undefined, { numeric: true }));
@@ -429,16 +407,21 @@
     });
   }
 
-  async function handleCatalogPrecisionClick(entry, prec, installed) {
-    if (!installed) {
-      onShowCatalogDownload(entry);
+  async function handleCatalogPrecisionClick(entry, prec, state) {
+    // Anything not fully present opens the download modal, which re-checks each
+    // file (with size) and offers "Download N Missing" — so a partial download
+    // resumes the missing companion instead of restarting from scratch.
+    if (state !== "installed") {
+      onShowCatalogDownload(entry, prec);
       return;
     }
-    // Installed: find the local model for this precision and show templates
+    // Installed: jump to this precision's templates. If the model can't be
+    // resolved (e.g. files on disk but not yet scanned), fall back to the
+    // download modal rather than silently closing — that onClose() dead-end is
+    // exactly what left partial entries looking installed yet unclickable.
     const resolved = resolveFilesForPrecision(entry.files, prec);
     const diffFile = resolved.find(f => f.folder === "diffusion_models" || f.folder === "unet");
-    if (!diffFile) return;
-    const localModel = models.find(m => m.filename === diffFile.filename);
+    const localModel = diffFile && models.find(m => m.filename === diffFile.filename);
     if (localModel && templatesForModel(localModel).length > 0) {
       activeSubmenu = {
         type: "template",
@@ -447,8 +430,80 @@
       };
       activeNestedSubmenu = null;
     } else {
+      onShowCatalogDownload(entry, prec);
+    }
+  }
+
+  // ── installed-model precision upgrades ──
+  // An installed model whose config declares several precisions for its
+  // primary file (e.g. Wan fp8_scaled + fp16) but only has some on disk can be
+  // "moved up" to a heavier precision. We surface the declared precisions as
+  // inline tags on the installed row: present ones jump to templates, missing
+  // ones open the download modal. Detection is client-side — modelSettings
+  // already ships the config's files, and the models list tells us which
+  // primary files are on disk.
+
+  // The config's primary diffusion/unet file entry — its variants are the
+  // upgrade options. Mirrors the backend is_primary_model_file: an explicit
+  // primary:true wins, else the first diffusion/unet entry.
+  function primaryFileEntry(settings) {
+    const files = settings?.files || [];
+    const isPrimaryFolder = f => f.folder === "diffusion_models" || f.folder === "unet" || f.folder === "checkpoints";
+    return files.find(f => f.primary && isPrimaryFolder(f))
+      || files.find(isPrimaryFolder)
+      || null;
+  }
+
+  // Declared primary precisions for an installed group, each tagged with
+  // whether its file is on disk. Empty unless the config has 2+ variants
+  // (nothing to upgrade otherwise).
+  function groupPrecisions(group) {
+    const settings = modelSettings[group.versions[0]?.hash];
+    const variants = primaryFileEntry(settings)?.variants || [];
+    if (variants.length < 2) return [];
+    return variants.map(v => {
+      const fnameLower = (v.filename || "").toLowerCase();
+      const localModel = models.find(m => (m.filename || "").toLowerCase() === fnameLower);
+      return { precision: v.precision, filename: v.filename, installed: !!localModel, model: localModel || null };
+    });
+  }
+
+  // Catalog-entry shape for the download modal, built from an installed model's
+  // stored config so the same modal handles a precision upgrade.
+  function entryForGroup(group) {
+    const s = modelSettings[group.versions[0]?.hash] || {};
+    const entry = {
+      hash: group.versions[0]?.hash,
+      display_name: s.display_name || group.name,
+      model_name: s.model_name || group.name,
+      version: s.version || "",
+      architecture: s.architecture || group.architecture || "",
+      family: s.family || group.family || "",
+      description: s.description || "",
+      files: s.files || [],
+    };
+    if (s.civitai_model_id) entry.civitai_model_id = s.civitai_model_id;
+    if (s.thumbnail) entry.thumbnail = s.thumbnail;
+    return entry;
+  }
+
+  // Installed precision tag → that precision's templates.
+  function handleInstalledPrecisionClick(prec) {
+    if (prec.model && templatesForModel(prec.model).length > 0) {
+      activeNestedSubmenu = null;
+      activeSubmenu = {
+        type: "template",
+        model: prec.model,
+        displayName: modelSettings[prec.model.hash]?.display_name || prec.model.filename,
+      };
+    } else {
       onClose();
     }
+  }
+
+  // Missing precision tag → download modal pre-set to that precision.
+  function handleMissingPrecisionClick(group, prec) {
+    onShowCatalogDownload(entryForGroup(group), prec.precision);
   }
 
   function sortCategories(cats) {
@@ -464,26 +519,48 @@
     const version = settings?.version || "";
     const filename = (model.filename || "").toLowerCase();
 
-    // No separator requirement — civitai filenames embed precision in
-    // camelCase (v4BaseFp8) which lowercasing flattens to "basefp8".
+    // Prefer the precision the config DECLARES for this exact file variant.
+    // A filename regex collapses GGUF quants (Q4/Q5/Q8 all read "GGUF") and
+    // fp8_scaled vs fp8, so multiple installed precisions of one model would
+    // render as identical, indistinguishable rows. The variant's precision
+    // field disambiguates them. Fall back to a filename sniff for configs
+    // with no variants array.
+    const precision = declaredPrecision(settings, filename) || sniffPrecision(filename);
+
+    if (precision && version) {
+      const esc = precision.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (version.toLowerCase().includes(precision.toLowerCase())) {
+        return version.replace(new RegExp(`\\s*${esc}`, "i"), ` (${precision})`);
+      }
+      return `${version} (${precision})`;
+    }
+    return version || model.filename || "";
+  }
+
+  // The precision label a config declares for the file with this exact name,
+  // checking each file entry's flat filename and its precision variants.
+  function declaredPrecision(settings, filenameLower) {
+    for (const f of settings?.files || []) {
+      if ((f.filename || "").toLowerCase() === filenameLower) return f.precision || null;
+      for (const v of f.variants || []) {
+        if ((v.filename || "").toLowerCase() === filenameLower) return v.precision || null;
+      }
+    }
+    return null;
+  }
+
+  // No separator requirement — civitai filenames embed precision in
+  // camelCase (v4BaseFp8) which lowercasing flattens to "basefp8".
+  function sniffPrecision(filenameLower) {
     const precisionPatterns = [
       [/bf16/i, "BF16"], [/fp16/i, "FP16"], [/fp8/i, "FP8"],
       [/fp32/i, "FP32"], [/nvfp4/i, "NVFP4"], [/fp4/i, "FP4"],
       [/\.gguf$/i, "GGUF"],
     ];
-
-    let precision = null;
     for (const [pattern, label] of precisionPatterns) {
-      if (pattern.test(filename)) { precision = label; break; }
+      if (pattern.test(filenameLower)) return label;
     }
-
-    if (precision && version) {
-      if (version.toLowerCase().includes(precision.toLowerCase())) {
-        return version.replace(new RegExp(`\\s*${precision}`, "i"), ` (${precision})`);
-      }
-      return `${version} (${precision})`;
-    }
-    return version || model.filename || "";
+    return null;
   }
 
   // Catalog entries have no modelSettings[hash], so derive the version label
@@ -683,6 +760,7 @@
         {@const model = group.versions[0]}
         {@const displayName = group.name}
         {@const meta = [group.architecture, group.family].filter(Boolean).join(" · ")}
+        {@const precs = groupPrecisions(group)}
         <div class="pcr-picker-item"
           class:pcr-picker-item-active={activeSubmenu?.type === "version" && activeSubmenu?.group?.name === group.name
             || activeSubmenu?.type === "template" && activeSubmenu?.model?.hash === model.hash}
@@ -693,42 +771,63 @@
           <div class="pcr-picker-item-info">
             <span class="pcr-picker-item-name">
               {displayName}
-              {#if group.versions.length > 1}
+              {#if group.versions.length > 1 && !precs.length}
                 <span class="pcr-model-version-badge">{group.versions.length}</span>
               {/if}
             </span>
             {#if meta}
               <span class="pcr-picker-item-meta">{meta}</span>
             {/if}
+            {#if precs.length}
+              <div class="pcr-picker-precision-row">
+                {#each precs as p}
+                  <span class="pcr-picker-precision-tag"
+                    class:pcr-precision-installed={p.installed}
+                    class:pcr-precision-missing={!p.installed}
+                    title={p.installed ? `${p.precision.toUpperCase()} installed — use it` : `Download ${p.precision.toUpperCase()}`}
+                    onclick={(e) => {
+                      e.stopPropagation();
+                      p.installed ? handleInstalledPrecisionClick(p) : handleMissingPrecisionClick(group, p);
+                    }}>
+                    {p.precision.toUpperCase()}{p.installed ? "" : " ↓"}
+                  </span>
+                {/each}
+              </div>
+            {/if}
           </div>
           <span class="pcr-picker-item-arrow">▸</span>
         </div>
       {/each}
 
-      <!-- Partially installed catalog (with inline precision buttons) -->
+      <!-- Started catalog entries (installed / resumable-partial precisions) -->
       {#each catalogInstalled as entry}
         {@const precisions = extractPrecisions(entry.files || [])}
         {@const status = catalogPrecisionStatus[entry.hash] || {}}
         <div class="pcr-picker-item pcr-picker-catalog-item"
+          class:pcr-picker-catalog-partial={precisions.some(p => status[p] === "partial")}
           onclick={(e) => {
             e.stopPropagation();
-            const installedPrec = precisions.find(p => status[p]);
-            if (installedPrec) handleCatalogPrecisionClick(entry, installedPrec, true);
+            const prec = precisions.find(p => status[p] === "installed")
+              || precisions.find(p => status[p] === "partial");
+            if (prec) handleCatalogPrecisionClick(entry, prec, status[prec]);
           }}>
           <div class="pcr-picker-item-info">
             <span class="pcr-picker-item-name">{entry.display_name || entry.model_name}</span>
             <div class="pcr-picker-precision-row">
               {#each precisions as prec}
-                {@const installed = !!status[prec]}
+                {@const st = status[prec] || "missing"}
                 <span class="pcr-picker-precision-tag"
-                  class:pcr-precision-installed={installed}
-                  class:pcr-precision-missing={!installed}
-                  title={installed ? `${prec.toUpperCase()} installed` : `Download ${prec.toUpperCase()}`}
+                  class:pcr-precision-installed={st === "installed"}
+                  class:pcr-precision-partial={st === "partial"}
+                  class:pcr-precision-missing={st === "missing"}
+                  title={st === "installed" ? `${prec.toUpperCase()} installed`
+                       : st === "partial" ? `${prec.toUpperCase()} download unfinished — click to resume`
+                       : `Download ${prec.toUpperCase()}`}
                   onclick={(e) => {
                     e.stopPropagation();
-                    handleCatalogPrecisionClick(entry, prec, installed);
+                    handleCatalogPrecisionClick(entry, prec, st);
                   }}>
-                  {prec.toUpperCase()}{installed ? "" : " ↓"}
+                  {prec.toUpperCase()}{st === "installed" ? "" : st === "partial" ? " ↻" : " ↓"}
                 </span>
               {/each}
             </div>
@@ -744,6 +843,7 @@
           {@const meta = [group.architecture, group.family].filter(Boolean).join(" · ")}
           <div class="pcr-picker-item pcr-picker-catalog-item"
             class:pcr-picker-item-active={activeSubmenu?.type === "catalogVersion" && activeSubmenu?.group === group}
+            class:pcr-picker-catalog-partial={group.partial}
             onclick={(e) => { e.stopPropagation(); handleCatalogGroupClick(group); }}>
             <div class="pcr-picker-item-info">
               <span class="pcr-picker-item-name">
@@ -752,11 +852,13 @@
                   <span class="pcr-model-version-badge">{group.versions.length}</span>
                 {/if}
               </span>
-              {#if meta}
-                <span class="pcr-picker-item-meta">{meta}</span>
+              {#if meta || group.partial}
+                <span class="pcr-picker-item-meta">
+                  {meta}{#if group.partial}{meta ? " · " : ""}<span class="pcr-picker-resume-hint">resume ↻</span>{/if}
+                </span>
               {/if}
             </div>
-            <span class="pcr-picker-item-arrow">{group.versions.length > 1 ? "▸" : "↓"}</span>
+            <span class="pcr-picker-item-arrow">{group.versions.length > 1 ? "▸" : (group.partial ? "↻" : "↓")}</span>
           </div>
         {/each}
       {/if}
@@ -1103,6 +1205,14 @@
   .pcr-precision-installed:hover {
     background: rgba(79, 195, 247, 0.25);
   }
+  .pcr-precision-partial {
+    background: rgba(255, 183, 77, 0.15);
+    color: #ffb74d;
+    border: 1px solid rgba(255, 183, 77, 0.4);
+  }
+  .pcr-precision-partial:hover {
+    background: rgba(255, 183, 77, 0.28);
+  }
   .pcr-precision-missing {
     background: rgba(255, 255, 255, 0.05);
     color: #888;
@@ -1111,6 +1221,14 @@
   .pcr-precision-missing:hover {
     color: #ccc;
     border-color: #666;
+  }
+  /* a started-but-unfinished download gets an amber edge so it reads as
+     "resume", not "ready" */
+  .pcr-picker-catalog-partial {
+    border-left-color: #ffb74d;
+  }
+  .pcr-picker-resume-hint {
+    color: #ffb74d;
   }
 
   .pcr-picker-civitai-loading {

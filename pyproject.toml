@@ -1,0 +1,34 @@
+# PromptChain — ComfyUI custom node pack.
+# ComfyUI Registry manifest: https://docs.comfy.org/registry/publishing
+# `dependencies` is kept in sync with requirements.txt (run `comfy node init`,
+# or it is mirrored manually) — requirements.txt is the source of truth.
+
+[project]
+name = "comfyui-promptchain"
+version = "0.1.1"
+description = "Prompt-authoring and image-iteration suite for ComfyUI: structured prompts, 3D posing, model awareness, regional control, and layered editing."
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+# Mirrors requirements.txt (the source of truth): core load-time dep + optional
+# feature deps (PuLID / Face Detailer / AI Selection), declared so they install
+# at install time instead of the node running pip at runtime.
+dependencies = [
+    "typing_extensions",
+    "insightface>=1.0",
+    "onnxruntime",
+    "facexlib",
+    "timm",
+    "ftfy",
+    "ultralytics",
+    "scikit-image",
+    "pi-heif",
+]
+
+[project.urls]
+Repository = "https://github.com/mobcat40/ComfyUI-PromptChain"
+
+[tool.comfy]
+# Publisher created at registry.comfy.org (immutable; appears in the node URL).
+PublisherId = "mobcat40"
+DisplayName = "ComfyUI-PromptChain"
+Icon = ""

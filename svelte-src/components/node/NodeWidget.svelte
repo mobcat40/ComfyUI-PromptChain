@@ -8,6 +8,7 @@
   import OutputPanel from "./OutputPanel.svelte";
   import ImagePanel from "./ImagePanel.svelte";
   import PosePanel from "./PosePanel.svelte";
+  import RegionPanel from "./RegionPanel.svelte";
   import Footer from "./Footer.svelte";
   import AIAssistant from "./AIAssistant.svelte";
 
@@ -24,6 +25,7 @@
     onToggleImage = () => {},
     onToggleAssistant = () => {},
     onTogglePose = () => {},
+    onToggleRegion = () => {},
     onOpenFullscreen = () => {},
     // doc dropdown DOM element (imperative)
     docDropdownEl = null,
@@ -37,10 +39,13 @@
     onOutputPanelRegister = null,
     onImagePanelRegister = null,
     onPosePanelRegister = null,
+    onRegionPanelRegister = null,
     onAIAssistantRegister = null,
     onFooterRegister = null,
     // returns the active 3D Poser node to dock into the pose panel
     getActivePoser = () => null,
+    // returns the active Region Box node to dock into the region panel
+    getActiveRegionBox = () => null,
     // OutputPanel API callbacks
     apiURL = (p) => p,
     fetchApi = (p, o) => fetch(p, o),
@@ -83,6 +88,7 @@
   onToggleImage={() => onToggleImage()}
   onToggleAssistant={() => onToggleAssistant()}
   onTogglePose={() => onTogglePose()}
+  onToggleRegion={() => onToggleRegion()}
   {onOpenFullscreen}
   {docDropdownEl}
 />
@@ -97,6 +103,14 @@
       {getActivePoser}
       onToggle={(visible) => { shared.posePanelVisible = visible; }}
       onRegister={onPosePanelRegister}
+    />
+    <!-- Region Box panel — also leftmost. Docks the live Region Box canvas. -->
+    <RegionPanel
+      {node}
+      {shared}
+      {getActiveRegionBox}
+      onToggle={(visible) => { shared.regionPanelVisible = visible; }}
+      onRegister={onRegionPanelRegister}
     />
     <!-- AIAssistant is always rendered so its DOM can be relocated into
          the fullscreen pane-row when entering fullscreen; visibility

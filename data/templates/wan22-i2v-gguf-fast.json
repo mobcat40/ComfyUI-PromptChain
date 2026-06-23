@@ -1,0 +1,477 @@
+{
+  "name": "Image-to-Video (GGUF, Fast 4-step)",
+  "category": "Video",
+  "order": 3,
+  "scope": {
+    "type": "family",
+    "architecture": "wan22",
+    "family": "wan22_i2v_gguf"
+  },
+  "created_at": 1782000000,
+  "id": "wan22-i2v-gguf-fast",
+  "prompt_id": "wan-i2v",
+  "lockModels": true,
+  "nodes": [
+    {
+      "type": "UnetLoaderGGUF",
+      "offset": [
+        60,
+        0
+      ],
+      "size": [
+        355,
+        83
+      ],
+      "widgets_values": [
+        "Wan2.2-I2V-A14B-HighNoise-Q5_K_M.gguf"
+      ],
+      "properties": {
+        "Node name for S&R": "UnetLoaderGGUF"
+      }
+    },
+    {
+      "type": "LoraLoaderModelOnly",
+      "offset": [
+        60,
+        120
+      ],
+      "size": [
+        355,
+        112
+      ],
+      "widgets_values": [
+        "wan2.2_i2v_A14b_high_noise_lora_rank64_lightx2v_4step_1022.safetensors",
+        0.7
+      ],
+      "properties": {
+        "Node name for S&R": "LoraLoaderModelOnly"
+      }
+    },
+    {
+      "type": "ModelSamplingSD3",
+      "offset": [
+        60,
+        280
+      ],
+      "size": [
+        315,
+        80
+      ],
+      "widgets_values": [
+        5
+      ],
+      "properties": {
+        "Node name for S&R": "ModelSamplingSD3"
+      }
+    },
+    {
+      "type": "UnetLoaderGGUF",
+      "offset": [
+        60,
+        420
+      ],
+      "size": [
+        355,
+        83
+      ],
+      "widgets_values": [
+        "Wan2.2-I2V-A14B-LowNoise-Q5_K_M.gguf"
+      ],
+      "properties": {
+        "Node name for S&R": "UnetLoaderGGUF"
+      }
+    },
+    {
+      "type": "LoraLoaderModelOnly",
+      "offset": [
+        60,
+        540
+      ],
+      "size": [
+        355,
+        112
+      ],
+      "widgets_values": [
+        "wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors",
+        1
+      ],
+      "properties": {
+        "Node name for S&R": "LoraLoaderModelOnly"
+      }
+    },
+    {
+      "type": "ModelSamplingSD3",
+      "offset": [
+        60,
+        700
+      ],
+      "size": [
+        315,
+        80
+      ],
+      "widgets_values": [
+        5
+      ],
+      "properties": {
+        "Node name for S&R": "ModelSamplingSD3"
+      }
+    },
+    {
+      "type": "CLIPLoader",
+      "offset": [
+        420,
+        0
+      ],
+      "size": [
+        340,
+        117
+      ],
+      "widgets_values": [
+        "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+        "wan",
+        "default"
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPLoader"
+      }
+    },
+    {
+      "type": "CLIPTextEncode",
+      "offset": [
+        420,
+        160
+      ],
+      "size": [
+        340,
+        116
+      ],
+      "widgets_values": [
+        ""
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      }
+    },
+    {
+      "type": "CLIPTextEncode",
+      "offset": [
+        420,
+        320
+      ],
+      "size": [
+        340,
+        116
+      ],
+      "widgets_values": [
+        ""
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      }
+    },
+    {
+      "type": "VAELoader",
+      "offset": [
+        420,
+        480
+      ],
+      "size": [
+        290,
+        83
+      ],
+      "widgets_values": [
+        "wan_2.1_vae.safetensors"
+      ],
+      "properties": {
+        "Node name for S&R": "VAELoader"
+      }
+    },
+    {
+      "type": "LoadImage",
+      "offset": [
+        420,
+        610
+      ],
+      "size": [
+        340,
+        460
+      ],
+      "widgets_values": [
+        "",
+        "image"
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      }
+    },
+    {
+      "type": "WanImageToVideo",
+      "offset": [
+        780,
+        0
+      ],
+      "size": [
+        300,
+        220
+      ],
+      "widgets_values": [
+        640,
+        640,
+        81,
+        1
+      ],
+      "properties": {
+        "Node name for S&R": "WanImageToVideo"
+      }
+    },
+    {
+      "type": "KSamplerAdvanced",
+      "offset": [
+        1140,
+        0
+      ],
+      "size": [
+        300,
+        504
+      ],
+      "widgets_values": [
+        "enable",
+        0,
+        "randomize",
+        4,
+        1,
+        "euler",
+        "simple",
+        0,
+        2,
+        "enable"
+      ],
+      "properties": {
+        "Node name for S&R": "KSamplerAdvanced"
+      }
+    },
+    {
+      "type": "KSamplerAdvanced",
+      "offset": [
+        1140,
+        560
+      ],
+      "size": [
+        300,
+        504
+      ],
+      "widgets_values": [
+        "disable",
+        0,
+        "fixed",
+        4,
+        1,
+        "euler",
+        "simple",
+        2,
+        4,
+        "disable"
+      ],
+      "properties": {
+        "Node name for S&R": "KSamplerAdvanced"
+      }
+    },
+    {
+      "type": "VAEDecode",
+      "offset": [
+        1500,
+        0
+      ],
+      "size": [
+        240,
+        72
+      ],
+      "widgets_values": [],
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      }
+    },
+    {
+      "type": "CreateVideo",
+      "offset": [
+        1500,
+        120
+      ],
+      "size": [
+        330,
+        120
+      ],
+      "widgets_values": [
+        16
+      ],
+      "properties": {
+        "Node name for S&R": "CreateVideo"
+      }
+    },
+    {
+      "type": "SaveVideo",
+      "offset": [
+        1860,
+        120
+      ],
+      "size": [
+        330,
+        200
+      ],
+      "widgets_values": [
+        "video/PromptChain",
+        "auto",
+        "auto"
+      ],
+      "properties": {
+        "Node name for S&R": "SaveVideo"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "from_node_idx": 0,
+      "from_slot": 0,
+      "to_node_idx": 1,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 1,
+      "from_slot": 0,
+      "to_node_idx": 2,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 3,
+      "from_slot": 0,
+      "to_node_idx": 4,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 4,
+      "from_slot": 0,
+      "to_node_idx": 5,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 6,
+      "from_slot": 0,
+      "to_node_idx": 7,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 6,
+      "from_slot": 0,
+      "to_node_idx": 8,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 7,
+      "from_slot": 0,
+      "to_node_idx": 11,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 8,
+      "from_slot": 0,
+      "to_node_idx": 11,
+      "to_slot": 1
+    },
+    {
+      "from_node_idx": 9,
+      "from_slot": 0,
+      "to_node_idx": 11,
+      "to_slot": 2
+    },
+    {
+      "from_node_idx": 10,
+      "from_slot": 0,
+      "to_node_idx": 11,
+      "to_slot": 4
+    },
+    {
+      "from_node_idx": 2,
+      "from_slot": 0,
+      "to_node_idx": 12,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 11,
+      "from_slot": 0,
+      "to_node_idx": 12,
+      "to_slot": 1
+    },
+    {
+      "from_node_idx": 11,
+      "from_slot": 1,
+      "to_node_idx": 12,
+      "to_slot": 2
+    },
+    {
+      "from_node_idx": 11,
+      "from_slot": 2,
+      "to_node_idx": 12,
+      "to_slot": 3
+    },
+    {
+      "from_node_idx": 5,
+      "from_slot": 0,
+      "to_node_idx": 13,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 11,
+      "from_slot": 0,
+      "to_node_idx": 13,
+      "to_slot": 1
+    },
+    {
+      "from_node_idx": 11,
+      "from_slot": 1,
+      "to_node_idx": 13,
+      "to_slot": 2
+    },
+    {
+      "from_node_idx": 12,
+      "from_slot": 0,
+      "to_node_idx": 13,
+      "to_slot": 3
+    },
+    {
+      "from_node_idx": 13,
+      "from_slot": 0,
+      "to_node_idx": 14,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 9,
+      "from_slot": 0,
+      "to_node_idx": 14,
+      "to_slot": 1
+    },
+    {
+      "from_node_idx": 14,
+      "from_slot": 0,
+      "to_node_idx": 15,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 15,
+      "from_slot": 0,
+      "to_node_idx": 16,
+      "to_slot": 0
+    }
+  ],
+  "anchorConnections": [
+    {
+      "from_slot": 1,
+      "to_node_idx": 7,
+      "to_slot": 1
+    },
+    {
+      "from_slot": 2,
+      "to_node_idx": 8,
+      "to_slot": 1
+    }
+  ]
+}

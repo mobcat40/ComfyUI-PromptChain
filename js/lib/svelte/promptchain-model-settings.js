@@ -1,6 +1,6 @@
 import { d as delegate, p as push, a as prop, s as state, c as proxy, u as user_effect, e as set, f as sibling, o as bind_this, t as template_effect, g as get, x as set_attribute, q as set_value, j as delegated, k as append, l as pop, m as user_derived, n as child, A as from_html, w as each, z as index, i as if_block, G as set_checked, y as set_text, h as set_class, v as first_child, D as comment, I as to_array, a1 as set_selected, R as text, E as untrack, M as unmount, L as mount } from "./disclose-version-uq4tn5Y6.js";
 import { s as set_style } from "./style-Boi27oOu.js";
-import { F as FAMILIES, A as ARCHITECTURES } from "./model-constants-DOP7d958.js";
+import { F as FAMILIES, A as ARCHITECTURES } from "./model-constants-cVxhUf51.js";
 import { S as SettingsSlider } from "./SettingsSlider-CKF_XmgB.js";
 import { b as bind_value } from "./input-DFQhebEz.js";
 import { b as bind_select_value } from "./select-Dp4ExMMc.js";
@@ -384,6 +384,17 @@ function SettingsTab($$anchor, $$props) {
     if (!get(editors)[nodeType]) get(editors)[nodeType] = {};
     get(editors)[nodeType][widgetName] = val;
   }
+  function mirrorIdeogramScheduler(latentNode) {
+    const sched = detected().find((d) => d.type === "Ideogram4Scheduler");
+    if (!sched) return;
+    for (const dim of ["width", "height"]) {
+      const v = $$props.readWidgetValue(latentNode, dim);
+      if (v !== void 0) {
+        $$props.writeWidgetValue(sched.node, dim, v);
+        setEditorValue("Ideogram4Scheduler", dim, v);
+      }
+    }
+  }
   function setRangeValue(nodeType, widgetName, lo, hi) {
     if (!rangeValues[nodeType]) rangeValues[nodeType] = {};
     rangeValues[nodeType][`${widgetName}_range`] = [lo, hi];
@@ -397,6 +408,17 @@ function SettingsTab($$anchor, $$props) {
   function togglePresetMenu(nodeType) {
     presetMenuOpen[nodeType] = !presetMenuOpen[nodeType];
   }
+  user_effect(() => {
+    function onDocDown(e) {
+      var _a2, _b2;
+      if ((_b2 = (_a2 = e.target) == null ? void 0 : _a2.closest) == null ? void 0 : _b2.call(_a2, ".pcr-resolution-preset-wrap")) return;
+      for (const k of Object.keys(presetMenuOpen)) {
+        if (presetMenuOpen[k]) presetMenuOpen[k] = false;
+      }
+    }
+    document.addEventListener("pointerdown", onDocDown, true);
+    return () => document.removeEventListener("pointerdown", onDocDown, true);
+  });
   let expandedState = proxy({ ...expandedSections() });
   function toggleSection(type) {
     expandedState[type] = !expandedState[type];
@@ -557,13 +579,23 @@ function SettingsTab($$anchor, $$props) {
         var node_8 = first_child(fragment_2);
         {
           var consequent_8 = ($$anchor4) => {
-            const w = user_derived(() => $$props.readWidgetValue(node(), "width"));
-            const h = user_derived(() => $$props.readWidgetValue(node(), "height"));
+            const w = user_derived(() => {
+              var _a2;
+              return (_a2 = get(editors)[type()]) == null ? void 0 : _a2.width;
+            });
+            const h = user_derived(() => {
+              var _a2;
+              return (_a2 = get(editors)[type()]) == null ? void 0 : _a2.height;
+            });
             var fragment_3 = comment();
             var node_9 = first_child(fragment_3);
             {
               var consequent_7 = ($$anchor5) => {
-                const presets = user_derived(() => get(savedWidgets)["_resolutions"] || []);
+                const presets = user_derived(() => {
+                  var _a2;
+                  return ((_a2 = get(editors)[type()]) == null ? void 0 : _a2["_resolutions"]) || [];
+                });
+                const isPreset = user_derived(() => get(presets).some((p) => p.width === get(w) && p.height === get(h)));
                 var div_6 = root_10$2();
                 var div_7 = sibling(child(div_6), 2);
                 var div_8 = child(div_7);
@@ -602,6 +634,7 @@ function SettingsTab($$anchor, $$props) {
                               $$props.writeWidgetValue(node(), "height", get(p).height);
                               setEditorValue(type(), "width", get(p).width);
                               setEditorValue(type(), "height", get(p).height);
+                              mirrorIdeogramScheduler(node());
                               presetMenuOpen[type()] = false;
                             });
                             delegated("click", span_2, (e) => {
@@ -622,22 +655,13 @@ function SettingsTab($$anchor, $$props) {
                     var div_12 = sibling(node_11, 2);
                     let classes_2;
                     var text_6 = child(div_12);
-                    template_effect(
-                      ($0, $1) => {
-                        classes_2 = set_class(div_12, 1, "pcr-resolution-preset-add svelte-82atyh", null, classes_2, $0);
-                        set_text(text_6, $1);
-                      },
-                      [
-                        () => ({
-                          "pcr-resolution-preset-add-disabled": get(presets).some((p) => p.width === get(w) && p.height === get(h))
-                        }),
-                        () => get(presets).some((p) => p.width === get(w) && p.height === get(h)) ? `${get(w)}×${get(h)} already saved` : "+ Add Current"
-                      ]
-                    );
+                    template_effect(() => {
+                      classes_2 = set_class(div_12, 1, "pcr-resolution-preset-add svelte-82atyh", null, classes_2, { "pcr-resolution-preset-add-disabled": get(isPreset) });
+                      set_text(text_6, get(isPreset) ? `${get(w)}×${get(h)} already saved` : "+ Add Current");
+                    });
                     delegated("click", div_12, () => {
-                      if (!get(presets).some((p) => p.width === get(w) && p.height === get(h))) {
-                        get(presets).push({ width: get(w), height: get(h) });
-                        get(editors)[type()]["_resolutions"] = [...get(presets)];
+                      if (!get(isPreset)) {
+                        get(editors)[type()]["_resolutions"] = [...get(presets), { width: get(w), height: get(h) }];
                       }
                       presetMenuOpen[type()] = false;
                     });
@@ -653,28 +677,23 @@ function SettingsTab($$anchor, $$props) {
                 var input_2 = sibling(input_1, 4);
                 let classes_4;
                 set_attribute(input_2, "step", 8);
-                template_effect(
-                  ($0, $1, $2, $3) => {
-                    classes = set_class(button_1, 1, "pcr-resolution-preset-btn svelte-82atyh", null, classes, $0);
-                    set_text(text_3, $1);
-                    classes_3 = set_class(input_1, 1, "pcr-resolution-input svelte-82atyh", null, classes_3, $2);
-                    set_value(input_1, get(w));
-                    classes_4 = set_class(input_2, 1, "pcr-resolution-input svelte-82atyh", null, classes_4, $3);
-                    set_value(input_2, get(h));
-                  },
-                  [
-                    () => ({
-                      "pcr-resolution-preset-active": get(presets).some((p) => p.width === get(w) && p.height === get(h))
-                    }),
-                    () => get(presets).some((p) => p.width === get(w) && p.height === get(h)) ? `${get(w)}×${get(h)}` : "Presets",
-                    () => ({
-                      "pcr-resolution-input-dimmed": get(presets).some((p) => p.width === get(w) && p.height === get(h))
-                    }),
-                    () => ({
-                      "pcr-resolution-input-dimmed": get(presets).some((p) => p.width === get(w) && p.height === get(h))
-                    })
-                  ]
-                );
+                template_effect(() => {
+                  classes = set_class(button_1, 1, "pcr-resolution-preset-btn svelte-82atyh", null, classes, {
+                    "pcr-resolution-preset-active": get(isPreset),
+                    "pcr-resolution-preset-dimmed": !get(isPreset)
+                  });
+                  set_text(text_3, get(isPreset) ? `${get(w)}×${get(h)}` : "Presets");
+                  classes_3 = set_class(input_1, 1, "pcr-resolution-input svelte-82atyh", null, classes_3, {
+                    "pcr-resolution-input-dimmed": get(isPreset),
+                    "pcr-resolution-input-active": !get(isPreset)
+                  });
+                  set_value(input_1, get(w));
+                  classes_4 = set_class(input_2, 1, "pcr-resolution-input svelte-82atyh", null, classes_4, {
+                    "pcr-resolution-input-dimmed": get(isPreset),
+                    "pcr-resolution-input-active": !get(isPreset)
+                  });
+                  set_value(input_2, get(h));
+                });
                 delegated("click", button_1, (e) => {
                   e.stopPropagation();
                   togglePresetMenu(type());
@@ -683,11 +702,13 @@ function SettingsTab($$anchor, $$props) {
                   const v = parseInt(e.target.value) || 512;
                   setEditorValue(type(), "width", v);
                   $$props.writeWidgetValue(node(), "width", v);
+                  mirrorIdeogramScheduler(node());
                 });
                 delegated("change", input_2, (e) => {
                   const v = parseInt(e.target.value) || 512;
                   setEditorValue(type(), "height", v);
                   $$props.writeWidgetValue(node(), "height", v);
+                  mirrorIdeogramScheduler(node());
                 });
                 append($$anchor5, div_6);
               };

@@ -5,87 +5,46 @@
   "architecture": "wan22",
   "family": "wan22_5b",
   "author": "Alibaba/Wan",
-  "description": "5B parameter hybrid text-to-video and image-to-video model. Single model — no MoE split needed. Fits in 8GB VRAM. Uses Wan 2.2 VAE (48-channel latent).",
+  "description": "5B hybrid text-and-image-to-video. Single dense model (no MoE, no speed LoRA). The lightest, fastest local Wan - fits ~8GB. Uses the dedicated wan2.2_vae (48-channel latent). fp16 safetensors via UNETLoader.",
   "license": "Apache 2.0",
-  "tags": [
-    "wan",
-    "video",
-    "t2v",
-    "i2v",
-    "5B",
-    "consumer",
-    "low-vram"
-  ],
+  "tags": ["wan", "video", "ti2v", "t2v", "i2v", "5B", "consumer", "low-vram"],
   "url": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
   "release_date": "2025-12-01",
   "tag_sources": [],
   "tag_format": "spaces",
   "prompt_style": "natural",
   "trigger": "",
-  "negative": "",
-  "notes": "Single model for both T2V and I2V. No MoE split. Uses wan2.2_vae (not wan_2.1_vae). 1280x704, 49 frames, 16fps.",
+  "negative": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走",
+  "notes": "Single dense KSampler: 20 steps, CFG 5.0, uni_pc/simple, ModelSamplingSD3 shift 8.0, 1280x704, 121 frames, 24fps. Separate I2V (load a start image) and T2V (no start image) templates. REQUIRES wan2.2_vae (NOT wan_2.1_vae). Trivial on 24GB. No distill LoRA exists for 5B.",
   "files": [
     {
       "label": "Diffusion Model",
       "folder": "diffusion_models",
       "filename": "wan2.2_ti2v_5B_fp16.safetensors",
       "size_bytes": 9999658848,
-      "source": {
-        "provider": "huggingface",
-        "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-        "path": "split_files/diffusion_models/wan2.2_ti2v_5B_fp16.safetensors"
-      },
+      "source": { "provider": "huggingface", "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged", "path": "split_files/diffusion_models/wan2.2_ti2v_5B_fp16.safetensors" },
       "sha256": null
     },
     {
       "label": "Text Encoder (UMT5-XXL)",
       "folder": "text_encoders",
-      "filename": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
-      "size_bytes": 6735906897,
-      "source": {
-        "provider": "huggingface",
-        "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-        "path": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
-      },
-      "sha256": null
+      "variants": [
+        { "precision": "fp8", "filename": "umt5_xxl_fp8_e4m3fn_scaled.safetensors", "size_bytes": 6735906897, "source": { "provider": "huggingface", "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged", "path": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors" }, "sha256": null },
+        { "precision": "fp16", "filename": "umt5_xxl_fp16.safetensors", "size_bytes": 11401671879, "source": { "provider": "huggingface", "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged", "path": "split_files/text_encoders/umt5_xxl_fp16.safetensors" }, "sha256": null }
+      ]
     },
-    {
-      "label": "VAE (Wan 2.2)",
-      "folder": "vae",
-      "filename": "wan2.2_vae.safetensors",
-      "size_bytes": 1409400960,
-      "source": {
-        "provider": "huggingface",
-        "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-        "path": "split_files/vae/wan2.2_vae.safetensors"
-      },
-      "sha256": null
-    }
+    { "label": "VAE (Wan 2.2)", "folder": "vae", "filename": "wan2.2_vae.safetensors", "size_bytes": 1429407336, "source": { "provider": "huggingface", "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged", "path": "split_files/vae/wan2.2_vae.safetensors" }, "sha256": null }
   ],
   "nodes": {
     "KSampler": {
-      "steps": 30,
-      "cfg": 4.0,
-      "sampler_name": "euler",
+      "steps": 20,
+      "cfg": 5.0,
+      "sampler_name": "uni_pc",
       "scheduler": "simple",
-      "steps_range": [
-        20,
-        50
-      ],
-      "cfg_range": [
-        1.0,
-        7.0
-      ],
-      "sampler_name_options": [
-        "euler",
-        "dpmpp_sde",
-        "dpmpp_2m"
-      ],
-      "scheduler_options": [
-        "simple",
-        "normal",
-        "beta"
-      ]
+      "steps_range": [15, 40],
+      "cfg_range": [1.0, 8.0],
+      "sampler_name_options": ["uni_pc", "euler", "dpmpp_2m"],
+      "scheduler_options": ["simple", "normal", "beta"]
     }
   }
 }

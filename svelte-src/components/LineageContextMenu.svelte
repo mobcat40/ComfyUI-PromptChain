@@ -5,6 +5,7 @@
     x, y,
     canExpand = false,
     canFocus = false,
+    pinned = false,
     canEdit = false,
     canDelete = false,
     isLocal = false,
@@ -52,7 +53,8 @@
   {#if canFocus}
     <button class="pcr-ctx-item" onclick={() => act("focus-branch")}>Focus this branch</button>
   {/if}
-  {#if (canExpand || canFocus) && (canEdit || canDelete || isLocal)}<div class="pcr-ctx-sep"></div>{/if}
+  <button class="pcr-ctx-item" onclick={() => act("pin")}>{pinned ? "Unpin" : "Pin"}</button>
+  {#if canEdit || canDelete || isLocal}<div class="pcr-ctx-sep"></div>{/if}
   {#if canEdit}
     <button class="pcr-ctx-item" onclick={() => act("edit")}>Edit</button>
   {/if}

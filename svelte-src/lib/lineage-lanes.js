@@ -83,7 +83,7 @@ const DEFAULT_REVEAL = CHILDREN_PER_ROW_CAP - 1; // reals shown alongside the ch
 //   width, height   — extent in columns / rows, for sizing the scroll content.
 export function buildRender(tree, anchorHash, brokenOut, opts = {}) {
   const { byHash, childrenOf } = tree;
-  const { displayedHash, revealed = new Map(), rootHash: rootOverride } = opts;
+  const { displayedHash, revealed = new Map(), rootHash: rootOverride, pinned = new Set() } = opts;
   const a = ancestry(tree, anchorHash);
   // "Focus this branch" renders only the subtree from rootOverride down; otherwise
   // the lane starts at the true family root.
@@ -135,8 +135,9 @@ export function buildRender(tree, anchorHash, brokenOut, opts = {}) {
     let bundleKids = [];
     let reals = kids;
     if (kids.length > CHILDREN_PER_ROW_CAP) {
-      // Candidates to fold: leaf siblings that aren't on the active path.
-      const optional = kids.filter(k => !activePath.has(k.hash) && !hasShownSubtree(k.hash));
+      // Candidates to fold: leaf siblings that aren't on the active path and aren't
+      // pinned (a pinned sibling is a deliberate keeper — never bundle it away).
+      const optional = kids.filter(k => !activePath.has(k.hash) && !hasShownSubtree(k.hash) && !pinned.has(k.hash));
       const budget = revealed.get(h) ?? DEFAULT_REVEAL;
       const forced = kids.length - optional.length;           // protected reals
       const keepOptional = Math.max(0, budget - forced);      // newest optional kept as reals

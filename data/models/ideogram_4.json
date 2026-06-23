@@ -130,7 +130,17 @@
       "steps_range": [
         12,
         48
-      ]
+      ],
+      "width": 1024,
+      "height": 1024
+    },
+    "DualModelGuider": {
+      "cfg": 7
+    },
+    "CFGOverride": {
+      "cfg": 3,
+      "start_percent": 0.7,
+      "end_percent": 1.0
     },
     "EmptyFlux2LatentImage": {
       "width": 1024,

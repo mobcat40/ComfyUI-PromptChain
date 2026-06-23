@@ -4,6 +4,8 @@
   import InpaintModal from "./InpaintModal.svelte";
   import EditModal from "./EditModal.svelte";
   import RePoseModal from "./RePoseModal.svelte";
+  import ExtendModal from "./ExtendModal.svelte";
+  import SmoothModal from "./SmoothModal.svelte";
   import ConfirmModal from "./sidebar/ConfirmModal.svelte";
   import LineageContextMenu from "./LineageContextMenu.svelte";
   import { buildRender, ancestry, CHILDREN_PER_ROW_CAP, CHILDREN_REVEAL_STEP } from "../lib/lineage-lanes.js";
@@ -33,6 +35,12 @@
     onReposeCaps = null,     // () => Promise<{recipes}> — installable pose-transfer recipes
     onReposeRun = null,      // (opts) => tracker — background pose-transfer render
     onMountPoser = null,     // (el, {width,height,outputMode}) => Promise<handle> — detached 3D poser
+    onExtendPrepare = null,  // (hash) => Promise<{lastFrameFilename,sourceRef,fps,frameCount,templateId,...}>
+    onExtendRun = null,      // (opts) => tracker — background video continuation render
+    onSmoothCheck = null,    // () => bool — RIFE pack + core video nodes registered
+    onSmoothInstall = null,  // () => Promise — offer to install the RIFE pack
+    onSmoothPrepare = null,  // (hash) => Promise<{sourceRef,fps,frameCount,...}>
+    onSmoothRun = null,      // (opts) => tracker — background RIFE interpolation
     autoEdit = false,
   } = $props();
 
@@ -387,6 +395,14 @@
   // Per-parent override of how many siblings render individually before the rest
   // fold into a "+N" bundle chip; bumped by CHILDREN_REVEAL_STEP on a chip click.
   let lineageRevealed = $state(new Map());
+  // Hashes the user pinned: a pinned sibling never folds into a +N bundle. Persisted
+  // per family alongside the expansion overlay.
+  let pinnedHashes = $state(new Set());
+  function togglePin(hash) {
+    const next = new Set(pinnedHashes);
+    if (next.has(hash)) next.delete(hash); else next.add(hash);
+    pinnedHashes = next;
+  }
   let subwayAnchor = $derived(
     lineageFocusHash && lineageTree.byHash.has(lineageFocusHash) ? lineageFocusHash : displayedHash
   );
@@ -394,7 +410,7 @@
   // subtree (no parent_hash mutation, no effect on which image is displayed/loaded).
   let focusRootHash = $state(null);
   let laneRender = $derived(buildRender(lineageTree, subwayAnchor, brokenOut,
-    { displayedHash, revealed: lineageRevealed, rootHash: focusRootHash }));
+    { displayedHash, revealed: lineageRevealed, rootHash: focusRootHash, pinned: pinnedHashes }));
   let lanesActive = $derived((brokenOut.size > 0 || !!focusRootHash) && lineageList.length > 1);
   // is `desc` the focus root or a descendant of it? (guarded parent_hash climb)
   function isInSubtree(desc, rootHash) {
@@ -448,15 +464,16 @@
     const prefs = readLanePrefs()[root];
     brokenOut = new Set((prefs?.brokenOut || []).filter(h => lineageTree.byHash.has(h)));
     lineageRevealed = new Map((prefs?.revealed || []).filter(([k]) => lineageTree.byHash.has(k)));
+    pinnedHashes = new Set((prefs?.pinned || []).filter(h => lineageTree.byHash.has(h)));
   });
   // persist after hydration; an empty overlay drops the entry rather than storing {}
   $effect(() => {
     const root = familyRootHash;
-    const bo = [...brokenOut], rv = [...lineageRevealed];
+    const bo = [...brokenOut], rv = [...lineageRevealed], pn = [...pinnedHashes];
     if (!root || root !== hydratedRoot) return;
     try {
       const all = readLanePrefs();
-      if (bo.length || rv.length) all[root] = { brokenOut: bo, revealed: rv };
+      if (bo.length || rv.length || pn.length) all[root] = { brokenOut: bo, revealed: rv, pinned: pn };
       else delete all[root];
       localStorage.setItem(LANE_PREFS_KEY, JSON.stringify(all));
     } catch {}
@@ -517,7 +534,9 @@
   // a plain click clears any selection and navigates.
   function handleNodeClick(e, item) {
     if (compareDropdownOpen) {
-      if (item.hash !== displayedHash) enterCompareWith(item.hash, item.filename || item.hash.slice(0, 8));
+      // mirror the dropdown's video filter — a video can't be the clip-path
+      // "after" frame, so picking one would paint raw bytes into an <img>
+      if (item.hash !== displayedHash && !isVideoItem(item)) enterCompareWith(item.hash, item.filename || item.hash.slice(0, 8));
       return;
     }
     if (e.ctrlKey || e.metaKey || e.shiftKey) { toggleSelect(item.hash); return; }
@@ -692,7 +711,9 @@
   });
 
   let compareTargets = $derived(
-    lineageList.filter(item => item?.hash !== displayedHash)
+    // wipe-compare only makes sense between two stills — a video can't be the
+    // clip-path "after" frame, so it never appears as a compare target
+    lineageList.filter(item => item?.hash !== displayedHash && !isVideoItem(item))
   );
   let hasCompareTargets = $derived(compareTargets.length > 0);
   let compareImageUrl = $derived(compareTargetHash ? imageUrl(compareTargetHash) : null);
@@ -837,6 +858,45 @@
     if (img?._directUrl) return img._directUrl;
     return apiURL(`/promptchain/thumb/${hash}`);
   }
+  // A thumbnail <img> can latch onto a 404 from a request that raced the
+  // server-side record (the thumb is written as part of recording); a broken
+  // <img> never retries itself, so a transient miss leaves a lineage node blank
+  // forever. Cache-bust and re-fetch on each error — the 404 is served no-store,
+  // so the thumb is on disk by now. Bounded, mirrors the gallery's retry; no polling.
+  function retryThumb(e) {
+    const img = e.currentTarget;
+    const n = +img.dataset.pcrRetry || 0;
+    if (n >= 3) return;
+    img.dataset.pcrRetry = String(n + 1);
+    const u = new URL(img.src, location.href);
+    u.searchParams.set("r", String(n + 1));
+    img.src = u.toString();
+  }
+
+  // Video outputs (Wan/AnimateDiff/…) are served by /promptchain/image/<hash>
+  // with their real mime type, but the hash-keyed URL carries no extension to
+  // detect them by. The displayed item's filename — from the gallery entry, its
+  // family node, or the fetched meta — is what tells us to render a <video>
+  // instead of an <img>. Thumbnails already poster-frame videos server-side, so
+  // the only signal a thumb is a clip is the ▶ badge keyed off this.
+  // superset of every backend video set so detection can't drift below them:
+  // browse_api _VIDEO_EXTS (…avi) and thumbs VIDEO_SUFFIXES (…mkv) both classify
+  // formats this regex must also accept, or a browse-opened clip falls through to
+  // a broken <img>.
+  const VIDEO_EXT_RE = /\.(mp4|webm|m4v|mkv|mov|avi)(\?|$)/i;
+  function isVideoItem(item) {
+    return VIDEO_EXT_RE.test(item?.filename || "");
+  }
+  function isVideoHash(hash) {
+    if (!hash) return false;
+    const entry = imageByHash.get(hash);
+    if (entry?.filename) return isVideoItem(entry);
+    const fam = lineageList.find((i) => i?.hash === hash);
+    if (fam?.filename) return isVideoItem(fam);
+    if (imageInfo?.hash === hash) return isVideoItem(imageInfo);
+    return false;
+  }
+  let displayedIsVideo = $derived(isVideoHash(displayedHash));
 
   // timeline navigation — moves scrubber position and syncs displayed image
   // zoom/pan is preserved across navigation (only resets on double-click or first open)
@@ -853,8 +913,26 @@
 
   // lineage navigation — only changes displayed image, not timeline position
   function navigateLineage(delta) {
-    // walk the VISIBLE strip only — collapsed bundles are skipped; expanding
-    // one brings its branch into the walk
+    // In the expanded tree, Up/Down move by GENERATION among the RENDERED nodes
+    // (parent / primary child), not the flat strip order — which can contain nodes
+    // the tree doesn't show.
+    if (lanesActive) {
+      const renderedReal = (h) => laneRender.nodes.some(n => n.kind === "node" && n.hash === h);
+      if (delta < 0) {
+        const p = lineageTree.byHash.get(displayedHash)?.parent_hash;
+        if (p && renderedReal(p)) { lineageJump(p); exitCompare(); }
+      } else {
+        const kids = (lineageTree.childrenOf.get(displayedHash) || []).map(k => k.hash).filter(renderedReal);
+        if (kids.length) {
+          const a = ancestry(lineageTree, subwayAnchor);
+          lineageJump(kids.find(h => a.set.has(h)) || kids[0]);
+          exitCompare();
+        }
+      }
+      return;
+    }
+    // strip mode: walk the VISIBLE strip only — collapsed bundles are skipped;
+    // expanding one brings its branch into the walk
     const idx = lineageVisible.findIndex(item => item.hash === displayedHash);
     if (idx < 0) return;
     const next = idx + delta;
@@ -864,8 +942,20 @@
     }
   }
 
+  // Left/Right in the expanded tree hop between siblings at the same depth (by column).
+  function navigateTreeSibling(delta) {
+    const reals = laneRender.nodes.filter(n => n.kind === "node");
+    const cur = reals.find(n => n.hash === displayedHash);
+    if (!cur) return;
+    const row = reals.filter(n => n.depth === cur.depth).sort((a, b) => a.x - b.x);
+    const i = row.findIndex(n => n.hash === displayedHash);
+    const next = row[i + delta];
+    if (next) { lineageJump(next.hash); exitCompare(); }
+  }
+
   // compare mode
   function enterCompareWith(targetHash, label) {
+    if (isVideoHash(targetHash)) return; // a video can't be the wipe "after" frame
     if (compareMode && compareTargetHash === targetHash) { exitCompare(); return; }
     const fresh = !compareMode;
     compareTargetHash = targetHash;
@@ -887,6 +977,13 @@
     compareTargetLabel = "";
     compareDropdownOpen = false;
   }
+
+  // Navigating onto a video (e.g. up/down the family) drops out of compare —
+  // the wipe overlay paints an <img> that can't show a clip. Writes only when
+  // already comparing, so it can't loop.
+  $effect(() => {
+    if (displayedIsVideo && (compareMode || compareDropdownOpen)) exitCompare();
+  });
 
   function handleSliderDown(e) {
     e.preventDefault();
@@ -1181,6 +1278,168 @@
     reposeTracker = null;
   }
 
+  // ── extend (video continuation — viewer post-process for video clips) ──
+  let extendModalOpen = $state(false);
+  let extendPrepared = $state(null); // { lastFrameFilename, lastFrameUrl, sourceRef, fps, frameCount, templateId, defaults, recipeDefaults, lightningAvailable }
+  let extendProgress = $state(null);
+  let extendPreparing = $state(false);
+  let extendLastEntry = $state(null); // result of the latest run, for the "Done" jump
+  let extendTracker = null, extendUnsub = null;
+
+  // Splice a freshly-rendered result into the timeline and navigate to it, so the
+  // user lands on the new clip when processing finishes and a follow-up action
+  // (Extend/Smooth) runs on it — not the source. Mirrors inpaintSaved.
+  function landOnResult(entry) {
+    if (!entry?.hash) return;
+    const existingIdx = images.findIndex((i) => i.hash === entry.hash);
+    if (existingIdx >= 0) {
+      currentIndex = existingIdx;
+    } else {
+      const srcIdx = images.findIndex((i) => i.hash === displayedHash);
+      const insertAt = srcIdx >= 0 ? srcIdx + 1 : images.length;
+      images = [...images.slice(0, insertAt), entry, ...images.slice(insertAt)];
+      currentIndex = insertAt;
+    }
+    displayedHash = entry.hash;
+  }
+
+  async function openExtend() {
+    if (extendPreparing || !onExtendPrepare || !onExtendRun || !displayedHash) return;
+    extendPreparing = true;
+    try {
+      const prepared = await onExtendPrepare(displayedHash);
+      if (prepared?.lastFrameFilename) {
+        extendPrepared = prepared;
+        extendProgress = null;
+        extendModalOpen = true;
+      }
+    } catch (e) {
+      console.error("[PromptChain] extend prepare failed", e);
+    }
+    extendPreparing = false;
+  }
+
+  function confirmExtend(opts) {
+    if (!onExtendRun || !extendPrepared) return;
+    // Recipe = which template renders the continuation. "lightning" swaps to the
+    // "-fast" sibling (4-step distill LoRAs, baked correctly); "normal" keeps the
+    // vanilla base. All the other fields are optional overrides buildExtendGraph
+    // applies on top of the template (omitted => template default).
+    const base = extendPrepared.templateId;
+    const templateId = opts.recipe === "lightning" ? `${base}-fast` : base;
+    const tracker = onExtendRun({
+      templateId,
+      lastFrameFilename: extendPrepared.lastFrameFilename,
+      parentFilename: extendPrepared.sourceRef,
+      length: Math.min(161, opts.length || extendPrepared.frameCount || 81), // ceiling: one continuation clip, never a long source's full frame count
+      width: opts.width || undefined,
+      height: opts.height || undefined,
+      outFps: opts.outFps || undefined,
+      steps: opts.steps, cfg: opts.cfg, shift: opts.shift,
+      sampler: opts.sampler, scheduler: opts.scheduler,
+      seed: opts.seed, // undefined unless the user pinned one
+      promptDoc: opts.promptDoc,
+      stitch: opts.stitch,
+      sourceVideoFilename: extendPrepared.sourceRef,
+      fps: extendPrepared.fps,
+    });
+    extendTracker = tracker;
+    extendUnsub?.();
+    extendUnsub = tracker.subscribe((state) => {
+      if (state.phase === "cancelled") { extendProgress = null; return; }
+      extendProgress = state;
+      // Keep the modal open on done so the user can compare, tweak settings, and
+      // Run Again; remember the result so "Done" can jump to it (finishExtend).
+      if (state.phase === "done" && state.entry?.hash) extendLastEntry = state.entry;
+    });
+  }
+
+  function finishExtend() {
+    if (extendLastEntry) { landOnResult(extendLastEntry); showNewGenBanner(null); }
+    closeExtend();
+  }
+
+  function closeExtend() {
+    extendModalOpen = false;
+    extendPrepared = null;
+    extendProgress = null;
+    extendLastEntry = null;
+    extendUnsub?.();
+    extendUnsub = null;
+    extendTracker = null;
+  }
+
+  // ── smooth (RIFE interpolation — viewer post-process for video clips) ──
+  let smoothModalOpen = $state(false);
+  let smoothPrepared = $state(null); // { sourceRef, fps, frameCount }
+  let smoothProgress = $state(null);
+  let smoothPreparing = $state(false);
+  let smoothLastEntry = $state(null); // result of the latest run, for the "Done" jump
+  let smoothTracker = null, smoothUnsub = null;
+
+  async function openSmooth() {
+    if (smoothPreparing || !onSmoothPrepare || !onSmoothRun || !displayedHash) return;
+    // Gate on the RIFE pack: offer to install it on first use, then bail (the
+    // user re-opens once it's registered). Same contract as the inpaint packs.
+    if (onSmoothCheck && !onSmoothCheck()) { onSmoothInstall?.(); return; }
+    smoothPreparing = true;
+    try {
+      const prepared = await onSmoothPrepare(displayedHash);
+      if (prepared?.sourceRef) {
+        smoothPrepared = prepared;
+        smoothProgress = null;
+        smoothModalOpen = true;
+      }
+    } catch (e) {
+      console.error("[PromptChain] smooth prepare failed", e);
+    }
+    smoothPreparing = false;
+  }
+
+  function confirmSmooth(opts) {
+    if (!onSmoothRun || !smoothPrepared) return;
+    // CreateVideo caps fps at 120, and ComfyUI REJECTS (not clamps) over-max — so
+    // smoothing an already-high-fps clip (32×4=128) would hard-fail the queue.
+    // Cap the multiplier so source_fps × mult never exceeds 120; keeps fps and
+    // frame count in sync (vs clamping outFps alone, which desyncs playback speed).
+    const srcFps = smoothPrepared.fps || 16;
+    const maxMult = Math.max(2, Math.floor(120 / srcFps));
+    const mult = Math.min(opts.multiplier || 2, maxMult);
+    const tracker = onSmoothRun({
+      sourceVideoFilename: smoothPrepared.sourceRef,
+      multiplier: mult,
+      outFps: Math.round(srcFps * mult),
+      ckptName: opts.ckptName,
+      scaleFactor: opts.scaleFactor,
+      ensemble: opts.ensemble,
+      fastMode: opts.fastMode,
+      parentFilename: smoothPrepared.sourceRef,
+    });
+    smoothTracker = tracker;
+    smoothUnsub?.();
+    smoothUnsub = tracker.subscribe((state) => {
+      if (state.phase === "cancelled") { smoothProgress = null; return; }
+      smoothProgress = state;
+      // Stay open on done for compare / Run Again; remember the result for "Done".
+      if (state.phase === "done" && state.entry?.hash) smoothLastEntry = state.entry;
+    });
+  }
+
+  function finishSmooth() {
+    if (smoothLastEntry) { landOnResult(smoothLastEntry); showNewGenBanner(null); }
+    closeSmooth();
+  }
+
+  function closeSmooth() {
+    smoothModalOpen = false;
+    smoothPrepared = null;
+    smoothProgress = null;
+    smoothLastEntry = null;
+    smoothUnsub?.();
+    smoothUnsub = null;
+    smoothTracker = null;
+  }
+
   // ── inpaint ──
   let inpaintModalOpen = $state(false);
   let inpaintPrepared = $state(null);
@@ -1248,6 +1507,7 @@
 
   async function openEdit(targetHash = displayedHash) {
     if (editPreparing || !onEditPrepare || !onEditSave) return;
+    if (isVideoHash(targetHash)) return; // the editor can't open a video clip
     const entry = images.find((i) => i.hash === targetHash) || { hash: targetHash };
     editPreparing = true;
     try {
@@ -1522,14 +1782,16 @@
       requestDeleteBatch();
       return;
     }
-    if ((e.key === "c" || e.key === "C") && !e.ctrlKey && !e.metaKey && hasCompareTargets) {
+    if ((e.key === "c" || e.key === "C") && !e.ctrlKey && !e.metaKey && hasCompareTargets && !displayedIsVideo) {
       e.preventDefault();
       if (compareMode) exitCompare();
       else compareDropdownOpen = !compareDropdownOpen;
       return;
     }
-    if (e.key === "ArrowLeft") { navigate(-1); return; }
-    if (e.key === "ArrowRight") { navigate(1); return; }
+    // In the expanded tree the arrows navigate the 2D family (Up/Down = generation,
+    // Left/Right = siblings); in the strip, Left/Right stay on the timeline.
+    if (e.key === "ArrowLeft") { if (lanesActive) { e.preventDefault(); navigateTreeSibling(-1); } else navigate(-1); return; }
+    if (e.key === "ArrowRight") { if (lanesActive) { e.preventDefault(); navigateTreeSibling(1); } else navigate(1); return; }
     if (e.key === "ArrowUp") { e.preventDefault(); navigateLineage(-1); return; }
     if (e.key === "ArrowDown") { e.preventDefault(); navigateLineage(1); return; }
   }
@@ -1715,6 +1977,8 @@
       expandBranches(item);
     } else if (action === "focus-branch") {
       focusBranch(hash);
+    } else if (action === "pin") {
+      togglePin(hash);
     } else if (action === "copy-path") {
       copyPath(hash);
     } else if (action === "edit") {
@@ -1900,8 +2164,9 @@
       data-hash={item.hash}
       class:current={item.hash === displayedHash}
       class:selected={selectedHashes.has(item.hash)}
+      class:pinned={pinnedHashes.has(item.hash)}
       class:orphaned={item.orphaned === 1}
-      class:compare-candidate={compareDropdownOpen && item.hash !== displayedHash}
+      class:compare-candidate={compareDropdownOpen && item.hash !== displayedHash && !isVideoItem(item)}
       class:compare-left={compareMode && item.hash === displayedHash}
       class:compare-right={compareMode && item.hash === compareTargetHash}
       onclick={(e) => handleNodeClick(e, item)}
@@ -1909,8 +2174,10 @@
       onmouseleave={hideTip}
       oncontextmenu={(e) => { hideTip(); openLineageMenu(e, item); }}
     >
-      <img src={thumbUrl(item.hash)} alt="" draggable="false" loading="lazy" />
+      <img src={thumbUrl(item.hash)} alt="" draggable="false" loading="lazy" onerror={retryThumb} />
+      {#if isVideoItem(item)}<div class="pcr-viewer-vidbadge" aria-hidden="true">▶</div>{/if}
       {#if selectedHashes.has(item.hash)}<div class="pcr-lin-selcheck">✓</div>{/if}
+      {#if pinnedHashes.has(item.hash)}<div class="pcr-lin-pinbadge" title="Pinned — kept out of bundles">★</div>{/if}
       <div class="pcr-viewer-lineage-dot"
         class:dot-root={item.hash === laneRender.rootHash}
         class:dot-current={item.hash === displayedHash}
@@ -1987,7 +2254,7 @@
                     onclick={() => revealMore(node.parent)}>
                     <div class="pcr-viewer-lineage-bundle-stack">
                       {#each node.preview as p (p)}
-                        <img src={thumbUrl(p)} alt="" draggable="false" loading="lazy" />
+                        <img src={thumbUrl(p)} alt="" draggable="false" loading="lazy" onerror={retryThumb} />
                       {/each}
                     </div>
                     <span class="pcr-viewer-lineage-bundle-count">+{node.count}</span>
@@ -2013,8 +2280,9 @@
                 class:descendant={i > lineageDisplayCurrentIdx}
                 class:branch={d.branch}
                 class:selected={selectedHashes.has(item.hash)}
+                class:pinned={pinnedHashes.has(item.hash)}
                 class:orphaned={item.orphaned === 1}
-                class:compare-candidate={compareDropdownOpen && item.hash !== displayedHash}
+                class:compare-candidate={compareDropdownOpen && item.hash !== displayedHash && !isVideoItem(item)}
                 class:compare-left={compareMode && item.hash === displayedHash}
                 class:compare-right={compareMode && item.hash === compareTargetHash}
                 onclick={(e) => handleNodeClick(e, item)}
@@ -2022,8 +2290,10 @@
                 onmouseleave={hideTip}
                 oncontextmenu={(e) => { hideTip(); openLineageMenu(e, item); }}
               >
-                <img src={thumbUrl(item.hash)} alt="" draggable="false" loading="lazy" />
+                <img src={thumbUrl(item.hash)} alt="" draggable="false" loading="lazy" onerror={retryThumb} />
+                {#if isVideoItem(item)}<div class="pcr-viewer-vidbadge" aria-hidden="true">▶</div>{/if}
                 {#if selectedHashes.has(item.hash)}<div class="pcr-lin-selcheck">✓</div>{/if}
+                {#if pinnedHashes.has(item.hash)}<div class="pcr-lin-pinbadge" title="Pinned — kept out of bundles">★</div>{/if}
                 <div class="pcr-viewer-lineage-dot"
                   class:dot-root={item.hash === lineageList[0]?.hash}
                   class:dot-current={i === lineageDisplayCurrentIdx}
@@ -2051,7 +2321,7 @@
                 {#if d.kind === "bundle"}
                   <div class="pcr-viewer-lineage-bundle-stack">
                     {#each d.preview as p (p.hash)}
-                      <img src={thumbUrl(p.hash)} alt="" draggable="false" loading="lazy" />
+                      <img src={thumbUrl(p.hash)} alt="" draggable="false" loading="lazy" onerror={retryThumb} />
                     {/each}
                   </div>
                   <span class="pcr-viewer-lineage-bundle-count">+{d.count}</span>
@@ -2109,17 +2379,42 @@
       {#if !imageLoaded && !imageError}
         <div class="pcr-viewer-spinner"></div>
       {/if}
-      <img
-        bind:this={mainImageEl}
-        src={mainImageSrc(displayedHash)}
-        alt=""
-        draggable="false"
-        class="pcr-viewer-image"
-        class:hidden={!imageLoaded}
-        style="transform: translate({panX}px, {panY}px) scale({zoom})"
-        onload={() => { imageLoaded = true; }}
-        onerror={() => { imageError = true; imageLoaded = false; }}
-      />
+      {#if displayedIsVideo}
+        <!-- svelte-ignore a11y_media_has_caption -->
+        <!-- stopPropagation keeps the container's pan/gesture handler (which
+             preventDefaults) from swallowing the native transport controls;
+             wheel still bubbles up for zoom. poster shows the server frame
+             while the clip buffers. -->
+        <video
+          bind:this={mainImageEl}
+          src={mainImageSrc(displayedHash)}
+          poster={imageByHash.get(displayedHash)?._directUrl ? null : thumbUrl(displayedHash)}
+          class="pcr-viewer-image"
+          class:hidden={!imageLoaded}
+          style="transform: translate({panX}px, {panY}px) scale({zoom})"
+          onloadeddata={() => { imageLoaded = true; }}
+          onerror={() => { imageError = true; imageLoaded = false; }}
+          onpointerdown={(e) => e.stopPropagation()}
+          ondblclick={(e) => e.stopPropagation()}
+          autoplay
+          loop
+          muted
+          playsinline
+          controls
+        ></video>
+      {:else}
+        <img
+          bind:this={mainImageEl}
+          src={mainImageSrc(displayedHash)}
+          alt=""
+          draggable="false"
+          class="pcr-viewer-image"
+          class:hidden={!imageLoaded}
+          style="transform: translate({panX}px, {panY}px) scale({zoom})"
+          onload={() => { imageLoaded = true; }}
+          onerror={() => { imageError = true; imageLoaded = false; }}
+        />
+      {/if}
       {#if compareMode && compareImageUrl}
         <img
           src={compareImageUrl}
@@ -2215,7 +2510,8 @@
                 class:current={thumb.globalIndex === currentIndex}
                 onclick={() => jumpTo(thumb.globalIndex)}
               >
-                <img src={thumbUrl(thumb.hash)} alt="" draggable="false" loading="lazy" />
+                <img src={thumbUrl(thumb.hash)} alt="" draggable="false" loading="lazy" onerror={retryThumb} />
+                {#if isVideoItem(thumb)}<div class="pcr-viewer-vidbadge" aria-hidden="true">▶</div>{/if}
               </div>
             {/each}
             <div class="pcr-viewer-history-fade"></div>
@@ -2256,7 +2552,8 @@
                 class:current={idx === currentIndex}
                 onclick={() => jumpTo(idx)}
               >
-                <img src={thumbUrl(img.hash)} alt="" draggable="false" loading="lazy" />
+                <img src={thumbUrl(img.hash)} alt="" draggable="false" loading="lazy" onerror={retryThumb} />
+                {#if isVideoItem(img)}<div class="pcr-viewer-vidbadge" aria-hidden="true">▶</div>{/if}
               </div>
             {/each}
           </div>
@@ -2292,7 +2589,7 @@
       </div>
 
       <!-- compare row -->
-      {#if hasCompareTargets}
+      {#if hasCompareTargets && !displayedIsVideo}
         <div class="pcr-viewer-toolbar-row pcr-viewer-compare-container">
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -2370,8 +2667,9 @@
         </div>
       {/if}
 
-      <!-- edit row -->
-      {#if onEditSave}
+      <!-- edit row — image-only: Edit/inpaint/upscale run on a still raster, so
+           it's hidden for video clips (no meaningful editor handoff exists) -->
+      {#if onEditSave && !displayedIsVideo}
         <div class="pcr-viewer-toolbar-row">
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -2390,6 +2688,42 @@
                 {editDocLayers[displayedHash]}
               </span>
             {/if}
+          </div>
+        </div>
+      {/if}
+
+      <!-- extend row — video clips only: render the next clip from the last frame -->
+      {#if onExtendRun && displayedIsVideo}
+        <div class="pcr-viewer-toolbar-row">
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <div
+            class="pcr-viewer-toolbar-btn"
+            onclick={() => { if (!extendPreparing) openExtend(); }}
+            title="Render the next clip, continuing from this video's last frame"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 16 12 5 21 5 3"/><line x1="20" y1="4" x2="20" y2="20"/>
+            </svg>
+            <span>{extendPreparing ? "Reading..." : "Extend"}</span>
+          </div>
+        </div>
+      {/if}
+
+      <!-- smooth row — video clips only: RIFE frame interpolation -->
+      {#if onSmoothRun && displayedIsVideo}
+        <div class="pcr-viewer-toolbar-row">
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <div
+            class="pcr-viewer-toolbar-btn"
+            onclick={() => { if (!smoothPreparing) openSmooth(); }}
+            title="Interpolate extra frames (RIFE) for smoother, higher-fps motion"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12h4l3-9 4 18 3-9h4"/>
+            </svg>
+            <span>{smoothPreparing ? "Reading..." : "Smooth"}</span>
           </div>
         </div>
       {/if}
@@ -2642,6 +2976,31 @@
   onCancel={() => { if (reposeProgress && ["building","queueing","running"].includes(reposeProgress.phase)) reposeTracker?.cancel?.(); else closeRepose(); }}
 />
 
+<ExtendModal
+  open={extendModalOpen}
+  lastFrameUrl={extendPrepared?.lastFrameUrl || ""}
+  fps={extendPrepared?.fps || 16}
+  frameCount={extendPrepared?.frameCount || 0}
+  lightningAvailable={extendPrepared?.lightningAvailable ?? true}
+  defaults={extendPrepared?.defaults || null}
+  recipeDefaults={extendPrepared?.recipeDefaults || null}
+  mountPromptEditor={onMountPromptEditor}
+  progress={extendProgress}
+  onRun={confirmExtend}
+  onDone={finishExtend}
+  onCancel={() => { if (extendProgress && ["building","queueing","running"].includes(extendProgress.phase)) extendTracker?.cancel?.(); else closeExtend(); }}
+/>
+
+<SmoothModal
+  open={smoothModalOpen}
+  fps={smoothPrepared?.fps || 16}
+  frameCount={smoothPrepared?.frameCount || 0}
+  progress={smoothProgress}
+  onRun={confirmSmooth}
+  onDone={finishSmooth}
+  onCancel={() => { if (smoothProgress && ["building","queueing","running"].includes(smoothProgress.phase)) smoothTracker?.cancel?.(); else closeSmooth(); }}
+/>
+
 <ConfirmModal
   open={confirmDeleteOpen}
   title={deleteBatch?.length ? `Delete ${deleteBatch.length} images` : "Delete image"}
@@ -2659,6 +3018,7 @@
     y={lineageMenu.y}
     canExpand={lineageMenu.item ? canExpand(lineageMenu.item) : false}
     canFocus={lineageMenu.item ? (lineageTree.childrenOf.get(lineageMenu.item.hash)?.length > 0 && lineageMenu.item.hash !== focusRootHash) : false}
+    pinned={lineageMenu.item ? pinnedHashes.has(lineageMenu.item.hash) : false}
     canEdit={!!onEditSave}
     canDelete={!!onDelete}
     isLocal={isLocalClient}
@@ -2746,6 +3106,28 @@
   }
   /* centered over the thumb so it never collides with the corner badges (dot,
      layers, fork pip / expander, opbadge) — the .selected ring already frames it */
+  /* pin marker — top-left; shares the corner with the layers badge, which shifts right when both show */
+  .pcr-lin-pinbadge {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 15px;
+    height: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    line-height: 1;
+    border-radius: 4px;
+    background: rgba(20, 20, 20, 0.82);
+    color: #ffd24a;
+    box-shadow: 0 0 0 1px rgba(255, 200, 60, 0.6);
+    pointer-events: none;
+    z-index: 3;
+  }
+  .pcr-viewer-lineage-node.pinned .pcr-viewer-lineage-layers {
+    left: 21px;
+  }
   .pcr-lin-selcheck {
     position: absolute;
     top: 50%;
@@ -3292,6 +3674,7 @@
     flex: 1;
   }
   .pcr-viewer-history-thumb {
+    position: relative;
     flex-shrink: 0;
     width: 40px;
     height: 40px;
@@ -3386,6 +3769,7 @@
   .pcr-viewer-history-grid::-webkit-scrollbar-thumb:hover { background: #555; }
 
   .pcr-viewer-grid-thumb {
+    position: relative;
     width: 56.5px;
     height: 56.5px;
     border: 2px solid transparent;
@@ -3398,6 +3782,27 @@
   .pcr-viewer-grid-thumb.current { border-color: #4fc3f7; box-shadow: 0 0 8px rgba(79, 195, 247, 0.4); }
   .pcr-viewer-grid-thumb:hover:not(.current) { border-color: #666; transform: scale(1.05); z-index: 1; }
   .pcr-viewer-grid-thumb img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+
+  /* ▶ overlay marking a poster-framed thumbnail as a playable video clip */
+  .pcr-viewer-vidbadge {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding-left: 1px;
+    font-size: 9px;
+    line-height: 1;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.55);
+    border-radius: 50%;
+    pointer-events: none;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  }
 
   /* metadata content */
   .pcr-viewer-meta-content {

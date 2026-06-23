@@ -309,14 +309,8 @@ async def subject_status(request):
     return web.json_response(out)
 
 
-async def _pip_install(resp, snapshot, pkgs):
-    await _send(resp, {"stage": "pip", "repo": ", ".join(pkgs)})
-    await _log(resp, "Installing: " + ", ".join(pkgs))
-    if await _run(resp, [_sys.executable, "-m", "pip", "install", *pkgs]) != 0:
-        await _restore_critical(resp, snapshot)
-        await _send(resp, {"error": f"pip install failed for {', '.join(pkgs)}"})
-        return False
-    return True
+# (_pip_install removed — PromptChain declares its deps in requirements.txt and
+# never runs pip at runtime; missing packages are surfaced to the user instead.)
 
 
 def _download_birefnet():
@@ -340,7 +334,8 @@ async def install_subject_target(resp, target: str, snapshot: dict) -> bool:
     owns the SSE lifecycle, the snapshot, and the final _restore_critical."""
     if target == "subject":
         miss = [m for m in ("transformers",) if not _have(m)]
-        if miss and not await _pip_install(resp, snapshot, miss):
+        if miss:
+            await _send(resp, {"error": f"missing package(s): {', '.join(miss)}. Run `pip install -r requirements.txt` for PromptChain (or reinstall it via Manager) and restart."})
             return False
         if not _birefnet_cached():
             await _send(resp, {"stage": "download", "file": "BiRefNet (~0.9GB)", "pct": 0})
@@ -349,7 +344,8 @@ async def install_subject_target(resp, target: str, snapshot: dict) -> bool:
         return True
     if target == "object":
         miss = [m for m in ("ultralytics",) if not _have(m)]
-        if miss and not await _pip_install(resp, snapshot, miss):
+        if miss:
+            await _send(resp, {"error": f"missing package(s): {', '.join(miss)}. Run `pip install -r requirements.txt` for PromptChain (or reinstall it via Manager) and restart."})
             return False
         if not _sam_cached():
             await _send(resp, {"stage": "download", "file": "SAM2 (~154MB)", "pct": 0})

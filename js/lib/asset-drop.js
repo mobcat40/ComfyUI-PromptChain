@@ -73,9 +73,35 @@ async function handleDrop(e) {
     const canvasX = (e.clientX - rect.left) / canvas.ds.scale - canvas.ds.offset[0];
     const canvasY = (e.clientY - rect.top) / canvas.ds.scale - canvas.ds.offset[1];
 
+    const scope = assetData.scope || "output";
+
+    // Smart switch: dropping an output image onto a STRICTLY EMPTY graph restores
+    // its embedded ComfyUI workflow (the litegraph "workflow" PNG chunk) instead of
+    // adding a Load Image node — mirroring ComfyUI's native PNG file-drop. Gated to
+    // zero nodes because loadGraphData clean-wipes the canvas (same as the native
+    // drop), so on a populated graph that would silently destroy the user's work.
+    // The endpoint already exists (inpaint/upscale use it) and NaN-defuses the JSON.
+    if (!app.graph?._nodes?.length && /\.(png|webp)$/i.test(assetData.path)) {
+        try {
+            const wfResp = await api.fetchApi(
+                `/promptchain/image-workflow?scope=${scope}&path=${encodeURIComponent(assetData.path)}`
+            );
+            if (wfResp.ok) {
+                const { workflow } = await wfResp.json();
+                if (workflow) {
+                    await app.loadGraphData(workflow, true, true, assetData.name || assetData.path.split("/").pop());
+                    app.extensionManager?.toast?.add?.({ severity: "success", summary: "Restored workflow from image", life: 2500 });
+                    return;
+                }
+            }
+        } catch (err) {
+            // any failure (no workflow chunk, fetch error) falls through to Load Image
+            log("workflow restore failed; falling back to Load Image", err);
+        }
+    }
+
     try {
         // fetch image via browse preview
-        const scope = assetData.scope || "output";
         const fetchResponse = await api.fetchApi(
             `/promptchain/browse/preview?scope=${scope}&path=${encodeURIComponent(assetData.path)}`
         );

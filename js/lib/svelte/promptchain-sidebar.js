@@ -433,6 +433,15 @@ function ItemThumbnail($$anchor, $$props) {
     if (thumbLoaded) set(showFlash, true);
     thumbLoaded = true;
   }
+  function retryThumb(e) {
+    const img = e.currentTarget;
+    const n = +img.dataset.pcrRetry || 0;
+    if (n >= 3) return;
+    img.dataset.pcrRetry = String(n + 1);
+    const u = new URL(img.src, location.href);
+    u.searchParams.set("r", String(n + 1));
+    img.src = u.toString();
+  }
   function handleDragOver(e) {
     if (item().type !== "folder") return;
     if (!e.dataTransfer.types.includes("application/x-promptchain-move")) return;
@@ -464,8 +473,8 @@ function ItemThumbnail($$anchor, $$props) {
   {
     var consequent_1 = ($$anchor2) => {
       var fragment = root_1$9();
-      var img = first_child(fragment);
-      var node_1 = sibling(img, 2);
+      var img_1 = first_child(fragment);
+      var node_1 = sibling(img_1, 2);
       {
         var consequent = ($$anchor3) => {
           var div_2 = root_2$6();
@@ -478,8 +487,8 @@ function ItemThumbnail($$anchor, $$props) {
       }
       template_effect(
         ($0) => {
-          set_attribute(img, "src", $0);
-          set_attribute(img, "alt", item().name);
+          set_attribute(img_1, "src", $0);
+          set_attribute(img_1, "alt", item().name);
         },
         [
           () => apiURL(`/promptchain/browse/preview?scope=${$$props.scope}&path=${encodeURIComponent(item().path)}&thumb=1`)
@@ -489,8 +498,8 @@ function ItemThumbnail($$anchor, $$props) {
     };
     var consequent_3 = ($$anchor2) => {
       var fragment_1 = root_3$7();
-      var img_1 = first_child(fragment_1);
-      var node_2 = sibling(img_1, 2);
+      var img_2 = first_child(fragment_1);
+      var node_2 = sibling(img_2, 2);
       {
         var consequent_2 = ($$anchor3) => {
           var div_3 = root_4$7();
@@ -503,12 +512,13 @@ function ItemThumbnail($$anchor, $$props) {
       }
       template_effect(
         ($0) => {
-          set_attribute(img_1, "src", $0);
-          set_attribute(img_1, "alt", item().name);
+          set_attribute(img_2, "src", $0);
+          set_attribute(img_2, "alt", item().name);
         },
         [() => apiURL(`/promptchain/thumb/${item().thumbnailHash}`)]
       );
-      event("load", img_1, onThumbUpdate);
+      event("load", img_2, onThumbUpdate);
+      event("error", img_2, retryThumb);
       append($$anchor2, fragment_1);
     };
     var consequent_4 = ($$anchor2) => {
@@ -722,6 +732,15 @@ function GridView($$anchor, $$props) {
     next.delete(itemPath);
     set(flashingThumbs, next, true);
   }
+  function retryThumb(e) {
+    const img = e.currentTarget;
+    const n = +img.dataset.pcrRetry || 0;
+    if (n >= 3) return;
+    img.dataset.pcrRetry = String(n + 1);
+    const u = new URL(img.src, location.href);
+    u.searchParams.set("r", String(n + 1));
+    img.src = u.toString();
+  }
   var div = root$2();
   var node = child(div);
   {
@@ -790,6 +809,7 @@ function GridView($$anchor, $$props) {
                   [() => thumbSrc(get(item))]
                 );
                 event("load", img_2, () => onThumbUpdate(get(item)));
+                event("error", img_2, retryThumb);
                 append($$anchor5, fragment_2);
               };
               var consequent_4 = ($$anchor5) => {
@@ -1000,6 +1020,15 @@ function ListView($$anchor, $$props) {
     if (b < 1048576) return (b / 1024).toFixed(1) + " KB";
     return (b / 1048576).toFixed(1) + " MB";
   }
+  function retryThumb(e) {
+    const img = e.currentTarget;
+    const n = +img.dataset.pcrRetry || 0;
+    if (n >= 3) return;
+    img.dataset.pcrRetry = String(n + 1);
+    const u = new URL(img.src, location.href);
+    u.searchParams.set("r", String(n + 1));
+    img.src = u.toString();
+  }
   function fmtDate(ts) {
     if (!ts) return "-";
     return new Date(ts * 1e3).toLocaleDateString(void 0, { month: "short", day: "numeric" });
@@ -1059,22 +1088,23 @@ function ListView($$anchor, $$props) {
     var node_1 = child(span);
     {
       var consequent = ($$anchor3) => {
-        var img = root_2$5();
-        template_effect(($0) => set_attribute(img, "src", $0), [
+        var img_1 = root_2$5();
+        template_effect(($0) => set_attribute(img_1, "src", $0), [
           () => apiURL(`/promptchain/browse/preview?scope=${$$props.scope}&path=${encodeURIComponent(get(item).path)}&thumb=1`)
         ]);
-        append($$anchor3, img);
+        append($$anchor3, img_1);
       };
       var consequent_1 = ($$anchor3) => {
         var svg = root_3$5();
         append($$anchor3, svg);
       };
       var consequent_2 = ($$anchor3) => {
-        var img_1 = root_4$5();
-        template_effect(($0) => set_attribute(img_1, "src", $0), [
+        var img_2 = root_4$5();
+        template_effect(($0) => set_attribute(img_2, "src", $0), [
           () => apiURL(`/promptchain/thumb/${get(item).thumbnailHash}`)
         ]);
-        append($$anchor3, img_1);
+        event("error", img_2, retryThumb);
+        append($$anchor3, img_2);
       };
       var consequent_3 = ($$anchor3) => {
         var svg_1 = root_5$5();

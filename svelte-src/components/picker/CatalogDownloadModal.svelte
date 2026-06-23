@@ -6,6 +6,9 @@
     catalogEntry,
     onClose,
     onModelReady,
+    // Pre-selects a precision (e.g. the "FP16 ↓" tag the user clicked on an
+    // installed model row). Falls back to the first declared precision.
+    initialPrecision = null,
   } = $props();
 
   // ── helpers ──────────────────────────────────────────────────────
@@ -54,7 +57,9 @@
   const rawFiles = catalogEntry.files || [];
   const precisions = extractPrecisions(rawFiles);
 
-  let selectedPrecision = $state(precisions[0] || null);
+  let selectedPrecision = $state(
+    (initialPrecision && precisions.includes(initialPrecision)) ? initialPrecision : (precisions[0] || null)
+  );
   let resolvedFiles = $derived(
     selectedPrecision ? resolveFilesForPrecision(rawFiles, selectedPrecision) : rawFiles
   );

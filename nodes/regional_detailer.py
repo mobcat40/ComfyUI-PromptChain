@@ -529,8 +529,10 @@ class RegionalDetailerNode(io.ComfyNode):
                 log.info("image %d: %d face(s) detected", b, len(detected))
                 faces_bound = []
                 for x1, y1, x2, y2 in detected:
-                    x1 = max(0, x1 - bbox_dilation); y1 = max(0, y1 - bbox_dilation)
-                    x2 = min(img_w, x2 + bbox_dilation); y2 = min(img_h, y2 + bbox_dilation)
+                    x1 = max(0, x1 - bbox_dilation)
+                    y1 = max(0, y1 - bbox_dilation)
+                    x2 = min(img_w, x2 + bbox_dilation)
+                    y2 = min(img_h, y2 + bbox_dilation)
                     ridx = _match_region((x1, y1, x2, y2), region_masks) if region_masks is not None else -1
                     faces_bound.append(((x1, y1, x2, y2), ridx))
             for (x1, y1, x2, y2), ridx in faces_bound:

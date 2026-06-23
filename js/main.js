@@ -17,6 +17,7 @@ import { applyVueMinWidthAll } from "./lib/sizing.js";
 import { attachSlotClickHandlers, attachCanvasClickHandler } from "./lib/slot-dropdown.js";
 import { getConnectedInputs, getLinkInfo } from "./lib/slot-utils.js";
 import { poseRegistry } from "./lib/pose-registry.js";
+import { regionBoxRegistry } from "./lib/region-box-registry.js";
 import { updateInputLabels, updateParentLabels, checkWildcardConflict, cleanupOrderChain } from "./lib/order-chain.js";
 import { createHighlightExtension } from "./lib/active-label-highlight.js";
 import { createWildcardBadgeExtension } from "./lib/wildcard-badge.js";
@@ -126,6 +127,7 @@ function syncShared(node, shared) {
   shared.outputPanelOpen = !!node.properties?.pcrOutputPanel;
   shared.imagePanelVisible = !!node.properties?.pcrImagePreview;
   shared.posePanelVisible = !!node.properties?.pcrPosePanel;
+  shared.regionPanelVisible = !!node.properties?.pcrRegionPanel;
 }
 
 // --- Image preview: execution tracking + graph traversal ---
@@ -139,7 +141,12 @@ let _executingNodeId = null;
 let _executionWorkflowId = null;
 let _lastPreviewUrl = null;
 
-const OUTPUT_NODE_TYPES = new Set(["SaveImage", "PreviewImage"]);
+// SaveVideo/SaveWEBM are terminal outputs too: they emit a PreviewVideo UI
+// payload shaped like images ({images:[{filename,subfolder,type}], animated})
+// so the executed handler treats them uniformly. Without them here the panel's
+// generating-node map never includes the video node, so hideProgress() never
+// fires and the preview stays stuck on "Generating…" after a video finishes.
+const OUTPUT_NODE_TYPES = new Set(["SaveImage", "PreviewImage", "SaveVideo", "SaveWEBM"]);
 const KSAMPLER_TYPES = new Set(["KSampler", "KSamplerAdvanced", "PromptChain_RegionalDetailer", "SamplerCustomAdvanced", "UltimateSDUpscale", "PromptChain_IdeogramSampler"]);
 const IMAGE_LATENT_TYPES = new Set(["IMAGE", "LATENT"]);
 const LOAD_IMAGE_TYPES = new Set(["LoadImage"]);
@@ -1399,6 +1406,13 @@ app.registerExtension({
         }
         node._pcrPosePanel?.toggle();
       };
+      node._pcrMenubar.toggleRegion = () => {
+        if (node.properties?.pcrCollapsed) {
+          handleCollapse(node, false, container);
+          if (shared) syncShared(node, shared);
+        }
+        node._pcrRegionPanel?.toggle();
+      };
       node._pcrMenubar.resetIterate = () => {
         if (!node.properties) node.properties = {};
         node.properties.pcrIterateIndex = 0;
@@ -1469,6 +1483,8 @@ app.registerExtension({
         getCanvasScale: () => app.canvas?.ds?.scale ?? 1,
         // the Poser node the pose panel should dock (shared registry, last-interacted)
         getActivePoser: () => poseRegistry.getActive(),
+        // the Region Box node the region panel should dock (shared registry)
+        getActiveRegionBox: () => regionBoxRegistry.getActive(),
         // registration callbacks
         onEditorPaneReady: (editorContainer) => {
           editorContainer._pcrNode = node;
@@ -1526,6 +1542,9 @@ app.registerExtension({
         },
         onPosePanelRegister: (panelApi) => {
           node._pcrPosePanel = panelApi;
+        },
+        onRegionPanelRegister: (panelApi) => {
+          node._pcrRegionPanel = panelApi;
         },
         onAIAssistantRegister: (panelApi) => {
           node._pcrAiAssistant = panelApi;
@@ -1598,6 +1617,13 @@ app.registerExtension({
           }
           node._pcrPosePanel?.toggle();
         },
+        onToggleRegion: () => {
+          if (node.properties?.pcrCollapsed) {
+            handleCollapse(node, false, container);
+            if (shared) syncShared(node, shared);
+          }
+          node._pcrRegionPanel?.toggle();
+        },
         onOpenFullscreen: () => {
           import("./lib/fullscreen-bridge.js")
             .then(m => m.showSvelteFullscreen(node))
@@ -1615,6 +1641,14 @@ app.registerExtension({
       };
       updatePosePresence();
       node._pcrUnsubscribePose = poseRegistry.subscribe(updatePosePresence);
+
+      // Same gate for the Region Box panel — driven from its own registry.
+      const updateRegionPresence = () => {
+        if (shared) shared.hasRegionBox = regionBoxRegistry.count > 0;
+        node._pcrRegionPanel?.refreshDock?.();
+      };
+      updateRegionPresence();
+      node._pcrUnsubscribeRegion = regionBoxRegistry.subscribe(updateRegionPresence);
 
       // Restore tag config now that node properties are available
       tagsDropdown.restore();
@@ -1698,6 +1732,8 @@ app.registerExtension({
         cleanupOrderChain(node.id);
         node._pcrUnsubscribePose?.();
         node._pcrUnsubscribePose = null;
+        node._pcrUnsubscribeRegion?.();
+        node._pcrUnsubscribeRegion = null;
         if (svelteInstance && svelteModule) {
           svelteModule.destroyNodeWidget(svelteInstance);
         }

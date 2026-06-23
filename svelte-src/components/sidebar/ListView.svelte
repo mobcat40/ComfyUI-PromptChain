@@ -27,6 +27,18 @@
     return (b / 1048576).toFixed(1) + " MB";
   }
 
+  // A cover whose /thumb request raced the record commit latches broken with no
+  // recovery. Cache-bust and re-fetch on the error event — bounded, no polling.
+  function retryThumb(e) {
+    const img = e.currentTarget;
+    const n = +img.dataset.pcrRetry || 0;
+    if (n >= 3) return;
+    img.dataset.pcrRetry = String(n + 1);
+    const u = new URL(img.src, location.href);
+    u.searchParams.set("r", String(n + 1));
+    img.src = u.toString();
+  }
+
   function fmtDate(ts) {
     if (!ts) return "-";
     return new Date(ts * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -122,6 +134,7 @@
             class="pcr-lv-mini"
             src={apiURL(`/promptchain/thumb/${item.thumbnailHash}`)}
             alt="" loading="lazy"
+            onerror={retryThumb}
           />
         {:else if item.type === "workflow"}
           <svg class="pcr-lv-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">

@@ -130,6 +130,18 @@
     next.delete(itemPath);
     flashingThumbs = next;
   }
+
+  // A cover whose /thumb request raced the record commit latches broken with no
+  // recovery. Cache-bust and re-fetch on the error event — bounded, no polling.
+  function retryThumb(e) {
+    const img = e.currentTarget;
+    const n = +img.dataset.pcrRetry || 0;
+    if (n >= 3) return;
+    img.dataset.pcrRetry = String(n + 1);
+    const u = new URL(img.src, location.href);
+    u.searchParams.set("r", String(n + 1));
+    img.src = u.toString();
+  }
 </script>
 
 <div class="pcr-gv" bind:this={wrapEl}>
@@ -183,7 +195,7 @@
               {/if}
             {:else if item.type === "workflow" && item.thumbnailHash}
               <img src={thumbSrc(item)} alt={item.name} loading="lazy" draggable="false"
-                onload={() => onThumbUpdate(item)} />
+                onload={() => onThumbUpdate(item)} onerror={retryThumb} />
               {#if flashingThumbs.has(item.path)}
                 <div class="pcr-ji-flash" onanimationend={() => onFlashEnd(item.path)}></div>
               {/if}

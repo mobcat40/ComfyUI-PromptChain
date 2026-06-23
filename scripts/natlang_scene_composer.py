@@ -11,7 +11,7 @@ any character/outfit/scene tokens baked in. Same prompt works for any
 named characters, any outfits, any scene.
 
 Run:
-  cd C:/comfyui/comfyui/custom_nodes/ComfyUI-PromptChain
+  cd <ComfyUI>/custom_nodes/ComfyUI-PromptChain
   python scripts/natlang_scene_composer.py
 """
 from __future__ import annotations

@@ -5,7 +5,7 @@
       "id": "ideogram-default",
       "name": "Default",
       "category": "Photographic",
-      "text": "// Your description\n{cursor}\n\n// Photographic - Default\nA candid natural-light photograph, soft daylight, true-to-life color and texture, sharp focus with a gently blurred background, relaxed off-center framing.",
+      "text": "// Write your image in plain words. Optional scopes you can add:\n//   $background{ a misty forest at dusk }   = the scene / background\n//   $alice{ red dress }, $bob{ blue suit }  = one per subject (keeps them from blending; draw a box in the Region Box panel to place each)\n// Lines starting with // are just notes — they are ignored.\n{cursor}\n\nA candid natural-light photograph, soft daylight, true-to-life color, sharp focus.",
       "scope": {
         "type": "architecture",
         "architecture": "ideogram"

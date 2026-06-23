@@ -11,10 +11,147 @@ import { prepareInpaint, runInpaint, saveInpaintResult, uploadInputImage, inpain
 import { prepareEdit, saveEditedImage } from "./edit-image.js";
 import { fetchReposeCaps } from "./repose-from-image.js";
 import { runReposeInBackground } from "./repose-background.js";
+import { runExtendInBackground } from "./extend-background.js";
+import { runSmoothInBackground } from "./smooth-background.js";
+import { smoothNodesAvailable } from "./smooth-from-image.js";
 import { mountDetachedPoser } from "../pose-studio.js";
 import { showNodePackInstallModal } from "./model-bridge.js";
 import { loadCodeMirror, createEditor } from "./editor.js";
 import { activateTagAutocomplete } from "./autocomplete.js";
+
+// "Extend video": which I2V template to continue with. A continuation is always
+// image->video, so it uses an I2V recipe regardless of how the source was made.
+// Pick the family whose models are installed (GGUF vs safetensors); the quant
+// resolver in buildExtendGraph then maps the template's baked variant to the
+// exact file on disk.
+async function pickI2VTemplate() {
+  try {
+    const res = await api.fetchApi("/promptchain/models/list");
+    const models = res.ok ? ((await res.json())?.models || []) : [];
+    const names = models.map((m) => (m.filename || "").toLowerCase());
+    if (names.some((n) => n.endsWith(".gguf") && n.includes("i2v") && (n.includes("a14b") || n.includes("wan2.2")))) return "wan22-i2v-gguf";
+    if (names.some((n) => /wan2\.2_i2v_.*(fp8_scaled|fp16)\.safetensors/.test(n))) return "wan22-i2v";
+  } catch { /* fall through to default */ }
+  return "wan22-i2v-gguf"; // the resolver remaps to whatever quant is actually installed
+}
+
+async function fetchTemplateJson(id) {
+  try {
+    const res = await api.fetchApi(`/promptchain/templates/${encodeURIComponent(id)}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.template || data;
+  } catch { return null; }
+}
+
+// Lightning (4-step) renders through the "-fast" template, which bakes the
+// LightX2V distill LoRAs. Picking it without those files on disk would build an
+// empty LoraLoaderModelOnly and render garbage with no error (the same failure
+// that rejected sf-video-test). Gate the option on the LoRAs actually being
+// installed. Fail-open on any probe error — server-side validation still
+// catches a genuinely missing file.
+async function lightningLorasInstalled(fastTemplate) {
+  try {
+    if (!fastTemplate?.nodes) return true;
+    const infoRes = await api.fetchApi("/object_info/LoraLoaderModelOnly");
+    if (!infoRes.ok) return true;
+    const info = await infoRes.json();
+    const installed = info?.LoraLoaderModelOnly?.input?.required?.lora_name?.[0] || [];
+    const installedSet = new Set(installed.map((n) => String(n).toLowerCase()));
+    const needed = fastTemplate.nodes
+      .filter((n) => (n.type || n.comfyClass) === "LoraLoaderModelOnly")
+      .map((n) => String(n.widgets_values?.[0] || "").toLowerCase())
+      .filter(Boolean);
+    if (!needed.length) return true;
+    return needed.every((f) => installedSet.has(f));
+  } catch { return true; }
+}
+
+// Per-recipe sampler defaults read from the SELECTED template's baked widgets —
+// NOT a config, because config presets only describe the normal recipe and are
+// wrong for the 4-step lightning one. KSamplerAdvanced widget order:
+// add_noise, noise_seed, control_after_generate, steps, cfg, sampler_name,
+// scheduler, start_at_step, end_at_step, return_with_leftover_noise.
+function extractRecipeDefaults(template) {
+  if (!template?.nodes) return null;
+  const find = (t) => template.nodes.find((n) => (n.type || n.comfyClass) === t);
+  const all = (t) => template.nodes.filter((n) => (n.type || n.comfyClass) === t);
+  const ks = all("KSamplerAdvanced");
+  const high = ks.find((n) => (n.widgets_values || [])[0] === "enable") || ks[0];
+  const hv = high?.widgets_values || [];
+  const ms = find("ModelSamplingSD3");
+  return {
+    steps: Number(hv[3]) || 20,
+    cfg: hv[4] != null ? Number(hv[4]) : 3.5,
+    sampler: hv[5] || "euler",
+    scheduler: hv[6] || "simple",
+    shift: Number((ms?.widgets_values || [])[0]) || 5,
+  };
+}
+
+async function prepareExtend(hash) {
+  if (!hash) return null;
+  const res = await api.fetchApi(`/promptchain/extend/prepare?hash=${encodeURIComponent(hash)}`);
+  if (!res.ok) return null;
+  const d = await res.json();
+  if (!d?.last_frame) return null;
+  const q = new URLSearchParams({ filename: d.last_frame, subfolder: "", type: "input" });
+  const templateId = await pickI2VTemplate();
+  const [normalTpl, fastTpl] = await Promise.all([
+    fetchTemplateJson(templateId),
+    fetchTemplateJson(`${templateId}-fast`),
+  ]);
+  return {
+    lastFrameFilename: d.last_frame,
+    lastFrameUrl: api.apiURL(`/view?${q}`),
+    sourceRef: d.source_ref || "",
+    fps: d.fps || 16,
+    frameCount: d.frame_count || 0,
+    width: d.width || 0,
+    height: d.height || 0,
+    templateId, // vanilla base; confirmExtend appends "-fast" for the Lightning recipe
+    lightningAvailable: await lightningLorasInstalled(fastTpl),
+    // Slider seeds: clip dims follow the SOURCE (drops the 640×640 hardcode).
+    // Length defaults to the source's DURATION in native-16fps frames (snapped to
+    // Wan's 4n+1) — so a smoothed 161f@32fps clip (5s) asks for ~81, not 161
+    // (which would be a too-long 10s render). fps default is the i2v native (16).
+    defaults: {
+      // Snap dims to /16 (Wan's latent grid) and clamp to a trained ceiling, so a
+      // foreign import's odd 1080p dims can't crash the patchify reshape.
+      width: Math.min(1280, Math.round((d.width || 640) / 16) * 16),
+      height: Math.min(1280, Math.round((d.height || 640) / 16) * 16),
+      length: (() => {
+        const dur = (d.frame_count || 81) / (d.fps || 16);
+        const native = Math.round(dur * 16);
+        // Ceiling 161 (~10s): length is ONE continuation clip, never the whole
+        // (possibly long / already-extended) source duration — else it OOMs.
+        return Math.min(161, Math.max(5, Math.round((native - 1) / 4) * 4 + 1));
+      })(),
+      fps: d.fps || 16,
+    },
+    recipeDefaults: {
+      normal: extractRecipeDefaults(normalTpl),
+      lightning: extractRecipeDefaults(fastTpl),
+    },
+  };
+}
+
+// "Smooth": offer to install the RIFE pack (Frame-Interpolation) on first use,
+// then re-register node defs so RIFE VFI becomes available without a full reload.
+function installFrameInterpPack() {
+  return new Promise((resolve) => {
+    let settled = false;
+    const settle = (v) => { if (!settled) { settled = true; resolve(v); } };
+    showNodePackInstallModal(
+      "FrameInterpolation",
+      async () => {
+        try { const defs = await app.getNodeDefs(); await app.registerNodesFromDefs(defs); } catch {}
+        settle(true);
+      },
+      () => settle(false),
+    );
+  });
+}
 
 // The reference box must show the prompt that actually made THIS image.
 // The embedded prompt is authoritative whenever it still carries $region
@@ -165,6 +302,12 @@ export async function openViewer(images, startIndex = 0, workflowId = "", onDele
     onReposeCaps: () => fetchReposeCaps(),
     onReposeRun: (opts) => runReposeInBackground(opts),
     onMountPoser: (el, opts) => mountDetachedPoser(el, opts),
+    onExtendPrepare: (hash) => prepareExtend(hash),
+    onExtendRun: (opts) => runExtendInBackground(opts),
+    onSmoothCheck: () => smoothNodesAvailable(),
+    onSmoothInstall: () => installFrameInterpPack(),
+    onSmoothPrepare: (hash) => prepareExtend(hash), // reuse: stages the source video + fps
+    onSmoothRun: (opts) => runSmoothInBackground(opts),
   });
 }
 

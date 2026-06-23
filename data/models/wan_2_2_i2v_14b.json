@@ -5,122 +5,57 @@
   "architecture": "wan22",
   "family": "wan22_i2v",
   "author": "Alibaba/Wan",
-  "description": "14B parameter image-to-video model. Dual-expert MoE architecture — high-noise and low-noise models run sequentially. 4-step generation with LightX2V LoRAs.",
+  "description": "14B image-to-video. Dual-expert MoE (high-noise + low-noise run sequentially). Safetensors fp8/fp16 via UNETLoader. Vanilla full-quality sampling by default; an optional LightX2V 4-step LoRA template gives fast drafts.",
   "license": "Apache 2.0",
-  "tags": [
-    "wan",
-    "video",
-    "i2v",
-    "image-to-video",
-    "MoE",
-    "14B"
-  ],
+  "tags": ["wan", "video", "i2v", "image-to-video", "MoE", "14B"],
   "url": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
   "release_date": "2025-12-01",
   "tag_sources": [],
   "tag_format": "spaces",
   "prompt_style": "natural",
   "trigger": "",
-  "negative": "",
-  "notes": "Dual-expert MoE: load HIGH + LOW noise models separately. 4 steps with LightX2V LoRAs, euler/simple, shift 5.0. 640x640, 81 frames, 16fps.",
+  "negative": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走",
+  "notes": "Vanilla: 20 steps (10 high + 10 low), CFG 3.5, euler/simple, ModelSamplingSD3 shift 5.0, 640x640, 81 frames, 16fps. Fast template = LightX2V 4-step LoRAs on both experts (4 steps, CFG 1.0) - faster but less motion and no negative prompt. 24GB: fp8 comfortable (one expert resident ~14GB); fp16 needs offload.",
   "files": [
     {
       "label": "Diffusion Model (High Noise)",
       "folder": "diffusion_models",
-      "filename": "wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors",
-      "size_bytes": 14294742832,
-      "source": {
-        "provider": "huggingface",
-        "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-        "path": "split_files/diffusion_models/wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors"
-      },
-      "sha256": null
+      "primary": true,
+      "variants": [
+        { "precision": "fp8_scaled", "filename": "wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors", "size_bytes": 14294742832, "source": { "provider": "huggingface", "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged", "path": "split_files/diffusion_models/wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors" }, "sha256": null },
+        { "precision": "fp16", "filename": "wan2.2_i2v_high_noise_14B_fp16.safetensors", "size_bytes": 28649479008, "source": { "provider": "huggingface", "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged", "path": "split_files/diffusion_models/wan2.2_i2v_high_noise_14B_fp16.safetensors" }, "sha256": null }
+      ]
     },
     {
       "label": "Diffusion Model (Low Noise)",
       "folder": "diffusion_models",
-      "filename": "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors",
-      "size_bytes": 14294742832,
-      "source": {
-        "provider": "huggingface",
-        "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-        "path": "split_files/diffusion_models/wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors"
-      },
-      "sha256": null
+      "variants": [
+        { "precision": "fp8_scaled", "filename": "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors", "size_bytes": 14294742832, "source": { "provider": "huggingface", "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged", "path": "split_files/diffusion_models/wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors" }, "sha256": null },
+        { "precision": "fp16", "filename": "wan2.2_i2v_low_noise_14B_fp16.safetensors", "size_bytes": 28649479008, "source": { "provider": "huggingface", "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged", "path": "split_files/diffusion_models/wan2.2_i2v_low_noise_14B_fp16.safetensors" }, "sha256": null }
+      ]
     },
     {
       "label": "Text Encoder (UMT5-XXL)",
       "folder": "text_encoders",
-      "filename": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
-      "size_bytes": 6735906897,
-      "source": {
-        "provider": "huggingface",
-        "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-        "path": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
-      },
-      "sha256": null
+      "variants": [
+        { "precision": "fp8", "filename": "umt5_xxl_fp8_e4m3fn_scaled.safetensors", "size_bytes": 6735906897, "source": { "provider": "huggingface", "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged", "path": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors" }, "sha256": null },
+        { "precision": "fp16", "filename": "umt5_xxl_fp16.safetensors", "size_bytes": 11401671879, "source": { "provider": "huggingface", "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged", "path": "split_files/text_encoders/umt5_xxl_fp16.safetensors" }, "sha256": null }
+      ]
     },
-    {
-      "label": "VAE",
-      "folder": "vae",
-      "filename": "wan_2.1_vae.safetensors",
-      "size_bytes": 253815318,
-      "source": {
-        "provider": "huggingface",
-        "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-        "path": "split_files/vae/wan_2.1_vae.safetensors"
-      },
-      "sha256": null
-    },
-    {
-      "label": "LightX2V LoRA (High Noise)",
-      "folder": "loras",
-      "filename": "wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors",
-      "size_bytes": 1226977424,
-      "source": {
-        "provider": "huggingface",
-        "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-        "path": "split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors"
-      },
-      "sha256": null
-    },
-    {
-      "label": "LightX2V LoRA (Low Noise)",
-      "folder": "loras",
-      "filename": "wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors",
-      "size_bytes": 1226977424,
-      "source": {
-        "provider": "huggingface",
-        "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-        "path": "split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors"
-      },
-      "sha256": null
-    }
+    { "label": "VAE", "folder": "vae", "filename": "wan_2.1_vae.safetensors", "size_bytes": 253815318, "source": { "provider": "huggingface", "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged", "path": "split_files/vae/wan_2.1_vae.safetensors" }, "sha256": null },
+    { "label": "LightX2V 4-step LoRA - High Noise (Fast, rank64 build)", "folder": "loras", "optional": true, "filename": "wan2.2_i2v_A14b_high_noise_lora_rank64_lightx2v_4step_1022.safetensors", "size_bytes": 665845760, "source": { "provider": "huggingface", "repo": "lightx2v/Wan2.2-Distill-Loras", "path": "wan2.2_i2v_A14b_high_noise_lora_rank64_lightx2v_4step_1022.safetensors" }, "sha256": null },
+    { "label": "LightX2V 4-step LoRA - Low Noise (Fast, rank64 build)", "folder": "loras", "optional": true, "filename": "wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors", "size_bytes": 774897664, "source": { "provider": "huggingface", "repo": "lightx2v/Wan2.2-Distill-Loras", "path": "wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors" }, "sha256": null }
   ],
   "nodes": {
-    "KSampler": {
-      "steps": 4,
-      "cfg": 1.0,
+    "KSamplerAdvanced": {
+      "steps": 20,
+      "cfg": 3.5,
       "sampler_name": "euler",
       "scheduler": "simple",
-      "steps_range": [
-        4,
-        30
-      ],
-      "cfg_range": [
-        1.0,
-        5.0
-      ],
-      "sampler_name_options": [
-        "euler",
-        "dpmpp_sde",
-        "dpmpp_2m"
-      ],
-      "scheduler_options": [
-        "simple",
-        "normal",
-        "beta"
-      ]
+      "steps_range": [10, 40],
+      "cfg_range": [1.0, 6.0],
+      "sampler_name_options": ["euler", "uni_pc", "dpmpp_2m"],
+      "scheduler_options": ["simple", "normal", "beta"]
     }
   }
 }

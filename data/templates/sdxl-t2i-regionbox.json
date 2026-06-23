@@ -1,0 +1,86 @@
+{
+  "name": "Regional — Region Boxes",
+  "category": "Generation",
+  "order": 1,
+  "scope": {
+    "type": "architecture",
+    "architecture": "sdxl"
+  },
+  "created_at": 1781740800,
+  "id": "sdxl-t2i-regionbox",
+  "nodes": [
+    {
+      "type": "KSampler",
+      "offset": [1560, 0],
+      "size": [300, 474],
+      "widgets_values": [674787291728667, "randomize", 30, 5, "euler", "normal", 1],
+      "properties": { "Node name for S&R": "KSampler" }
+    },
+    {
+      "type": "VAEDecode",
+      "offset": [1900, 0],
+      "size": [210, 46],
+      "widgets_values": [],
+      "properties": { "Node name for S&R": "VAEDecode" }
+    },
+    {
+      "type": "SaveImage",
+      "offset": [1900, 120],
+      "size": [320, 380],
+      "widgets_values": ["{model_name}/%date:yyyy-MM-dd_hhmmss%"],
+      "properties": {}
+    },
+    {
+      "type": "CLIPSetLastLayer",
+      "offset": [820, 220],
+      "size": [260, 60],
+      "widgets_values": [-2],
+      "properties": { "Node name for S&R": "CLIPSetLastLayer" }
+    },
+    {
+      "type": "CheckpointLoaderSimple",
+      "offset": [820, 0],
+      "size": [360, 100],
+      "widgets_values": ["PVCStyleModelMovable_epsIll11.safetensors"],
+      "properties": { "Node name for S&R": "CheckpointLoaderSimple" }
+    },
+    {
+      "type": "EmptyLatentImage",
+      "offset": [820, 320],
+      "size": [300, 106],
+      "widgets_values": [832, 1216, 1],
+      "properties": { "Node name for S&R": "EmptyLatentImage" }
+    },
+    {
+      "type": "PromptChain_AttentionCouple",
+      "offset": [1200, 0],
+      "size": [300, 170],
+      "widgets_values": [0.5, 22],
+      "properties": { "Node name for S&R": "PromptChain_AttentionCouple" }
+    },
+    {
+      "type": "PromptChain_RegionBox",
+      "offset": [1190, 220],
+      "size": [340, 400],
+      "widgets_values": ["", 832, 1216, 0],
+      "properties": { "Node name for S&R": "PromptChain_RegionBox" }
+    }
+  ],
+  "connections": [
+    { "from_node_idx": 4, "from_slot": 0, "to_node_idx": 6, "to_slot": 0 },
+    { "from_node_idx": 4, "from_slot": 1, "to_node_idx": 3, "to_slot": 0 },
+    { "from_node_idx": 3, "from_slot": 0, "to_node_idx": 6, "to_slot": 1 },
+    { "from_node_idx": 6, "from_slot": 0, "to_node_idx": 0, "to_slot": 0 },
+    { "from_node_idx": 6, "from_slot": 1, "to_node_idx": 0, "to_slot": 1 },
+    { "from_node_idx": 6, "from_slot": 2, "to_node_idx": 0, "to_slot": 2 },
+    { "from_node_idx": 7, "from_slot": 0, "to_node_idx": 6, "to_slot": 3 },
+    { "from_node_idx": 7, "from_slot": 1, "to_node_idx": 6, "to_slot": 4 },
+    { "from_node_idx": 5, "from_slot": 0, "to_node_idx": 0, "to_slot": 3 },
+    { "from_node_idx": 0, "from_slot": 0, "to_node_idx": 1, "to_slot": 0 },
+    { "from_node_idx": 4, "from_slot": 2, "to_node_idx": 1, "to_slot": 1 },
+    { "from_node_idx": 1, "from_slot": 0, "to_node_idx": 2, "to_slot": 0 }
+  ],
+  "anchorConnections": [
+    { "from_slot": 3, "to_node_idx": 6, "to_slot": 2 }
+  ]
+}

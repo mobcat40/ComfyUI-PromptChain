@@ -1,0 +1,148 @@
+{
+  "name": "Regional — Region Boxes",
+  "category": "Generation",
+  "order": 1,
+  "scope": {
+    "type": "architecture",
+    "architecture": "ideogram"
+  },
+  "created_at": 1781740800,
+  "id": "ideogram-t2i-regionbox",
+  "prompt_id": "ideogram-default",
+  "nodes": [
+    {
+      "type": "CLIPTextEncode",
+      "offset": [900, 0],
+      "size": [225, 116],
+      "widgets_values": [""],
+      "properties": { "Node name for S&R": "CLIPTextEncode" }
+    },
+    {
+      "type": "ConditioningZeroOut",
+      "offset": [1180, 0],
+      "size": [240, 48],
+      "widgets_values": [],
+      "properties": { "Node name for S&R": "ConditioningZeroOut" }
+    },
+    {
+      "type": "CFGOverride",
+      "offset": [1180, 120],
+      "size": [280, 106],
+      "widgets_values": [3.0, 0.7, 1.0],
+      "properties": { "Node name for S&R": "CFGOverride" }
+    },
+    {
+      "type": "DualModelGuider",
+      "offset": [1500, 120],
+      "size": [266, 150],
+      "widgets_values": [7.0],
+      "properties": { "Node name for S&R": "DualModelGuider" }
+    },
+    {
+      "type": "PromptChain_IdeogramSampler",
+      "offset": [1840, 360],
+      "size": [310, 220],
+      "widgets_values": [4, 0.08],
+      "properties": { "Node name for S&R": "PromptChain_IdeogramSampler" }
+    },
+    {
+      "type": "SaveImage",
+      "offset": [2440, 0],
+      "size": [400, 460],
+      "widgets_values": ["Ideogram4/%date:yyyy-MM-dd%"],
+      "properties": {}
+    },
+    {
+      "type": "UNETLoader",
+      "offset": [820, 200],
+      "size": [320, 82],
+      "widgets_values": ["ideogram4_fp8_scaled.safetensors", "default"],
+      "properties": { "Node name for S&R": "UNETLoader" }
+    },
+    {
+      "type": "UNETLoader",
+      "offset": [820, 320],
+      "size": [320, 82],
+      "widgets_values": ["ideogram4_unconditional_fp8_scaled.safetensors", "default"],
+      "properties": { "Node name for S&R": "UNETLoader" }
+    },
+    {
+      "type": "CLIPLoader",
+      "offset": [560, 0],
+      "size": [320, 110],
+      "widgets_values": ["qwen3vl_8b_fp8_scaled.safetensors", "ideogram4", "default"],
+      "properties": { "Node name for S&R": "CLIPLoader" }
+    },
+    {
+      "type": "VAELoader",
+      "offset": [1500, 300],
+      "size": [246, 58],
+      "widgets_values": ["flux2-vae.safetensors"],
+      "properties": { "Node name for S&R": "VAELoader" }
+    },
+    {
+      "type": "RandomNoise",
+      "offset": [1500, 400],
+      "size": [260, 82],
+      "widgets_values": [0, "randomize"],
+      "properties": { "Node name for S&R": "RandomNoise" }
+    },
+    {
+      "type": "KSamplerSelect",
+      "offset": [1500, 520],
+      "size": [240, 58],
+      "widgets_values": ["euler"],
+      "properties": { "Node name for S&R": "KSamplerSelect" }
+    },
+    {
+      "type": "Ideogram4Scheduler",
+      "offset": [1500, 620],
+      "size": [300, 154],
+      "widgets_values": [20, 1024, 1024, 0.5, 1.75],
+      "properties": { "Node name for S&R": "Ideogram4Scheduler" }
+    },
+    {
+      "type": "EmptyFlux2LatentImage",
+      "offset": [1500, 800],
+      "size": [290, 106],
+      "widgets_values": [1024, 1024, 1],
+      "properties": { "Node name for S&R": "EmptyFlux2LatentImage" }
+    },
+    {
+      "type": "PromptChain_IdeogramCaption",
+      "offset": [600, 180],
+      "size": [250, 82],
+      "widgets_values": ["caption"],
+      "properties": { "Node name for S&R": "PromptChain_IdeogramCaption" }
+    },
+    {
+      "type": "PromptChain_RegionBox",
+      "offset": [560, 300],
+      "size": [340, 400],
+      "widgets_values": ["", 1024, 1024, 0],
+      "properties": { "Node name for S&R": "PromptChain_RegionBox" }
+    }
+  ],
+  "connections": [
+    { "from_node_idx": 8, "from_slot": 0, "to_node_idx": 0, "to_slot": 0 },
+    { "from_node_idx": 14, "from_slot": 0, "to_node_idx": 0, "to_slot": 1 },
+    { "from_node_idx": 0, "from_slot": 0, "to_node_idx": 3, "to_slot": 1 },
+    { "from_node_idx": 0, "from_slot": 0, "to_node_idx": 1, "to_slot": 0 },
+    { "from_node_idx": 1, "from_slot": 0, "to_node_idx": 3, "to_slot": 3 },
+    { "from_node_idx": 6, "from_slot": 0, "to_node_idx": 2, "to_slot": 0 },
+    { "from_node_idx": 2, "from_slot": 0, "to_node_idx": 3, "to_slot": 0 },
+    { "from_node_idx": 7, "from_slot": 0, "to_node_idx": 3, "to_slot": 2 },
+    { "from_node_idx": 3, "from_slot": 0, "to_node_idx": 4, "to_slot": 1 },
+    { "from_node_idx": 10, "from_slot": 0, "to_node_idx": 4, "to_slot": 0 },
+    { "from_node_idx": 11, "from_slot": 0, "to_node_idx": 4, "to_slot": 2 },
+    { "from_node_idx": 12, "from_slot": 0, "to_node_idx": 4, "to_slot": 3 },
+    { "from_node_idx": 13, "from_slot": 0, "to_node_idx": 4, "to_slot": 4 },
+    { "from_node_idx": 9, "from_slot": 0, "to_node_idx": 4, "to_slot": 5 },
+    { "from_node_idx": 4, "from_slot": 0, "to_node_idx": 5, "to_slot": 0 },
+    { "from_node_idx": 15, "from_slot": 1, "to_node_idx": 14, "to_slot": 2 }
+  ],
+  "anchorConnections": [
+    { "from_slot": 1, "to_node_idx": 14, "to_slot": 0 },
+    { "from_slot": 3, "to_node_idx": 14, "to_slot": 1 }
+  ]
+}

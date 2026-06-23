@@ -2,7 +2,7 @@
 # Install only:
 #   pip install insightface onnxruntime-gpu open-clip-torch safetensors ml_dtypes==0.3.2
 
-insightface>=0.7.3
+insightface>=1.0
 onnxruntime-gpu>=1.16.0
 # If onnxruntime-gpu fails (CPU only): pip install onnxruntime
 

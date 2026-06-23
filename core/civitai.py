@@ -927,52 +927,109 @@ def download_model(url: str, filename: str, on_progress=None, folder_type: str =
             else:
                 raise RuntimeError("CivitAI API key required for downloads. Set it in PromptChain/config.json or CIVITAI_API_KEY env var.")
 
+        # Resume an interrupted download: a leftover .part is a valid in-order
+        # prefix of the file (TCP delivers bytes in order, and HTTP errors are
+        # caught before any write, so .part only ever holds real body bytes).
+        # Ask the server to continue from that offset via a Range request.
+        resume_from = 0
+        try:
+            if os.path.isfile(temp_path):
+                resume_from = os.path.getsize(temp_path)
+        except OSError:
+            resume_from = 0
+        if resume_from:
+            headers["Range"] = f"bytes={resume_from}-"
+
         resp = requests.get(url, stream=True, timeout=30, allow_redirects=True, headers=headers)
-        resp.raise_for_status()
 
-        total = int(resp.headers.get("content-length", 0))
-        if total > _MAX_DOWNLOAD_BYTES:
+        # Range rejected (416): our .part is >= the server's file. Exactly equal
+        # = a finished-but-unpromoted download, so promote it; any other offset
+        # is unusable, so discard the stub and restart clean.
+        already_complete = False
+        if resume_from and resp.status_code == 416:
+            tail = resp.headers.get("content-range", "").rsplit("/", 1)[-1]
+            full = int(tail) if tail.isdigit() else 0
             resp.close()
-            raise RuntimeError(f"refusing download: Content-Length {total} exceeds cap {_MAX_DOWNLOAD_BYTES}")
-        if total > 0:
-            try:
-                free = shutil.disk_usage(dest_dir).free
-                if total > free:
-                    resp.close()
-                    raise RuntimeError(f"insufficient disk space: need {total}, have {free}")
-            except OSError:
-                pass  # disk_usage can fail on some network mounts; don't block download
+            if full and resume_from == full:
+                already_complete = True
+            else:
+                try:
+                    os.remove(temp_path)
+                except OSError:
+                    pass
+                resume_from = 0
+                headers.pop("Range", None)
+                resp = requests.get(url, stream=True, timeout=30, allow_redirects=True, headers=headers)
 
-        with _download_lock:
-            _download_state["size_bytes"] = total
+        if not already_complete:
+            resp.raise_for_status()
 
-        downloaded = 0
-        last_chunk_at = _time.monotonic()
-        with open(temp_path, "wb") as f:
-            for chunk in resp.iter_content(chunk_size=1024 * 1024):
-                if _download_cancel.is_set():
-                    resp.close()
-                    raise RuntimeError("Download cancelled")
-                now = _time.monotonic()
-                if now - last_chunk_at > _CHUNK_STALL_SECONDS:
-                    resp.close()
-                    raise RuntimeError(f"download stalled: no data for {_CHUNK_STALL_SECONDS}s")
-                if not chunk:
-                    continue
-                last_chunk_at = now
-                downloaded += len(chunk)
-                if downloaded > _MAX_DOWNLOAD_BYTES:
-                    resp.close()
-                    raise RuntimeError(f"download exceeded cap {_MAX_DOWNLOAD_BYTES} bytes (server lied about Content-Length)")
-                f.write(chunk)
-                progress = (downloaded / total * 100) if total else 0
+            # 206 = server honored the resume; its Content-Range carries the FULL
+            # size (Content-Length is only the remaining tail). Any other status
+            # (200) means Range was ignored — start clean so we never append onto
+            # a stale head or double-count progress.
+            if resp.status_code == 206:
+                mode = "ab"
+                tail = resp.headers.get("content-range", "").rsplit("/", 1)[-1]
+                total = int(tail) if tail.isdigit() else resume_from + int(resp.headers.get("content-length", 0))
+            else:
+                mode = "wb"
+                resume_from = 0
+                total = int(resp.headers.get("content-length", 0))
 
-                with _download_lock:
-                    _download_state["downloaded"] = downloaded
-                    _download_state["progress"] = progress
+            if total > _MAX_DOWNLOAD_BYTES:
+                resp.close()
+                raise RuntimeError(f"refusing download: size {total} exceeds cap {_MAX_DOWNLOAD_BYTES}")
+            if total > 0:
+                try:
+                    free = shutil.disk_usage(dest_dir).free
+                    if (total - resume_from) > free:
+                        resp.close()
+                        raise RuntimeError(f"insufficient disk space: need {total - resume_from}, have {free}")
+                except OSError:
+                    pass  # disk_usage can fail on some network mounts; don't block download
 
-                if on_progress:
-                    on_progress(downloaded, total)
+            with _download_lock:
+                _download_state["size_bytes"] = total
+
+            downloaded = resume_from
+            last_chunk_at = _time.monotonic()
+            with open(temp_path, mode) as f:
+                for chunk in resp.iter_content(chunk_size=1024 * 1024):
+                    if _download_cancel.is_set():
+                        resp.close()
+                        raise RuntimeError("Download cancelled")
+                    now = _time.monotonic()
+                    if now - last_chunk_at > _CHUNK_STALL_SECONDS:
+                        resp.close()
+                        raise RuntimeError(f"download stalled: no data for {_CHUNK_STALL_SECONDS}s")
+                    if not chunk:
+                        continue
+                    last_chunk_at = now
+                    downloaded += len(chunk)
+                    if downloaded > _MAX_DOWNLOAD_BYTES:
+                        resp.close()
+                        # streamed past the declared size → the .part is corrupt
+                        try:
+                            os.remove(temp_path)
+                        except OSError:
+                            pass
+                        raise RuntimeError(f"download exceeded cap {_MAX_DOWNLOAD_BYTES} bytes (server lied about Content-Length)")
+                    f.write(chunk)
+                    progress = (downloaded / total * 100) if total else 0
+
+                    with _download_lock:
+                        _download_state["downloaded"] = downloaded
+                        _download_state["progress"] = progress
+
+                    if on_progress:
+                        on_progress(downloaded, total)
+
+            # Never promote a short file to its final name: a stream that ended
+            # early without raising would otherwise look complete on disk and
+            # block resume forever. Keep the .part so the next attempt continues.
+            if total > 0 and downloaded != total:
+                raise RuntimeError(f"incomplete download: got {downloaded} of {total} bytes")
 
         os.replace(temp_path, dest_path)
 
@@ -984,12 +1041,9 @@ def download_model(url: str, filename: str, on_progress=None, folder_type: str =
         with _download_lock:
             _download_state["status"] = "failed"
             _download_state["error"] = str(e)
-
-        if os.path.exists(temp_path):
-            try:
-                os.remove(temp_path)
-            except OSError:
-                pass
+        # Keep the .part on a recoverable interruption (stall, network drop,
+        # cancel, incomplete) so the next attempt resumes from here instead of
+        # restarting. The corrupt-state paths above already removed it.
         raise
     finally:
         with _download_lock:

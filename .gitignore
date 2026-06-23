@@ -30,3 +30,5 @@ cache/
 # dev-only probes/harnesses/tests moved out of scripts/ (which keeps only the
 # runtime-imported modules) — kept local, never shipped
 /_harness/
+# comfy-node-publish build artifact (the uploaded tarball) — never commit it
+/node.zip

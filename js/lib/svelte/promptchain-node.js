@@ -4,19 +4,19 @@ var __typeError = (msg) => {
 var __accessCheck = (obj, member, msg) => member.has(obj) || __typeError("Cannot " + msg);
 var __privateGet = (obj, member, getter) => (__accessCheck(obj, member, "read from private field"), getter ? getter.call(obj) : member.get(obj));
 var __privateAdd = (obj, member, value) => member.has(obj) ? __typeError("Cannot add the same private member more than once") : member instanceof WeakSet ? member.add(obj) : member.set(obj, value);
-var _mode, _switchIndex, _locked, _disabled, _collapsed, _connectedCount, _hasLabels, _switchLabel, _iterateCurrent, _iterateTotal, _iterateCycle, _switchOptions, _outputPanelOpen, _imagePanelVisible, _aiAssistantOpen, _posePanelVisible, _hasPoseStudio, _compiledOutput, _compiledNegOutput, _imageUrl, _previewUrl, _progress, _isGenerating, _rollSelected;
+var _mode, _switchIndex, _locked, _disabled, _collapsed, _connectedCount, _hasLabels, _switchLabel, _iterateCurrent, _iterateTotal, _iterateCycle, _switchOptions, _outputPanelOpen, _imagePanelVisible, _aiAssistantOpen, _posePanelVisible, _regionPanelVisible, _hasPoseStudio, _hasRegionBox, _compiledOutput, _compiledNegOutput, _imageUrl, _previewUrl, _progress, _isGenerating, _rollSelected;
 import { p as push, o as bind_this, k as append, l as pop, A as from_html, d as delegate, a as prop, g as get, j as delegated, m as user_derived, s as state, c as proxy, u as user_effect, i as if_block, f as sibling, r as event, e as set, C as tick, n as child, D as comment, v as first_child, w as each, t as template_effect, y as set_text, h as set_class, x as set_attribute, Q as clsx, z as index, R as text, E as untrack, M as unmount, L as mount } from "./disclose-version-uq4tn5Y6.js";
 import { u as useApi, p as provideApi } from "./api-context-BFKo1mCD.js";
-import { M as Menubar } from "./Menubar-DI-z1NzN.js";
+import { M as Menubar } from "./Menubar-DC12j8gE.js";
 import { o as onDestroy, a as onMount } from "./index-client-iMRCrpBY.js";
 import { s as set_style } from "./style-Boi27oOu.js";
 import { h as html, P as PopupAnchor } from "./PopupAnchor-C6OWGGTI.js";
 import { api } from "/scripts/api.js";
-import { c as clampGalleryRowHeight, z as zoomGalleryRowHeight, G as GeneratedGallery } from "./GeneratedGallery-Dw0CC3-N.js";
+import { c as clampGalleryRowHeight, z as zoomGalleryRowHeight, G as GeneratedGallery } from "./GeneratedGallery-D5XbkMk7.js";
 import { b as bind_value } from "./input-DFQhebEz.js";
 import { app } from "/scripts/app.js";
 import { r as readNodePrompt, c as cryptoId, e as extractNGrams, m as matchCharactersInDb, i as isStandaloneMainPromptChain, a as applyPromptText } from "./ai-patch-helpers-Bayqv0oF.js";
-var root$c = from_html(`<div class="pcr-editor-frame"></div>`);
+var root$d = from_html(`<div class="pcr-editor-frame"></div>`);
 function EditorPane($$anchor, $$props) {
   push($$props, true);
   let editorContainer;
@@ -26,12 +26,12 @@ function EditorPane($$anchor, $$props) {
   function setEditorView(view) {
   }
   var $$exports = { getContainer, setEditorView };
-  var div = root$c();
+  var div = root$d();
   bind_this(div, ($$value) => editorContainer = $$value, () => editorContainer);
   append($$anchor, div);
   return pop($$exports);
 }
-var root$b = from_html(`<div class="pcr-output-panel-content pcr-scrollable svelte-qbaa69" tabindex="0"></div>`);
+var root$c = from_html(`<div class="pcr-output-panel-content pcr-scrollable svelte-qbaa69" tabindex="0"></div>`);
 function PromptOutput($$anchor, $$props) {
   push($$props, true);
   let compiledOutput = prop($$props, "compiledOutput", 3, ""), compiledNegOutput = prop($$props, "compiledNegOutput", 3, "");
@@ -59,7 +59,7 @@ ${escapeHtml(compiledNegOutput())}`;
     }
     return result;
   });
-  var div = root$b();
+  var div = root$c();
   html(div, () => get(html$1), true);
   delegated("pointerdown", div, (e) => e.stopPropagation());
   delegated("mousedown", div, (e) => e.stopPropagation());
@@ -70,7 +70,7 @@ delegate(["pointerdown", "mousedown"]);
 var root_1$6 = from_html(`<span class="pcr-console-placeholder svelte-1ouufnb">No log entries</span>`);
 var root_3$5 = from_html(`<div class="pcr-console-line svelte-1ouufnb"><span class="pcr-console-time svelte-1ouufnb"> </span> <span class="pcr-console-msg svelte-1ouufnb"> </span></div>`);
 var root_4$6 = from_html(`<div class="pcr-console-scroll-btn svelte-1ouufnb"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"></path></svg></div>`);
-var root$a = from_html(`<div class="pcr-console-log pcr-scrollable svelte-1ouufnb" tabindex="0"><!> <!></div>`);
+var root$b = from_html(`<div class="pcr-console-log pcr-scrollable svelte-1ouufnb" tabindex="0"><!> <!></div>`);
 function ConsoleLog($$anchor, $$props) {
   push($$props, true);
   let active = prop($$props, "active", 3, false);
@@ -155,7 +155,7 @@ function ConsoleLog($$anchor, $$props) {
   onDestroy(() => {
     unsubscribe();
   });
-  var div = root$a();
+  var div = root$b();
   var node = child(div);
   {
     var consequent = ($$anchor2) => {
@@ -212,8 +212,8 @@ function ConsoleLog($$anchor, $$props) {
   pop();
 }
 delegate(["pointerdown", "mousedown", "click"]);
-var root_2$8 = from_html(`<div class="pcr-output-panel-generated pcr-scrollable svelte-1kzsw09" style="display:block"><!></div>`);
-var root$9 = from_html(`<div></div> <div class="pcr-output-panel svelte-1kzsw09"><div class="pcr-output-panel-header svelte-1kzsw09"><div class="pcr-output-panel-tabs svelte-1kzsw09"><button>Prompt Output</button> <button> </button> <button>Console</button></div> <div class="pcr-output-panel-controls svelte-1kzsw09"><div class="pcr-output-panel-maximize svelte-1kzsw09"></div>  <div class="pcr-output-panel-close svelte-1kzsw09" title="Close Panel"></div></div></div> <!> <div><!></div> <!></div>`, 1);
+var root_2$9 = from_html(`<div class="pcr-output-panel-generated pcr-scrollable svelte-1kzsw09" style="display:block"><!></div>`);
+var root$a = from_html(`<div></div> <div class="pcr-output-panel svelte-1kzsw09"><div class="pcr-output-panel-header svelte-1kzsw09"><div class="pcr-output-panel-tabs svelte-1kzsw09"><button>Prompt Output</button> <button> </button> <button>Console</button></div> <div class="pcr-output-panel-controls svelte-1kzsw09"><div class="pcr-output-panel-maximize svelte-1kzsw09"></div>  <div class="pcr-output-panel-close svelte-1kzsw09" title="Close Panel"></div></div></div> <!> <div><!></div> <!></div>`, 1);
 function OutputPanel($$anchor, $$props) {
   var _a, _b, _c, _d, _e;
   push($$props, true);
@@ -486,7 +486,7 @@ function OutputPanel($$anchor, $$props) {
   });
   onDestroy(() => resizeAc == null ? void 0 : resizeAc.abort());
   var $$exports = { open, close, toggle, openPrompt, getIsOpen };
-  var fragment = root$9();
+  var fragment = root$a();
   var div = first_child(fragment);
   let classes;
   let styles;
@@ -537,7 +537,7 @@ function OutputPanel($$anchor, $$props) {
   var node_3 = sibling(div_7, 2);
   {
     var consequent_2 = ($$anchor2) => {
-      var div_8 = root_2$8();
+      var div_8 = root_2$9();
       var node_4 = child(div_8);
       {
         var consequent_1 = ($$anchor3) => {
@@ -674,12 +674,13 @@ function OutputPanel($$anchor, $$props) {
   return pop($$exports);
 }
 delegate(["pointerdown", "mousedown", "click"]);
-var root_1$5 = from_html(`<img draggable="false" alt="" class="svelte-ro1n43"/>`);
-var root_2$7 = from_html(`<div class="pcr-image-placeholder svelte-ro1n43"> </div>`);
-var root_4$5 = from_html(`<span class="pcr-image-panel-progress-text svelte-ro1n43"> </span>`);
-var root_3$4 = from_html(`<div><div class="pcr-image-panel-progress-track svelte-ro1n43"><div class="pcr-image-panel-progress-bar svelte-ro1n43"></div></div> <!></div>`);
-var root_5$4 = from_html(`<span class="pcr-image-panel-info-text svelte-ro1n43"> </span>`);
-var root$8 = from_html(`<div class="pcr-image-divider svelte-ro1n43"></div> <div class="pcr-image-panel svelte-ro1n43"><div class="pcr-image-panel-header svelte-ro1n43"><span> </span> <button class="pcr-image-panel-close-btn svelte-ro1n43" title="Close image panel"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svelte-ro1n43"><line x1="18" y1="6" x2="6" y2="18" class="svelte-ro1n43"></line><line x1="6" y1="6" x2="18" y2="18" class="svelte-ro1n43"></line></svg></button></div> <div class="pcr-image-container svelte-ro1n43"><!> <!></div> <div><!></div></div>`, 1);
+var root_1$5 = from_html(`<video autoplay="" loop="" playsinline="" controls="" class="svelte-ro1n43"></video>`, 2);
+var root_2$8 = from_html(`<img draggable="false" alt="" class="svelte-ro1n43"/>`);
+var root_3$4 = from_html(`<div class="pcr-image-placeholder svelte-ro1n43"> </div>`);
+var root_5$4 = from_html(`<span class="pcr-image-panel-progress-text svelte-ro1n43"> </span>`);
+var root_4$5 = from_html(`<div><div class="pcr-image-panel-progress-track svelte-ro1n43"><div class="pcr-image-panel-progress-bar svelte-ro1n43"></div></div> <!></div>`);
+var root_6$3 = from_html(`<span class="pcr-image-panel-info-text svelte-ro1n43"> </span>`);
+var root$9 = from_html(`<div class="pcr-image-divider svelte-ro1n43"></div> <div class="pcr-image-panel svelte-ro1n43"><div class="pcr-image-panel-header svelte-ro1n43"><span> </span> <button class="pcr-image-panel-close-btn svelte-ro1n43" title="Close image panel"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svelte-ro1n43"><line x1="18" y1="6" x2="6" y2="18" class="svelte-ro1n43"></line><line x1="6" y1="6" x2="18" y2="18" class="svelte-ro1n43"></line></svg></button></div> <div class="pcr-image-container svelte-ro1n43"><!> <!></div> <div><!></div></div>`, 1);
 function ImagePanel($$anchor, $$props) {
   var _a, _b;
   push($$props, true);
@@ -699,6 +700,7 @@ function ImagePanel($$anchor, $$props) {
   let panelEl;
   let dividerEl;
   let imgEl;
+  let videoEl;
   let imgContainerEl;
   let isVisible = state(!!((_a = node().properties) == null ? void 0 : _a.pcrImagePreview));
   let panelWidth = state(proxy(((_b = node().properties) == null ? void 0 : _b.pcrImagePanelWidth) || DEFAULT_WIDTH));
@@ -771,6 +773,10 @@ function ImagePanel($$anchor, $$props) {
       return { filename: "", subfolder: "" };
     }
   }
+  let isVideoUrl = user_derived(() => {
+    if (!get(currentImageUrl)) return false;
+    return /\.(mp4|webm|m4v|mov)(\?|$)/i.test(parseImageUrl(get(currentImageUrl)).filename);
+  });
   let filenameDisplay = user_derived(() => {
     if (shared().isGenerating) return "Generating…";
     if (!get(currentImageUrl)) return "";
@@ -827,6 +833,12 @@ function ImagePanel($$anchor, $$props) {
     set(naturalWidth, (imgEl == null ? void 0 : imgEl.naturalWidth) || 0, true);
     set(naturalHeight, (imgEl == null ? void 0 : imgEl.naturalHeight) || 0, true);
     if (!get(isPreviewMode)) resetZoom();
+  }
+  function handleVideoLoaded() {
+    set(imageLoaded, true);
+    set(imageError, false);
+    set(naturalWidth, (videoEl == null ? void 0 : videoEl.videoWidth) || 0, true);
+    set(naturalHeight, (videoEl == null ? void 0 : videoEl.videoHeight) || 0, true);
   }
   function handleImageError() {
     set(imageLoaded, false);
@@ -1093,7 +1105,7 @@ function ImagePanel($$anchor, $$props) {
     showProgressBar,
     hideProgress
   };
-  var fragment = root$8();
+  var fragment = root$9();
   var div = first_child(fragment);
   let styles;
   bind_this(div, ($$value) => dividerEl = $$value, () => dividerEl);
@@ -1108,62 +1120,76 @@ function ImagePanel($$anchor, $$props) {
   var node_1 = child(div_3);
   {
     var consequent = ($$anchor2) => {
-      var img_1 = root_1$5();
+      var video = root_1$5();
+      video.muted = true;
       let styles_2;
+      bind_this(video, ($$value) => videoEl = $$value, () => videoEl);
+      template_effect(() => {
+        set_attribute(video, "src", get(currentImageUrl));
+        styles_2 = set_style(video, "", styles_2, { display: get(imageLoaded) ? "block" : "none" });
+      });
+      event("loadeddata", video, handleVideoLoaded);
+      event("error", video, handleImageError);
+      append($$anchor2, video);
+    };
+    var consequent_1 = ($$anchor2) => {
+      var img_1 = root_2$8();
+      let styles_3;
       bind_this(img_1, ($$value) => imgEl = $$value, () => imgEl);
       template_effect(() => {
         set_attribute(img_1, "src", get(currentImageUrl));
-        styles_2 = set_style(img_1, "", styles_2, { display: get(imageLoaded) ? "block" : "none" });
+        styles_3 = set_style(img_1, "", styles_3, { display: get(imageLoaded) ? "block" : "none" });
       });
       event("load", img_1, handleImageLoad);
       event("error", img_1, handleImageError);
       append($$anchor2, img_1);
     };
     if_block(node_1, ($$render) => {
-      if (get(currentImageUrl)) $$render(consequent);
+      if (get(currentImageUrl) && get(isVideoUrl)) $$render(consequent);
+      else if (get(currentImageUrl)) $$render(consequent_1, 1);
     });
   }
   var node_2 = sibling(node_1, 2);
   {
-    var consequent_1 = ($$anchor2) => {
-      var div_4 = root_2$7();
+    var consequent_2 = ($$anchor2) => {
+      var div_4 = root_3$4();
       var text_1 = child(div_4);
       template_effect(() => set_text(text_1, get(imageError) ? "Image not found" : "No image"));
       append($$anchor2, div_4);
     };
     if_block(node_2, ($$render) => {
-      if (!get(imageLoaded) || !get(currentImageUrl)) $$render(consequent_1);
+      if (!get(imageLoaded) || !get(currentImageUrl)) $$render(consequent_2);
     });
   }
   bind_this(div_3, ($$value) => imgContainerEl = $$value, () => imgContainerEl);
   var div_5 = sibling(div_3, 2);
   let classes_1;
-  let styles_3;
+  let styles_4;
   var node_3 = child(div_5);
   {
-    var consequent_3 = ($$anchor2) => {
-      var div_6 = root_3$4();
+    var consequent_4 = ($$anchor2) => {
+      var div_6 = root_4$5();
       let classes_2;
       var div_7 = child(div_6);
       var div_8 = child(div_7);
-      let styles_4;
+      let styles_5;
       var node_4 = sibling(div_7, 2);
       {
-        var consequent_2 = ($$anchor3) => {
-          var span_1 = root_4$5();
+        var consequent_3 = ($$anchor3) => {
+          var span_1 = root_5$4();
           var text_2 = child(span_1);
           template_effect(() => set_text(text_2, `${get(progressValue) ?? ""}/${get(progressMax) ?? ""}`));
           append($$anchor3, span_1);
         };
         if_block(node_4, ($$render) => {
-          if (!get(progressIndeterminate)) $$render(consequent_2);
+          if (!get(progressIndeterminate)) $$render(consequent_3);
         });
       }
       template_effect(() => {
         classes_2 = set_class(div_6, 1, "pcr-image-panel-progress svelte-ro1n43", null, classes_2, {
           "pcr-image-panel-progress-indeterminate": get(progressIndeterminate)
         });
-        styles_4 = set_style(div_8, "", styles_4, {
+        styles_5 = set_style(div_8, "", styles_5, {
           width: `${get(progressPercent) ?? ""}%`,
           transition: `width ${progressDuration * 1.3}s linear`
         });
@@ -1171,13 +1197,13 @@ function ImagePanel($$anchor, $$props) {
       append($$anchor2, div_6);
     };
     var alternate = ($$anchor2) => {
-      var span_2 = root_5$4();
+      var span_2 = root_6$3();
       var text_3 = child(span_2);
       template_effect(() => set_text(text_3, get(infoText)));
       append($$anchor2, span_2);
     };
     if_block(node_3, ($$render) => {
-      if (get(showProgress)) $$render(consequent_3);
+      if (get(showProgress)) $$render(consequent_4);
       else $$render(alternate, -1);
     });
   }
@@ -1192,7 +1218,7 @@ function ImagePanel($$anchor, $$props) {
     set_attribute(span, "title", get(filenameDisplay));
     set_text(text2, get(filenameDisplay));
     classes_1 = set_class(div_5, 1, "pcr-image-panel-info svelte-ro1n43", null, classes_1, { "pcr-image-panel-info-always": get(showProgress) });
-    styles_3 = set_style(div_5, "", styles_3, {
+    styles_4 = set_style(div_5, "", styles_4, {
       display: get(showProgress) || get(imageLoaded) && get(currentImageUrl) ? "flex" : "none"
     });
   });
@@ -1234,8 +1260,8 @@ delegate([
   "pointermove",
   "pointerup"
 ]);
-var root_2$6 = from_html(`<div class="pcr-pose-panel-placeholder svelte-1xr40xl">No 3D Poser node in the graph</div>`);
-var root$7 = from_html(`<div class="pcr-pose-panel svelte-1xr40xl"><!> <div class="pcr-pose-panel-body svelte-1xr40xl"><!></div></div> <div class="pcr-pose-divider svelte-1xr40xl"></div>`, 1);
+var root_2$7 = from_html(`<div class="pcr-pose-panel-placeholder svelte-1xr40xl">No 3D Poser node in the graph</div>`);
+var root$8 = from_html(`<div class="pcr-pose-panel svelte-1xr40xl"><!> <div class="pcr-pose-panel-body svelte-1xr40xl"><!></div></div> <div class="pcr-pose-divider svelte-1xr40xl"></div>`, 1);
 function PosePanel($$anchor, $$props) {
   var _a, _b;
   push($$props, true);
@@ -1415,6 +1441,240 @@ function PosePanel($$anchor, $$props) {
     toggle,
     getIsVisible
   };
+  var fragment = root$8();
+  var div = first_child(fragment);
+  let styles;
+  var node_1 = child(div);
+  {
+    if_block(node_1, ($$render) => {
+    });
+  }
+  var div_1 = sibling(node_1, 2);
+  var node_2 = child(div_1);
+  {
+    var consequent_1 = ($$anchor2) => {
+      var div_2 = root_2$7();
+      append($$anchor2, div_2);
+    };
+    if_block(node_2, ($$render) => {
+      if (!get(hasDock)) $$render(consequent_1);
+    });
+  }
+  bind_this(div_1, ($$value) => bodyEl = $$value, () => bodyEl);
+  bind_this(div, ($$value) => panelEl = $$value, () => panelEl);
+  var div_3 = sibling(div, 2);
+  let styles_1;
+  bind_this(div_3, ($$value) => dividerEl = $$value, () => dividerEl);
+  template_effect(() => {
+    styles = set_style(div, "", styles, {
+      width: `${get(panelWidth) ?? ""}px`,
+      display: get(isVisible) ? "flex" : "none"
+    });
+    styles_1 = set_style(div_3, "", styles_1, { display: get(isVisible) ? "flex" : "none" });
+  });
+  delegated("pointerdown", div, (e) => e.stopPropagation());
+  delegated("mousedown", div, (e) => e.stopPropagation());
+  delegated("click", div, (e) => e.stopPropagation());
+  delegated("dblclick", div, (e) => e.stopPropagation());
+  event("pointerleave", div, onPanelLeave);
+  event("pointermove", div, onPanelMove, true);
+  delegated("dblclick", div_3, (e) => {
+    var _a2, _b2, _c, _d;
+    e.preventDefault();
+    e.stopPropagation();
+    const poser = dockedNode || getActivePoser()();
+    const w = (_b2 = (_a2 = poser == null ? void 0 : poser.widgets) == null ? void 0 : _a2.find((x) => x.name === "width")) == null ? void 0 : _b2.value;
+    const h = (_d = (_c = poser == null ? void 0 : poser.widgets) == null ? void 0 : _c.find((x) => x.name === "height")) == null ? void 0 : _d.value;
+    if (!w || !h) return;
+    const bodyH = (bodyEl == null ? void 0 : bodyEl.offsetHeight) || (panelEl == null ? void 0 : panelEl.offsetHeight) || 300;
+    set(panelWidth, clampPanelWidth(Math.round(bodyH * (w / h))), true);
+    if (node().properties) node().properties.pcrPosePanelWidth = get(panelWidth);
+  });
+  append($$anchor, fragment);
+  return pop($$exports);
+}
+delegate(["pointerdown", "mousedown", "click", "dblclick"]);
+var root_2$6 = from_html(`<div class="pcr-region-panel-placeholder svelte-wos87s">No Region Box node in the graph</div>`);
+var root$7 = from_html(`<div class="pcr-region-panel svelte-wos87s"><!> <div class="pcr-region-panel-body svelte-wos87s"><!></div></div> <div class="pcr-region-divider svelte-wos87s"></div>`, 1);
+function RegionPanel($$anchor, $$props) {
+  var _a, _b;
+  push($$props, true);
+  const DEFAULT_WIDTH = 440;
+  const MIN_WIDTH = 240;
+  let node = prop($$props, "node", 7), onToggle = prop($$props, "onToggle", 3, () => {
+  }), onRegister = prop($$props, "onRegister", 3, null), getActiveRegionBox = prop($$props, "getActiveRegionBox", 3, () => null);
+  const { getCanvasScale } = useApi();
+  let panelEl;
+  let dividerEl;
+  let bodyEl;
+  let isVisible = state(!!((_a = node().properties) == null ? void 0 : _a.pcrRegionPanel));
+  let panelWidth = state(proxy(((_b = node().properties) == null ? void 0 : _b.pcrRegionPanelWidth) || DEFAULT_WIDTH));
+  let dockedNode = null;
+  let hasDock = state(false);
+  let toggleListener = null;
+  function emitToggle(visible) {
+    onToggle()(visible);
+    toggleListener == null ? void 0 : toggleListener(visible);
+  }
+  function setToggleListener(cb) {
+    toggleListener = cb;
+  }
+  function dock(rb) {
+    var _a2;
+    if (!rb || !bodyEl || !((_a2 = rb._pcrRegion) == null ? void 0 : _a2.enterDock)) return;
+    rb._pcrRegion.enterDock(bodyEl);
+    dockedNode = rb;
+    set(hasDock, true);
+  }
+  function undock() {
+    var _a2;
+    if (dockedNode && ((_a2 = dockedNode._pcrRegion) == null ? void 0 : _a2.exitDock)) {
+      try {
+        dockedNode._pcrRegion.exitDock();
+      } catch (e) {
+        console.error("[PromptChain] region undock error", e);
+      }
+    }
+    dockedNode = null;
+    set(hasDock, false);
+  }
+  function refreshDock() {
+    if (!get(isVisible)) return;
+    if (dockedNode && dockedNode._pcrAlive) return;
+    if (dockedNode) undock();
+    const active = getActiveRegionBox()();
+    if (active) dock(active);
+  }
+  function show() {
+    set(isVisible, true);
+    if (node().properties) node().properties.pcrRegionPanel = true;
+    emitToggle(true);
+    requestAnimationFrame(() => {
+      if (get(isVisible)) dock(getActiveRegionBox()());
+    });
+  }
+  function hide() {
+    undock();
+    set(isVisible, false);
+    if (node().properties) node().properties.pcrRegionPanel = false;
+    emitToggle(false);
+  }
+  function toggle() {
+    get(isVisible) ? hide() : show();
+  }
+  function getIsVisible() {
+    return get(isVisible);
+  }
+  function getMaxPanelWidth() {
+    const row = panelEl == null ? void 0 : panelEl.parentElement;
+    const rowWidth = (row == null ? void 0 : row.offsetWidth) || 0;
+    if (!rowWidth) return Number.POSITIVE_INFINITY;
+    return Math.max(MIN_WIDTH, rowWidth - 120);
+  }
+  function clampPanelWidth(value) {
+    return Math.min(Math.max(MIN_WIDTH, value), getMaxPanelWidth());
+  }
+  onMount(() => {
+    var _a2, _b2;
+    (_a2 = onRegister()) == null ? void 0 : _a2({
+      toggle,
+      show,
+      hide,
+      getIsVisible,
+      refreshDock,
+      setToggleListener,
+      cleanup
+    });
+    if ((_b2 = node().properties) == null ? void 0 : _b2.pcrRegionPanel) requestAnimationFrame(() => show());
+    requestAnimationFrame(() => {
+      set(panelWidth, clampPanelWidth(get(panelWidth)), true);
+    });
+  });
+  let dividerAc;
+  onMount(() => {
+    dividerAc = new AbortController();
+    let isDragging = false;
+    let startX = 0;
+    let startWidth = 0;
+    const getScale = () => {
+      const inFs = !!document.querySelector(".pcr-fs-overlay");
+      return inFs ? 1 : getCanvasScale();
+    };
+    document.addEventListener(
+      "pointerdown",
+      (e) => {
+        if (!dividerEl || e.target !== dividerEl && !dividerEl.contains(e.target)) return;
+        isDragging = true;
+        startX = e.clientX;
+        startWidth = (panelEl == null ? void 0 : panelEl.offsetWidth) || get(panelWidth);
+        document.body.style.cursor = "col-resize";
+        document.body.style.userSelect = "none";
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        const canvas = document.querySelector("canvas.lgraphcanvas");
+        if (canvas && typeof e.pointerId === "number") {
+          try {
+            if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+          } catch {
+          }
+        }
+      },
+      { capture: true, signal: dividerAc.signal }
+    );
+    document.addEventListener(
+      "pointermove",
+      (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const delta = (e.clientX - startX) / getScale();
+        set(panelWidth, clampPanelWidth(startWidth + delta), true);
+      },
+      { capture: true, signal: dividerAc.signal }
+    );
+    document.addEventListener(
+      "pointerup",
+      () => {
+        if (!isDragging) return;
+        isDragging = false;
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+        if (node().properties) node().properties.pcrRegionPanelWidth = get(panelWidth);
+      },
+      { capture: true, signal: dividerAc.signal }
+    );
+  });
+  let closeState = state(
+    "hidden"
+    // hidden | dim | full
+  );
+  function onPanelMove(e) {
+    if (!panelEl) return;
+    const r = panelEl.getBoundingClientRect();
+    const inTop = e.clientY - r.top < Math.max(32, r.height * 0.1);
+    const inRight = r.right - e.clientX < Math.max(32, r.width * 0.1);
+    set(closeState, inTop && inRight ? "full" : "dim", true);
+  }
+  function onPanelLeave() {
+    set(closeState, "hidden");
+  }
+  function cleanup() {
+    dividerAc == null ? void 0 : dividerAc.abort();
+    undock();
+  }
+  onDestroy(() => {
+    dividerAc == null ? void 0 : dividerAc.abort();
+    undock();
+  });
+  var $$exports = {
+    setToggleListener,
+    refreshDock,
+    show,
+    hide,
+    toggle,
+    getIsVisible
+  };
   var fragment = root$7();
   var div = first_child(fragment);
   let styles;
@@ -1456,13 +1716,13 @@ function PosePanel($$anchor, $$props) {
     var _a2, _b2, _c, _d;
     e.preventDefault();
     e.stopPropagation();
-    const poser = dockedNode || getActivePoser()();
-    const w = (_b2 = (_a2 = poser == null ? void 0 : poser.widgets) == null ? void 0 : _a2.find((x) => x.name === "width")) == null ? void 0 : _b2.value;
-    const h = (_d = (_c = poser == null ? void 0 : poser.widgets) == null ? void 0 : _c.find((x) => x.name === "height")) == null ? void 0 : _d.value;
+    const rb = dockedNode || getActiveRegionBox()();
+    const w = (_b2 = (_a2 = rb == null ? void 0 : rb.widgets) == null ? void 0 : _a2.find((x) => x.name === "width")) == null ? void 0 : _b2.value;
+    const h = (_d = (_c = rb == null ? void 0 : rb.widgets) == null ? void 0 : _c.find((x) => x.name === "height")) == null ? void 0 : _d.value;
     if (!w || !h) return;
     const bodyH = (bodyEl == null ? void 0 : bodyEl.offsetHeight) || (panelEl == null ? void 0 : panelEl.offsetHeight) || 300;
     set(panelWidth, clampPanelWidth(Math.round(bodyH * (w / h))), true);
-    if (node().properties) node().properties.pcrPosePanelWidth = get(panelWidth);
+    if (node().properties) node().properties.pcrRegionPanelWidth = get(panelWidth);
   });
   append($$anchor, fragment);
   return pop($$exports);
@@ -3440,7 +3700,7 @@ delegate([
   "keydown",
   "change"
 ]);
-var root = from_html(`<!> <div class="pcr-node-content"><div class="pcr-editor-row"><!> <!> <div class="pcr-editor-stack"><!> <!></div> <!></div> <!></div>`, 1);
+var root = from_html(`<!> <div class="pcr-node-content"><div class="pcr-editor-row"><!> <!> <!> <div class="pcr-editor-stack"><!> <!></div> <!></div> <!></div>`, 1);
 function NodeWidget($$anchor, $$props) {
   push($$props, true);
   let shared = prop($$props, "shared", 7), onSetMode = prop($$props, "onSetMode", 3, () => {
@@ -3451,8 +3711,9 @@ function NodeWidget($$anchor, $$props) {
   }), onToggleImage = prop($$props, "onToggleImage", 3, () => {
   }), onToggleAssistant = prop($$props, "onToggleAssistant", 3, () => {
   }), onTogglePose = prop($$props, "onTogglePose", 3, () => {
+  }), onToggleRegion = prop($$props, "onToggleRegion", 3, () => {
   }), onOpenFullscreen = prop($$props, "onOpenFullscreen", 3, () => {
-  }), docDropdownEl = prop($$props, "docDropdownEl", 3, null), modelIndicatorEl = prop($$props, "modelIndicatorEl", 3, null), tagsDropdownEl = prop($$props, "tagsDropdownEl", 3, null), getEditorView = prop($$props, "getEditorView", 3, () => null), onEditorPaneReady = prop($$props, "onEditorPaneReady", 3, null), onOutputPanelRegister = prop($$props, "onOutputPanelRegister", 3, null), onImagePanelRegister = prop($$props, "onImagePanelRegister", 3, null), onPosePanelRegister = prop($$props, "onPosePanelRegister", 3, null), onAIAssistantRegister = prop($$props, "onAIAssistantRegister", 3, null), onFooterRegister = prop($$props, "onFooterRegister", 3, null), getActivePoser = prop($$props, "getActivePoser", 3, () => null), apiURL = prop($$props, "apiURL", 3, (p) => p), fetchApi = prop($$props, "fetchApi", 3, (p, o) => fetch(p, o)), toast = prop($$props, "toast", 3, () => {
+  }), docDropdownEl = prop($$props, "docDropdownEl", 3, null), modelIndicatorEl = prop($$props, "modelIndicatorEl", 3, null), tagsDropdownEl = prop($$props, "tagsDropdownEl", 3, null), getEditorView = prop($$props, "getEditorView", 3, () => null), onEditorPaneReady = prop($$props, "onEditorPaneReady", 3, null), onOutputPanelRegister = prop($$props, "onOutputPanelRegister", 3, null), onImagePanelRegister = prop($$props, "onImagePanelRegister", 3, null), onPosePanelRegister = prop($$props, "onPosePanelRegister", 3, null), onRegionPanelRegister = prop($$props, "onRegionPanelRegister", 3, null), onAIAssistantRegister = prop($$props, "onAIAssistantRegister", 3, null), onFooterRegister = prop($$props, "onFooterRegister", 3, null), getActivePoser = prop($$props, "getActivePoser", 3, () => null), getActiveRegionBox = prop($$props, "getActiveRegionBox", 3, () => null), apiURL = prop($$props, "apiURL", 3, (p) => p), fetchApi = prop($$props, "fetchApi", 3, (p, o) => fetch(p, o)), toast = prop($$props, "toast", 3, () => {
   }), getWorkflowId = prop($$props, "getWorkflowId", 3, () => ""), fetchWorkflowImages = prop($$props, "fetchWorkflowImages", 3, async () => []), fetchWorkflowCount = prop($$props, "fetchWorkflowCount", 3, async () => 0), subscribeHistory = prop($$props, "subscribeHistory", 3, () => () => {
   }), invalidateCache = prop($$props, "invalidateCache", 3, () => {
   }), openViewer = prop($$props, "openViewer", 3, () => {
@@ -3499,6 +3760,7 @@ function NodeWidget($$anchor, $$props) {
     onToggleImage: () => onToggleImage()(),
     onToggleAssistant: () => onToggleAssistant()(),
     onTogglePose: () => onTogglePose()(),
+    onToggleRegion: () => onToggleRegion()(),
     get onOpenFullscreen() {
       return onOpenFullscreen();
     },
@@ -3527,7 +3789,25 @@ function NodeWidget($$anchor, $$props) {
     }
   });
   var node_3 = sibling(node_2, 2);
-  AIAssistant(node_3, {
+  RegionPanel(node_3, {
+    get node() {
+      return $$props.node;
+    },
+    get shared() {
+      return shared();
+    },
+    get getActiveRegionBox() {
+      return getActiveRegionBox();
+    },
+    onToggle: (visible) => {
+      shared().regionPanelVisible = visible;
+    },
+    get onRegister() {
+      return onRegionPanelRegister();
+    }
+  });
+  var node_4 = sibling(node_3, 2);
+  AIAssistant(node_4, {
     get node() {
       return $$props.node;
     },
@@ -3541,10 +3821,10 @@ function NodeWidget($$anchor, $$props) {
       return onAIAssistantRegister();
     }
   });
-  var div_2 = sibling(node_3, 2);
-  var node_4 = child(div_2);
+  var div_2 = sibling(node_4, 2);
+  var node_5 = child(div_2);
   bind_this(
-    EditorPane(node_4, {
+    EditorPane(node_5, {
       get node() {
         return $$props.node;
       },
@@ -3555,8 +3835,8 @@ function NodeWidget($$anchor, $$props) {
     ($$value) => editorPane = $$value,
     () => editorPane
   );
-  var node_5 = sibling(node_4, 2);
-  OutputPanel(node_5, {
+  var node_6 = sibling(node_5, 2);
+  OutputPanel(node_6, {
     get node() {
       return $$props.node;
     },
@@ -3570,8 +3850,8 @@ function NodeWidget($$anchor, $$props) {
       return onOutputPanelRegister();
     }
   });
-  var node_6 = sibling(div_2, 2);
-  ImagePanel(node_6, {
+  var node_7 = sibling(div_2, 2);
+  ImagePanel(node_7, {
     get node() {
       return $$props.node;
     },
@@ -3585,8 +3865,8 @@ function NodeWidget($$anchor, $$props) {
       return onImagePanelRegister();
     }
   });
-  var node_7 = sibling(div_1, 2);
-  Footer(node_7, {
+  var node_8 = sibling(div_1, 2);
+  Footer(node_8, {
     get node() {
       return $$props.node;
     },
@@ -3632,7 +3912,9 @@ class SharedState {
     __privateAdd(this, _imagePanelVisible, state(false));
     __privateAdd(this, _aiAssistantOpen, state(false));
     __privateAdd(this, _posePanelVisible, state(false));
+    __privateAdd(this, _regionPanelVisible, state(false));
     __privateAdd(this, _hasPoseStudio, state(false));
+    __privateAdd(this, _hasRegionBox, state(false));
     __privateAdd(this, _compiledOutput, state(""));
     __privateAdd(this, _compiledNegOutput, state(""));
     __privateAdd(this, _imageUrl, state(null));
@@ -3654,6 +3936,7 @@ class SharedState {
     this.imagePanelVisible = !!p.pcrImagePreview;
     this.aiAssistantOpen = !!p.pcrAiAssistant;
     this.posePanelVisible = !!p.pcrPosePanel;
+    this.regionPanelVisible = !!p.pcrRegionPanel;
     this.compiledOutput = p.pcrCompiledOutput || "";
     this.compiledNegOutput = p.pcrCompiledNegOutput || "";
   }
@@ -3753,11 +4036,23 @@ class SharedState {
   set posePanelVisible(value) {
     set(__privateGet(this, _posePanelVisible), value, true);
   }
+  get regionPanelVisible() {
+    return get(__privateGet(this, _regionPanelVisible));
+  }
+  set regionPanelVisible(value) {
+    set(__privateGet(this, _regionPanelVisible), value, true);
+  }
   get hasPoseStudio() {
     return get(__privateGet(this, _hasPoseStudio));
   }
   set hasPoseStudio(value) {
     set(__privateGet(this, _hasPoseStudio), value, true);
+  }
+  get hasRegionBox() {
+    return get(__privateGet(this, _hasRegionBox));
+  }
+  set hasRegionBox(value) {
+    set(__privateGet(this, _hasRegionBox), value, true);
   }
   get compiledOutput() {
     return get(__privateGet(this, _compiledOutput));
@@ -3818,7 +4113,9 @@ _outputPanelOpen = new WeakMap();
 _imagePanelVisible = new WeakMap();
 _aiAssistantOpen = new WeakMap();
 _posePanelVisible = new WeakMap();
+_regionPanelVisible = new WeakMap();
 _hasPoseStudio = new WeakMap();
+_hasRegionBox = new WeakMap();
 _compiledOutput = new WeakMap();
 _compiledNegOutput = new WeakMap();
 _imageUrl = new WeakMap();

@@ -112,7 +112,7 @@
       "type": "PromptChain_IdeogramCaption",
       "offset": [600, 180],
       "size": [250, 82],
-      "widgets_values": ["envelope"],
+      "widgets_values": ["caption"],
       "properties": { "Node name for S&R": "PromptChain_IdeogramCaption" }
     }
   ],
@@ -134,6 +134,7 @@
     { "from_node_idx": 4, "from_slot": 0, "to_node_idx": 5, "to_slot": 0 }
   ],
   "anchorConnections": [
-    { "from_slot": 1, "to_node_idx": 14, "to_slot": 0 }
+    { "from_slot": 1, "to_node_idx": 14, "to_slot": 0 },
+    { "from_slot": 3, "to_node_idx": 14, "to_slot": 1 }
   ]
 }

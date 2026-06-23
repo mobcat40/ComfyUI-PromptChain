@@ -24,6 +24,18 @@
     thumbLoaded = true;
   }
 
+  // A cover whose /thumb request raced the record commit latches broken with no
+  // recovery. Cache-bust and re-fetch on the error event — bounded, no polling.
+  function retryThumb(e) {
+    const img = e.currentTarget;
+    const n = +img.dataset.pcrRetry || 0;
+    if (n >= 3) return;
+    img.dataset.pcrRetry = String(n + 1);
+    const u = new URL(img.src, location.href);
+    u.searchParams.set("r", String(n + 1));
+    img.src = u.toString();
+  }
+
   function handleDragOver(e) {
     if (item.type !== "folder") return;
     if (!e.dataTransfer.types.includes("application/x-promptchain-move")) return;
@@ -81,6 +93,7 @@
         src={apiURL(`/promptchain/thumb/${item.thumbnailHash}`)}
         alt={item.name} loading="lazy" draggable="false"
         onload={onThumbUpdate}
+        onerror={retryThumb}
       />
       {#if showFlash}
         <div class="pcr-gi-flash" onanimationend={() => showFlash = false}></div>

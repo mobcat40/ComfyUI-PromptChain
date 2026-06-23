@@ -9,6 +9,7 @@
 
 import { api } from "../../../scripts/api.js";
 import { REPOSE_RECIPES } from "./repose-recipes.js";
+import { offscreenIdBase } from "./offscreen-graph.js";
 
 const EMPTY_WORKFLOW = { last_node_id: 0, last_link_id: 0, nodes: [], links: [], groups: [], config: {}, extra: {}, version: 0.4 };
 
@@ -123,6 +124,7 @@ export async function buildReposeGraph(opts) {
 
   const workflowId = freshWorkflowId();
   const graph = new LG.LGraph(structuredClone({ ...EMPTY_WORKFLOW, id: workflowId }));
+  graph.last_node_id = offscreenIdBase(); // render-node ids must stay off the live canvas — see offscreen-graph.js
 
   const created = new Array(template.nodes.length).fill(null);
   let poserLoader = null;

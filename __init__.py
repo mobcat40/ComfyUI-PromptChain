@@ -12,6 +12,7 @@ from .nodes.pose_studio import PoseStudioNode
 from .nodes.attention_couple import AttentionCoupleNode
 from .nodes.regional_detailer import RegionalDetailerNode, MaskedDetailNode
 from .nodes.regional_conditioning import RegionalConditioningNode
+from .nodes.region_box import RegionBoxNode
 from .nodes.defocus_mask import DefocusMaskNode
 from .nodes.ideogram_sampler import IdeogramSamplerNode
 from .nodes.ideogram_caption import IdeogramCaptionNode
@@ -54,6 +55,7 @@ from .core import pose_api  # noqa: F401
 from .core import inpaint_files  # noqa: F401  (age-sweeps input/promptchain_inpaint at startup)
 from .core import upscale_api  # noqa: F401
 from .core import edit_api  # noqa: F401
+from .core import extend_api  # noqa: F401
 from .core import modal_setup_api  # noqa: F401
 from .core import subject_api  # noqa: F401
 from .core import install_sections  # noqa: F401
@@ -222,7 +224,7 @@ _threading.Thread(target=_preload, daemon=True).start()
 class PromptChainExtension(ComfyExtension):
     @override
     async def get_node_list(self) -> list[type[io.ComfyNode]]:
-        return [PromptChainNode, PoseStudioNode, AttentionCoupleNode, RegionalDetailerNode, MaskedDetailNode, RegionalConditioningNode, DefocusMaskNode, IdeogramSamplerNode, IdeogramCaptionNode]
+        return [PromptChainNode, PoseStudioNode, AttentionCoupleNode, RegionalDetailerNode, MaskedDetailNode, RegionalConditioningNode, RegionBoxNode, DefocusMaskNode, IdeogramSamplerNode, IdeogramCaptionNode]
 
 
 async def comfy_entrypoint() -> PromptChainExtension:

@@ -19,7 +19,7 @@ The output schema is intentionally tiny:
   ...
 
 Run:
-  cd C:/comfyui/comfyui/custom_nodes/ComfyUI-PromptChain
+  cd <ComfyUI>/custom_nodes/ComfyUI-PromptChain
   python scripts/natlang_decompose_probe.py
   python scripts/natlang_decompose_probe.py <filter>
 """

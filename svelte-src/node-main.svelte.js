@@ -28,10 +28,13 @@ export class SharedState {
   imagePanelVisible = $state(false);
   aiAssistantOpen = $state(false);
   posePanelVisible = $state(false);
+  regionPanelVisible = $state(false);
 
   // whether any 3D Poser node exists in the graph (gates the menubar button) —
   // main.js drives this from the shared pose registry, not node.properties.
   hasPoseStudio = $state(false);
+  // same gate for the Region Box panel — driven from the region-box registry.
+  hasRegionBox = $state(false);
 
   // execution output
   compiledOutput = $state("");
@@ -59,6 +62,7 @@ export class SharedState {
     this.imagePanelVisible = !!p.pcrImagePreview;
     this.aiAssistantOpen = !!p.pcrAiAssistant;
     this.posePanelVisible = !!p.pcrPosePanel;
+    this.regionPanelVisible = !!p.pcrRegionPanel;
     this.compiledOutput = p.pcrCompiledOutput || "";
     this.compiledNegOutput = p.pcrCompiledNegOutput || "";
   }

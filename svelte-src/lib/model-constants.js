@@ -2,19 +2,44 @@
 // Architecture and family definitions for classification fields.
 // Precision extraction and file resolution for multi-variant catalog entries.
 
+const PRIMARY_FOLDERS = new Set(["diffusion_models", "unet", "checkpoints"]);
+
+// A precision's tier, so a companion file (text encoder, VAE) pairs with the
+// chosen primary precision even when their labels differ — a diffusion
+// "fp8_scaled" alongside a text-encoder "fp8", or a GGUF-quant primary
+// (Q5_K_M) with an fp8/fp16 text encoder. High-precision primaries pull the
+// high-precision companion; everything else (fp8*, fp4, GGUF quants) pulls the
+// lighter one.
+function precisionTier(precision) {
+  return /fp16|bf16|fp32/i.test(precision || "") ? "high" : "low";
+}
+
 export function extractPrecisions(files) {
-  const precisions = new Set();
-  for (const f of files) if (f.variants) for (const v of f.variants) precisions.add(v.precision);
-  return [...precisions];
+  // Only the primary diffusion/unet/checkpoint entry's variants define the
+  // user-selectable precisions. Companion files carry their own variant labels
+  // (umt5 "fp8"/"fp16") that must not appear as standalone choices — selecting
+  // one would resolve no diffusion file. They're paired to the chosen primary
+  // precision by resolveFilesForPrecision instead.
+  const primary = files.find(f => f.variants && PRIMARY_FOLDERS.has(f.folder))
+    || files.find(f => f.variants);
+  const precisions = [];
+  for (const v of primary?.variants || []) {
+    if (!precisions.includes(v.precision)) precisions.push(v.precision);
+  }
+  return precisions;
 }
 
 export function resolveFilesForPrecision(files, precision) {
+  const tier = precisionTier(precision);
   return files.map(f => {
-    if (f.variants) {
-      const match = f.variants.find(v => v.precision === precision);
-      return match ? { label: f.label, folder: f.folder, filename: match.filename, size_bytes: match.size_bytes, source: match.source } : null;
-    }
-    return f;
+    if (!f.variants) return f;
+    // Exact precision wins; otherwise pair by tier so a companion file whose
+    // labels don't match the primary still resolves to a compatible variant
+    // rather than being dropped from the download set.
+    const match = f.variants.find(v => v.precision === precision)
+      || f.variants.find(v => precisionTier(v.precision) === tier)
+      || f.variants[0];
+    return match ? { label: f.label, folder: f.folder, filename: match.filename, size_bytes: match.size_bytes, source: match.source } : null;
   }).filter(Boolean);
 }
 
@@ -73,9 +98,12 @@ export const FAMILIES = {
     { id: "qwen_aio", label: "Qwen AIO" },
   ],
   wan22: [
-    { id: "wan22_t2v", label: "Wan T2V 14B" },
     { id: "wan22_i2v", label: "Wan I2V 14B" },
-    { id: "wan22_5b", label: "Wan 5B" },
+    { id: "wan22_i2v_gguf", label: "Wan I2V 14B (GGUF)" },
+    { id: "wan22_t2v", label: "Wan T2V 14B" },
+    { id: "wan22_t2v_gguf", label: "Wan T2V 14B (GGUF)" },
+    { id: "wan22_5b", label: "Wan TI2V 5B" },
+    { id: "wan22_5b_gguf", label: "Wan TI2V 5B (GGUF)" },
   ],
   ltx: [
     { id: "ltx23", label: "LTX 2.3" },

@@ -233,9 +233,9 @@ async function showModelPickerInner(pcNode, anchorEl, opts) {
       closeModelPicker();
       showDownloadModal(civitaiResult, pcNode, anchorEl);
     },
-    onShowCatalogDownload: (catalogEntry) => {
+    onShowCatalogDownload: (catalogEntry, initialPrecision) => {
       closeModelPicker();
-      showCatalogDownloadModal(catalogEntry, pcNode, anchorEl);
+      showCatalogDownloadModal(catalogEntry, pcNode, anchorEl, initialPrecision);
     },
     onClose: () => closeModelPicker(),
     applyTemplate: (tpl, filename, presetNodes) => {
@@ -304,7 +304,7 @@ function closeCatalogDownloadModal() {
   }
 }
 
-async function showCatalogDownloadModal(catalogEntry, pcNode, indicatorEl) {
+async function showCatalogDownloadModal(catalogEntry, pcNode, indicatorEl, initialPrecision = null) {
   closeCatalogDownloadModal();
   ensureCSS();
 
@@ -315,6 +315,7 @@ async function showCatalogDownloadModal(catalogEntry, pcNode, indicatorEl) {
 
   _activeCatalogDownload = mod.mountCatalogDownloadModal(_catalogContainer, {
     catalogEntry,
+    initialPrecision,
     onClose: () => closeCatalogDownloadModal(),
     onModelReady: (filename) => {
       closeCatalogDownloadModal();

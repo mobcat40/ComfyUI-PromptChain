@@ -10,6 +10,7 @@ import { api } from "../../scripts/api.js";
 import { poseRegistry } from "./lib/pose-registry.js";
 import { setEditorContent, attachDocChangeListener } from "./lib/editor.js";
 import { getLink } from "./lib/slot-utils.js";
+import { traceRegionConsumer, ensureConsumerPoseWire, seedRegionBlocks, readRegionBlockBodies } from "./lib/regional-binding.js";
 
 const NODE_TYPE = "PromptChain_PoseStudio";
 const MIN_NODE_SIZE = [320, 400];
@@ -21,11 +22,17 @@ console.log("%c[PromptChain PoseStudio] BUILD region-rename-reverse-1 (text $nam
 // ── figure/prop clipboard ───────────────────────────────────────────────────
 // Copy a selection (person, prop, or band-selected group) and paste it into the
 // same viewport or any other 3D Poser — including one in another workflow. The
-// payload rides the SYSTEM clipboard (survives workflow switches and browser
-// restarts); this module-level copy is the fallback when the clipboard API is
-// unavailable or permission-denied (then paste works within the current tab).
+// payload rides THREE channels, tried in order on paste: the SYSTEM clipboard
+// (crosses browsers/profiles, but its async read is permission- and focus-gated
+// and silently times out cross-tab), this module-level copy (same page only),
+// and localStorage (shared across every tab/window of this origin and surviving
+// reloads, with no permission gate — the reliable bridge between two workflows
+// opened in separate tabs, which the clipboard read can't be counted on for).
 const CLIP_FORMAT = "promptchain-pose-clip";
+const POSE_CLIP_STORE_KEY = "promptchain:poseClip";
 let poseClipMemory = null;
+function writePoseClipStore(json) { try { localStorage.setItem(POSE_CLIP_STORE_KEY, json); } catch {} }
+function readPoseClipStore() { try { return localStorage.getItem(POSE_CLIP_STORE_KEY); } catch { return null; } }
 
 // ── lazy Three.js loader ────────────────────────────────────────────────────
 // three.bundle.js is an IIFE that assigns window.PromptChainThree, but only
@@ -1081,6 +1088,25 @@ function ensureCouplePoseWire(node) {
   if (poseOut >= 0) node.connect(poseOut, couple, poseIn);
 }
 
+// Inject region prompts carried from a cross-scene paste (a character built in
+// another workflow brings its $name{} body with it). Held on the node until the
+// bound PromptChain editor exists, so a paste made before that editor builds
+// isn't lost — re-tried from captureAndUpload on the next capture, never polled.
+// Uses the broad consumer trace (AttentionCouple / RegionalConditioning /
+// Ideogram), so "region mode" here is purely the destination's wiring.
+function flushPendingRegions(node) {
+  const pend = node._pcrPendingRegions;
+  if (!pend?.length) return;
+  // Only seed entities that still exist — a figure deleted before the bound
+  // editor became available must not leave a ghost $name{} bound to no mask row.
+  const live = node._pcrPose?.entityNames?.();
+  const fresh = live ? pend.filter((e) => live.some((n) => n.toLowerCase() === e.name.toLowerCase())) : pend;
+  // seedRegionBlocks returns true when done OR when the dest isn't region-wired
+  // at all (nothing to inject into) — either way stop retrying; only a wired
+  // consumer whose editor isn't built yet keeps the paste pending.
+  if (seedRegionBlocks(node, fresh)) node._pcrPendingRegions = null;
+}
+
 // Content id for a capture set (control map + masks), salted with the node id.
 // The salt keeps two posers in one graph from sharing filenames — sharing would
 // let one poser's superseded-set delete orphan the other's live reference.
@@ -1174,6 +1200,10 @@ async function captureAndUpload(node) {
       ps.uploadedOnce = true;
       window.dispatchEvent(new CustomEvent("promptchain:pose-uploaded", { detail: { nodeId: node.id } }));
     }
+    // Body-aware first: drain any region prompts carried in from a cross-scene
+    // paste (writes $name{ tags }), so the add-only reconcile below sees those
+    // blocks already present and won't re-seed them empty.
+    flushPendingRegions(node);
     // Regional: keep the bound PromptChain prompt's $name{} blocks in sync
     // with the region entities — figures AND named props (add-only). No-op
     // unless this Poser feeds an AttentionCouple.
@@ -8434,19 +8464,27 @@ async function mountViewport(node, container) {
       }
     }
     const clip = serializeClip(sel);
+    // Carry each selected NAMED entity's region prompt ($name{ body }) so a
+    // character built here keeps its prompt when pasted into another scene.
+    const selNames = sel.map((s) => (s.kind === "figure" ? s.o.customName : s.o.userData?.customName)).filter(Boolean);
+    const regions = readRegionBlockBodies(node, selNames);
+    if (Object.keys(regions).length) clip.regions = regions;
     const json = JSON.stringify(clip);
     poseClipMemory = json;
+    writePoseClipStore(json); // cross-tab/-reload bridge, no clipboard permission needed
     let system = false;
     // Bounded: in some contexts the clipboard promise never settles (no
     // permission UI to resolve it) — cut/copy must not wedge behind it; the
-    // tab-local fallback is already written above.
+    // tab-local + localStorage fallbacks are already written above.
     try {
       await Promise.race([
         navigator.clipboard.writeText(json).then(() => { system = true; }),
         new Promise((res) => setTimeout(res, 1500)),
       ]);
-    } catch {} // http-non-localhost / permission denied → tab-local fallback
-    showClipToast(`copied ${clipCountLabel(clip)}${system ? "" : " (this browser tab only)"}`);
+    } catch {} // http-non-localhost / permission denied → localStorage bridge still carries it
+    // System clipboard reaches other browsers/profiles; without it the
+    // localStorage bridge still reaches every tab/window of THIS browser.
+    showClipToast(`copied ${clipCountLabel(clip)}${system ? "" : " (this browser only)"}`);
   };
   const parseClip = (text) => {
     if (!text) return null;
@@ -8463,10 +8501,21 @@ async function mountViewport(node, container) {
         new Promise((res) => setTimeout(() => res(null), 1500)), // never-settling read → tab-local fallback
       ]);
     } catch {}
-    const clip = parseClip(sysText) || parseClip(poseClipMemory);
+    const clip = parseClip(sysText) || parseClip(poseClipMemory) || parseClip(readPoseClipStore());
     if (!clip) { showClipToast("nothing to paste — copy a person or prop first (right-click → copy)", true); return; }
     if (!node._pcrAlive) return;
     const data = JSON.parse(JSON.stringify(clip)); // position nudges below must not mutate the stored clipboard
+
+    // groupId is per-node (groupIdSeq starts at 1 in every Poser), so a pasted
+    // "g1" would silently fuse with an unrelated "g1" already in this scene.
+    // Remap each distinct clip group to a fresh destination-unique id before
+    // rebuild — buildPropFrom then restores the already-fresh id verbatim.
+    const groupRemap = new Map();
+    for (const p of data.props) {
+      if (typeof p.groupId !== "string" || !p.groupId) continue;
+      if (!groupRemap.has(p.groupId)) groupRemap.set(p.groupId, "g" + (groupIdSeq++));
+      p.groupId = groupRemap.get(p.groupId);
+    }
 
     // Nudge the whole group sideways onto free ground — pasting in place would
     // stack the duplicate exactly inside the original. Relative arrangement is
@@ -8478,17 +8527,45 @@ async function mountViewport(node, container) {
     const spots = [...data.figures.map((fd) => fd.root || [0, 0, 0]), ...data.props.map((p) => p.pos || [0, 0, 0])];
     let dx = 0;
     while (dx < 6 && spots.some(([x, , z]) => taken(x + dx, z))) dx += 0.5;
-    // Custom names must stay unique across ALL region entities (figures + named
-    // props): a colliding pasted name (e.g. duplicating "alice" or "sword" in
-    // the same scene) falls back to default/unnamed — two masks under one name
-    // would bind ambiguously.
+    // A custom name already live in this scene belongs to a DIFFERENT character
+    // (two people independently built as "maid1" must stay distinct), so suffix
+    // the paste to the next free "<name>_<n>" instead of dropping it — the
+    // region and its carried prompt travel intact. Stays within
+    // validateEntityName's grammar (letters/digits/_, starts with a letter;
+    // never "mannequinN", which only auto-default figures use — and a default
+    // figure carries no clip name, so collisions here are always custom↔custom).
     const usedNames = new Set(liveEntityNames().map((n) => n.toLowerCase()));
-    const droppedNames = [];
+    const clipRegions = data.regions || {}; // { sourceName: bodyText }
+    const pastedRegions = []; // { name: finalName, body } to inject into the bound prompt
+    const renamedNames = []; // "old → new" notes for the toast
+    const carriedBodies = new Set(); // source names whose body is already claimed
+    const resolvePastedName = (raw) => {
+      // Defensive: a clip name should already be grammar-valid, but never let an
+      // odd one through to become a $scope. null → treat as unnamed/default.
+      if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(raw) || /^mannequin\d+$/i.test(raw)) return null;
+      let nm = raw;
+      if (usedNames.has(nm.toLowerCase())) {
+        let n = 2;
+        while (usedNames.has((raw + "_" + n).toLowerCase())) n++;
+        nm = raw + "_" + n;
+        renamedNames.push(raw + " → " + nm);
+      }
+      usedNames.add(nm.toLowerCase());
+      // Carry the source body once per source name — figures are processed before
+      // props, so the entity that actually owns the $block claims it; a second
+      // entity sharing the raw name (only via a malformed clip) gets no body.
+      // typeof guard: a region literally named "__proto__"/"toString" must read as
+      // empty, not as an inherited Object.prototype member.
+      const carriedBody = !carriedBodies.has(raw) && typeof clipRegions[raw] === "string" ? clipRegions[raw] : "";
+      carriedBodies.add(raw);
+      pastedRegions.push({ name: nm, body: carriedBody });
+      return nm;
+    };
     for (const fd of data.figures) {
       delete fd.uid; // pasted person gets a fresh identity — never collide with the source's
       if (typeof fd.name === "string" && fd.name) {
-        if (usedNames.has(fd.name.toLowerCase())) { droppedNames.push(fd.name); delete fd.name; }
-        else usedNames.add(fd.name.toLowerCase());
+        const nm = resolvePastedName(fd.name);
+        if (nm) fd.name = nm; else delete fd.name;
       }
       if (Array.isArray(fd.root)) fd.root[0] += dx;
       if (fd.footPins) for (const k of Object.keys(fd.footPins)) fd.footPins[k][0] += dx; // world anchors ride along
@@ -8496,8 +8573,8 @@ async function mountViewport(node, container) {
     for (const p of data.props) {
       delete p.uid; // fresh identity, same rule as figures
       if (typeof p.name === "string" && p.name) {
-        if (usedNames.has(p.name.toLowerCase())) { droppedNames.push(p.name); delete p.name; }
-        else usedNames.add(p.name.toLowerCase());
+        const nm = resolvePastedName(p.name);
+        if (nm) p.name = nm; else delete p.name;
       }
       if (Array.isArray(p.pos)) p.pos[0] += dx;
     }
@@ -8541,8 +8618,17 @@ async function mountViewport(node, container) {
     ]);
     updatePinBtn();
     syncBodySliders();
+    // Carry each pasted character's region + prompt into the bound prompt: stash
+    // the bodies and inject now (flushed again on the next capture if the bound
+    // editor isn't built yet), and ensure the POSE_JSON→consumer wire so the
+    // server can bind each $name to its mask row. No-op when not region-wired.
+    if (pastedRegions.length) {
+      node._pcrPendingRegions = (node._pcrPendingRegions || []).concat(pastedRegions);
+      flushPendingRegions(node);
+      ensureConsumerPoseWire(node);
+    }
     showClipToast(`pasted ${clipCountLabel(data)}` +
-      (droppedNames.length ? ` — name${droppedNames.length > 1 ? "s" : ""} ${droppedNames.map((n) => `"${n}"`).join(", ")} taken → default` : ""));
+      (renamedNames.length ? ` — renamed ${renamedNames.map((n) => `"${n}"`).join(", ")} (already in scene)` : ""));
     requestRender();
     captureAndUpload(node);
   };

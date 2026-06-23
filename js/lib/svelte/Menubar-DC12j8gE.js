@@ -283,7 +283,7 @@ function ModeMenu($$anchor, $$props) {
 delegate(["click"]);
 var root_1 = from_html(`<span class="pcr-menubar-mode-arrow svelte-vzwh12"></span>`);
 var root_2 = from_html(`<span title="AI Assistant (experimental)" data-action="assistant"></span>`);
-var root_3 = from_html(`<span data-action="pose"></span> <span title="Toggle image preview" data-action="image"></span> <span title="Toggle output panel (Ctrl+\`)" data-action="output"></span>`, 1);
+var root_3 = from_html(`<span data-action="pose"></span> <span data-action="region"></span> <span title="Toggle image preview" data-action="image"></span> <span title="Toggle output panel (Ctrl+\`)" data-action="output"></span>`, 1);
 var root_4 = from_html(`<span class="pcr-menubar-btn svelte-vzwh12" title="Fullscreen editor" data-action="maximize"></span> <span title="Collapse editor" data-action="collapse"></span>`, 1);
 var root = from_html(`<div><div class="pcr-menubar-actions-left"></div> <div style="display:flex;align-items:center;min-width:0;"><div class="pcr-menubar-mode svelte-vzwh12"><span class="pcr-menubar-mode-label svelte-vzwh12"> </span> <!></div> <div class="pcr-menubar-actions svelte-vzwh12"><!> <span title="Lock output" data-action="lock"></span> <span title="Disable node" data-action="disable"></span> <!> <!></div></div></div> <!>`, 1);
 function Menubar($$anchor, $$props) {
@@ -304,6 +304,7 @@ function Menubar($$anchor, $$props) {
   }), onToggleImage = prop($$props, "onToggleImage", 3, () => {
   }), onToggleAssistant = prop($$props, "onToggleAssistant", 3, () => {
   }), onTogglePose = prop($$props, "onTogglePose", 3, () => {
+  }), onToggleRegion = prop($$props, "onToggleRegion", 3, () => {
   }), onOpenFullscreen = prop($$props, "onOpenFullscreen", 3, () => {
   }), onResetIterate = prop($$props, "onResetIterate", 3, null), docDropdownEl = prop($$props, "docDropdownEl", 3, null);
   let docSlot;
@@ -393,6 +394,8 @@ function Menubar($$anchor, $$props) {
       if (get(aiAssistantEnabled)) onToggleAssistant()();
     } else if (action2 === "pose") {
       if ($$props.shared.hasPoseStudio) onTogglePose()();
+    } else if (action2 === "region") {
+      if ($$props.shared.hasRegionBox) onToggleRegion()();
     } else if (action2 === "collapse") onToggleCollapse()();
     else if (action2 === "maximize") onOpenFullscreen()();
   }
@@ -475,13 +478,18 @@ function Menubar($$anchor, $$props) {
       var span_6 = sibling(span_5, 2);
       let classes_5;
       let styles_6;
-      html(span_6, () => '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>', true);
-      action(span_6, ($$node, $$action_arg) => actionClick == null ? void 0 : actionClick($$node, $$action_arg), () => "image");
+      html(span_6, () => '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5v4h2V5h4V3H5c-1.1 0-2 .9-2 2zm2 10H3v4c0 1.1.9 2 2 2h4v-2H5v-4zm14 4h-4v2h4c1.1 0 2-.9 2-2v-4h-2v4zm0-16h-4v2h4v4h2V5c0-1.1-.9-2-2-2zM7 7v10h10V7H7zm8 8H9V9h6v6z"/></svg>', true);
+      action(span_6, ($$node, $$action_arg) => actionClick == null ? void 0 : actionClick($$node, $$action_arg), () => "region");
       var span_7 = sibling(span_6, 2);
       let classes_6;
       let styles_7;
-      html(span_7, () => '<svg width="18" height="18" viewBox="0 -960 960 960" fill="currentColor"><path d="M400-280h160v-80H400v80Zm0-160h280v-80H400v80ZM280-600h400v-80H280v80Zm200 120ZM80-80v-80h102q-48-23-77.5-68T75-330q0-79 55.5-134.5T265-520v80q-45 0-77.5 32T155-330q0 39 24 69t61 38v-97h80v240H80Zm320-40v-80h360v-560H200v160h-80v-160q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H400Z"/></svg>', true);
-      action(span_7, ($$node, $$action_arg) => actionClick == null ? void 0 : actionClick($$node, $$action_arg), () => "output");
+      html(span_7, () => '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>', true);
+      action(span_7, ($$node, $$action_arg) => actionClick == null ? void 0 : actionClick($$node, $$action_arg), () => "image");
+      var span_8 = sibling(span_7, 2);
+      let classes_7;
+      let styles_8;
+      html(span_8, () => '<svg width="18" height="18" viewBox="0 -960 960 960" fill="currentColor"><path d="M400-280h160v-80H400v80Zm0-160h280v-80H400v80ZM280-600h400v-80H280v80Zm200 120ZM80-80v-80h102q-48-23-77.5-68T75-330q0-79 55.5-134.5T265-520v80q-45 0-77.5 32T155-330q0 39 24 69t61 38v-97h80v240H80Zm320-40v-80h360v-560H200v160h-80v-160q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H400Z"/></svg>', true);
+      action(span_8, ($$node, $$action_arg) => actionClick == null ? void 0 : actionClick($$node, $$action_arg), () => "output");
       template_effect(() => {
         classes_4 = set_class(span_5, 1, "pcr-menubar-btn svelte-vzwh12", null, classes_4, {
           "pcr-menubar-btn-active": $$props.shared.posePanelVisible,
@@ -489,10 +497,16 @@ function Menubar($$anchor, $$props) {
         });
         set_attribute(span_5, "title", $$props.shared.hasPoseStudio ? "Toggle 3D Poser panel" : "Add a 3D Poser node to use this");
         styles_5 = set_style(span_5, "", styles_5, { color: $$props.shared.posePanelVisible ? "#ff8c1a" : "" });
-        classes_5 = set_class(span_6, 1, "pcr-menubar-btn svelte-vzwh12", null, classes_5, { "pcr-menubar-btn-active": $$props.shared.imagePanelVisible });
-        styles_6 = set_style(span_6, "", styles_6, { color: $$props.shared.imagePanelVisible ? "#4bb949" : "" });
-        classes_6 = set_class(span_7, 1, "pcr-menubar-btn svelte-vzwh12", null, classes_6, { "pcr-menubar-btn-active": $$props.shared.outputPanelOpen });
-        styles_7 = set_style(span_7, "", styles_7, { color: $$props.shared.outputPanelOpen ? "#4fc3f7" : "" });
+        classes_5 = set_class(span_6, 1, "pcr-menubar-btn svelte-vzwh12", null, classes_5, {
+          "pcr-menubar-btn-active": $$props.shared.regionPanelVisible,
+          "pcr-menubar-btn-disabled": !$$props.shared.hasRegionBox
+        });
+        set_attribute(span_6, "title", $$props.shared.hasRegionBox ? "Toggle Region Box panel" : "Add a Region Box node to use this");
+        styles_6 = set_style(span_6, "", styles_6, { color: $$props.shared.regionPanelVisible ? "#42b9c4" : "" });
+        classes_6 = set_class(span_7, 1, "pcr-menubar-btn svelte-vzwh12", null, classes_6, { "pcr-menubar-btn-active": $$props.shared.imagePanelVisible });
+        styles_7 = set_style(span_7, "", styles_7, { color: $$props.shared.imagePanelVisible ? "#4bb949" : "" });
+        classes_7 = set_class(span_8, 1, "pcr-menubar-btn svelte-vzwh12", null, classes_7, { "pcr-menubar-btn-active": $$props.shared.outputPanelOpen });
+        styles_8 = set_style(span_8, "", styles_8, { color: $$props.shared.outputPanelOpen ? "#4fc3f7" : "" });
       });
       append($$anchor2, fragment_1);
     };
@@ -504,17 +518,17 @@ function Menubar($$anchor, $$props) {
   {
     var consequent_3 = ($$anchor2) => {
       var fragment_2 = root_4();
-      var span_8 = first_child(fragment_2);
-      html(span_8, () => '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h7v2H5v5H3V3zm11 0h7v7h-2V5h-5V3zM3 14h2v5h5v2H3v-7zm18 0v7h-7v-2h5v-5h2z"/></svg>', true);
-      action(span_8, ($$node, $$action_arg) => actionClick == null ? void 0 : actionClick($$node, $$action_arg), () => "maximize");
-      var span_9 = sibling(span_8, 2);
-      let classes_7;
-      let styles_8;
-      html(span_9, () => '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6.83 4H20a2 2 0 0 1 2 2v12c0 .34-.09.66-.23.94L20 17.17V8h-9.17l-4-4zm13.66 19.31L17.17 20H4a2 2 0 0 1-2-2V6c0-.34.08-.66.23-.94L.69 3.51L2.1 2.1l19.8 19.8l-1.41 1.41zM15.17 18l-10-10H4v10h11.17z"/></svg>', true);
-      action(span_9, ($$node, $$action_arg) => actionClick == null ? void 0 : actionClick($$node, $$action_arg), () => "collapse");
+      var span_9 = first_child(fragment_2);
+      html(span_9, () => '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h7v2H5v5H3V3zm11 0h7v7h-2V5h-5V3zM3 14h2v5h5v2H3v-7zm18 0v7h-7v-2h5v-5h2z"/></svg>', true);
+      action(span_9, ($$node, $$action_arg) => actionClick == null ? void 0 : actionClick($$node, $$action_arg), () => "maximize");
+      var span_10 = sibling(span_9, 2);
+      let classes_8;
+      let styles_9;
+      html(span_10, () => '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6.83 4H20a2 2 0 0 1 2 2v12c0 .34-.09.66-.23.94L20 17.17V8h-9.17l-4-4zm13.66 19.31L17.17 20H4a2 2 0 0 1-2-2V6c0-.34.08-.66.23-.94L.69 3.51L2.1 2.1l19.8 19.8l-1.41 1.41zM15.17 18l-10-10H4v10h11.17z"/></svg>', true);
+      action(span_10, ($$node, $$action_arg) => actionClick == null ? void 0 : actionClick($$node, $$action_arg), () => "collapse");
       template_effect(() => {
-        classes_7 = set_class(span_9, 1, "pcr-menubar-btn svelte-vzwh12", null, classes_7, { "pcr-menubar-btn-active": $$props.shared.collapsed });
-        styles_8 = set_style(span_9, "", styles_8, { color: $$props.shared.collapsed ? "#5e79ff" : "" });
+        classes_8 = set_class(span_10, 1, "pcr-menubar-btn svelte-vzwh12", null, classes_8, { "pcr-menubar-btn-active": $$props.shared.collapsed });
+        styles_9 = set_style(span_10, "", styles_9, { color: $$props.shared.collapsed ? "#5e79ff" : "" });
       });
       append($$anchor2, fragment_2);
     };
@@ -592,4 +606,4 @@ export {
   Menubar as M,
   SearchableList as S
 };
-//# sourceMappingURL=Menubar-DI-z1NzN.js.map
+//# sourceMappingURL=Menubar-DC12j8gE.js.map

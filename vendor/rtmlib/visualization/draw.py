@@ -51,7 +51,7 @@ def draw_skeleton(img,
         else:
             raise NotImplementedError
 
-    skeleton_dict = eval(f'{skeleton}')
+    skeleton_dict = globals()[skeleton]  # name is one of the hard-coded skeletons above; dict lookup, not eval
     keypoint_info = skeleton_dict['keypoint_info']
     skeleton_info = skeleton_dict['skeleton_info']
 

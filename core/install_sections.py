@@ -98,38 +98,13 @@ def section_for_injectable(key: str) -> str | None:
 # subprocess (inheriting our env + interpreter), so it writes to exactly the
 # cache the runtime later reads, and is a cheap no-op once cached. Best-effort:
 # a failure never aborts the install — the weight simply falls back to lazy.
-_MEMBER_PREFETCH: dict[str, dict] = {
-    # PuLID Flux 2 pulls EVA02-L-14-336 (merged2b) via open_clip into the HF hub
-    # cache on first run. download_pretrained() fetches without building the model.
-    "PuLIDFlux2": {
-        "label": "EVA-CLIP",
-        "code": (
-            "import os; os.environ.setdefault('HF_HUB_DISABLE_PROGRESS_BARS','1'); "
-            "from open_clip.pretrained import get_pretrained_cfg, download_pretrained; "
-            "print('EVA-CLIP cached at', "
-            "download_pretrained(get_pretrained_cfg('EVA02-L-14-336','merged2b_s6b_b61k')))"
-        ),
-    },
-}
-
-
 async def _prefetch_for_member(resp: web.StreamResponse, key: str) -> None:
-    """Pre-fetch a just-installed member's lazy first-use weights. Best-effort —
-    on any failure it logs and returns, leaving the weight to download on first
-    use as it did before."""
-    spec = _MEMBER_PREFETCH.get(key)
-    if not spec:
-        return
-    await _send(resp, {"stage": "prefetch", "file": spec["label"]})
-    await _log(resp, f"Pre-fetching {spec['label']} so the first render doesn't stall…")
-    try:
-        code = await _run(resp, [sys.executable, "-c", spec["code"]])
-        if code == 0:
-            await _log(resp, f"{spec['label']}: ready")
-        else:
-            await _log(resp, f"{spec['label']}: pre-fetch skipped (exit {code}) — downloads on first use instead")
-    except Exception as e:
-        await _log(resp, f"{spec['label']}: pre-fetch skipped ({e}) — downloads on first use instead")
+    """No-op. Weight pre-fetching was removed for ComfyUI Registry compliance —
+    it ran a subprocess to warm a pack's lazy weights. Those weights now simply
+    download on first render, as the packs already handle (e.g. PuLID-Flux2's
+    EVA-CLIP via open_clip), so the first such render is slightly slower and
+    nothing else changes."""
+    return None
 
 
 def _member_status(m: dict) -> dict:

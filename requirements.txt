@@ -1,0 +1,27 @@
+# PromptChain — dependencies for the ComfyUI Registry.
+#
+# Two groups:
+#   1. Core load-time deps PromptChain's own code imports (ComfyUI ships the
+#      rest: torch, numpy, Pillow, transformers, einops, av, requests, ...).
+#   2. Optional feature deps, declared so they install WITH the pack (Manager /
+#      pip at install time) instead of the node running pip at runtime — which
+#      the ComfyUI Registry forbids. These cover PuLID, the Face Detailer, and
+#      AI Selection. They make a fresh install heavier but keep it compliant.
+#
+# Torch/numpy/opencv-downgrading pins from the bundled packs (numpy<2,
+# ml_dtypes, onnxruntime-gpu, facenet-pytorch) are deliberately NOT mirrored
+# here, so `pip install -r requirements.txt` can never break a working ComfyUI.
+# The few features that need those (SeedVR2, Flux PuLID) keep their own path.
+
+# --- core ---
+typing_extensions
+
+# --- optional feature deps (PuLID · Face Detailer · AI Selection) ---
+insightface>=1.0
+onnxruntime
+facexlib
+timm
+ftfy
+ultralytics
+scikit-image
+pi-heif

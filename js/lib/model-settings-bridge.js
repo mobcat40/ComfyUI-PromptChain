@@ -31,7 +31,7 @@ export const FAMILIES = {
   zimage: [{ id: "zimage_base", label: "Z-Image Base" }, { id: "zimage_turbo", label: "Z-Image Turbo" }],
   qwen_image: [{ id: "qwen_image", label: "Qwen Image" }],
   qwen_edit: [{ id: "qwen_edit", label: "Qwen Edit" }, { id: "qwen_aio", label: "Qwen AIO" }],
-  wan22: [{ id: "wan22_t2v", label: "Wan T2V 14B" }, { id: "wan22_i2v", label: "Wan I2V 14B" }, { id: "wan22_5b", label: "Wan 5B" }],
+  wan22: [{ id: "wan22_i2v", label: "Wan I2V 14B" }, { id: "wan22_i2v_gguf", label: "Wan I2V 14B (GGUF)" }, { id: "wan22_t2v", label: "Wan T2V 14B" }, { id: "wan22_t2v_gguf", label: "Wan T2V 14B (GGUF)" }, { id: "wan22_5b", label: "Wan TI2V 5B" }, { id: "wan22_5b_gguf", label: "Wan TI2V 5B (GGUF)" }],
   ltx: [{ id: "ltx23", label: "LTX 2.3" }],
   hunyuan_video: [{ id: "hunyuan_video_15", label: "HunyuanVideo 1.5" }],
   hidream: [{ id: "hidream", label: "HiDream-I1" }],
@@ -215,7 +215,37 @@ export const FLUX_NODES = {
   },
 };
 
+// Ideogram 4 tuning nodes. Its t2i graph samples through PromptChain_IdeogramSampler
+// (a SamplerCustomAdvanced+VAEDecode drop-in), fed by these. Surfaced in the model
+// Settings panel like FLUX_NODES so an Ideogram model has real controls instead of
+// an empty pane. Resolution stays on the EmptyFlux2LatentImage row (LATENT_NODES);
+// the scheduler's own width/height are intentionally not exposed here to avoid a
+// second resolution row.
+export const IDEOGRAM_NODES = {
+  Ideogram4Scheduler: {
+    label: "Scheduler",
+    widgets: {
+      steps: { type: "slider", min: 1, max: 200, step: 1 },
+    },
+  },
+  DualModelGuider: {
+    label: "Guidance",
+    widgets: {
+      cfg: { type: "slider", min: 0, max: 30, step: 0.1 },
+    },
+  },
+  CFGOverride: {
+    label: "CFG Override",
+    widgets: {
+      cfg:           { type: "slider", min: 0, max: 30, step: 0.1 },
+      start_percent: { type: "slider", min: 0, max: 1, step: 0.01 },
+      end_percent:   { type: "slider", min: 0, max: 1, step: 0.01 },
+    },
+  },
+};
+
 const FLUX_NODE_TYPES = new Set(Object.keys(FLUX_NODES));
+const IDEOGRAM_NODE_TYPES = new Set(Object.keys(IDEOGRAM_NODES));
 const SAMPLER_INCLUDES = ["KSampler"];
 const LATENT_NODE_TYPES = new Set(Object.keys(LATENT_NODES));
 const CLIP_NODE_TYPES = new Set(Object.keys(CLIP_NODES));
@@ -540,6 +570,7 @@ export function detectSupportedNodes(pcNode) {
   const seenIds = new Set();
   let ksamplerNode = null;
   let fluxSamplerNode = null;
+  let ideogramSamplerNode = null;
 
   for (const node of downstream) {
     if (seenIds.has(node.id)) continue;
@@ -547,6 +578,16 @@ export function detectSupportedNodes(pcNode) {
 
     if (cls === "SamplerCustomAdvanced") {
       seenIds.add(node.id);
+      fluxSamplerNode = node;
+      continue;
+    }
+
+    // Ideogram samples through PromptChain_IdeogramSampler (a SamplerCustomAdvanced
+    // drop-in). Reuse the Flux pivot machinery (latent/sampler/noise upstream walk)
+    // and additionally walk the Ideogram-only tuning nodes below.
+    if (cls === "PromptChain_IdeogramSampler") {
+      seenIds.add(node.id);
+      ideogramSamplerNode = node;
       fluxSamplerNode = node;
       continue;
     }
@@ -575,7 +616,9 @@ export function detectSupportedNodes(pcNode) {
       continue;
     }
     for (const pattern of SAMPLER_INCLUDES) {
-      if (cls.includes(pattern)) {
+      // KSamplerSelect just PICKS a sampler (outputs SAMPLER); it's not a real
+      // sampler pivot — exclude it so it never gets adopted as the latent anchor.
+      if (cls.includes(pattern) && cls !== "KSamplerSelect") {
         seenIds.add(node.id);
         detected.push({ node, config: SUPPORTED_NODES.KSampler, type: cls });
         ksamplerNode = node;
@@ -590,6 +633,19 @@ export function detectSupportedNodes(pcNode) {
       if (fluxNode && !seenIds.has(fluxNode.id)) {
         seenIds.add(fluxNode.id);
         detected.push({ node: fluxNode, config: FLUX_NODES[cls], type: cls });
+      }
+    }
+  }
+
+  // Ideogram-only tuning nodes upstream of the Ideogram sampler (steps / guidance /
+  // cfg-override). Resolution + sampler + noise are already picked up via the Flux
+  // walk above and the latent walk below.
+  if (ideogramSamplerNode) {
+    for (const cls of IDEOGRAM_NODE_TYPES) {
+      const n = findUpstreamByType(ideogramSamplerNode, new Set([cls]));
+      if (n && !seenIds.has(n.id)) {
+        seenIds.add(n.id);
+        detected.push({ node: n, config: IDEOGRAM_NODES[cls], type: cls });
       }
     }
   }
@@ -2348,7 +2404,7 @@ export function resolveResolutionTicks(detected) {
   }
   if (!inputLongest) {
     const latEntry = detected.find(d =>
-      d.type === "EmptyLatentImage" || d.type === "EmptySD3LatentImage"
+      d.type === "EmptyLatentImage" || d.type === "EmptySD3LatentImage" || d.type === "EmptyFlux2LatentImage"
     );
     if (latEntry) {
       const wW = readWidgetValue(latEntry.node, "width");
@@ -2728,9 +2784,9 @@ export async function showModelModal(pcNode, modelInfo, anchorEl, { tab = null }
       }
       return items;
     },
-    onShowCatalogDownload: (entry) => {
+    onShowCatalogDownload: (entry, initialPrecision) => {
       closeModelModal();
-      showCatalogDownloadModal(entry, pcNode, anchorEl);
+      showCatalogDownloadModal(entry, pcNode, anchorEl, initialPrecision);
     },
     // Editor reference for prompts tab
     getEditor: () => pcNode._pcrEditor,

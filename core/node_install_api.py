@@ -135,9 +135,13 @@ NODE_PACKS: dict[str, dict] = {
         # provide. `pip` installs ultralytics WITH its deps (torch/numpy/opencv
         # restored afterward by _restore_critical). proof_nodes is our own node,
         # so `present` hinges on the face model existing on disk.
+        # pi-heif: ultralytics monkey-patches PIL.Image.open and lazily pip-
+        # installs pi-heif on the FIRST open of any unidentifiable file — which
+        # targets the wrong interpreter and then retries forever, spamming the
+        # log. Shipping it here puts it in the right venv so that never fires.
         "repos": [],
         "proof_nodes": ["PromptChain_RegionalDetailer"],
-        "pip": ["ultralytics"],
+        "pip": ["ultralytics", "pi-heif"],
         "models": [
             {"url": "https://huggingface.co/Bingsu/adetailer/resolve/main/face_yolov8n.pt",
              "dest": "ultralytics/bbox/face_yolov8n.pt"},
@@ -187,6 +191,19 @@ NODE_PACKS: dict[str, dict] = {
             {"url": "https://huggingface.co/numz/SeedVR2_comfyUI/resolve/main/ema_vae_fp16.safetensors",
              "dest": "SEEDVR2/ema_vae_fp16.safetensors"},
         ],
+    },
+    "FrameInterpolation": {
+        "label": "Frame Interpolation (RIFE)",
+        # RIFE neural frame interpolation for the viewer "Smooth" action (2x/3x
+        # fps). Bundled (Fannovel16 ComfyUI-Frame-Interpolation, stripped to the
+        # RIFE model only — the other interpolation models were unused and carried
+        # unclear/non-commercial licenses). The rife49 weights auto-download from
+        # the pack's own HF-mirrored registry on first run, so no model is fetched
+        # here. pip adds einops (torch/numpy/opencv/torchvision fall to _PROTECTED).
+        "bundle": ["ComfyUI-Frame-Interpolation"],
+        "proof_nodes": ["RIFE VFI"],
+        "pip": ["einops"],
+        "models": [],
     },
     "ControlNet": {
         "label": "ControlNet",
@@ -545,80 +562,32 @@ def _torch_index_url() -> str | None:
 
 
 async def _restore_critical(resp: web.StreamResponse, snapshot: dict[str, str | None]) -> None:
-    """Compare critical pkg versions to the pre-install snapshot; reinstall
-    any that changed. torch trio restored together from the CUDA index."""
-    now = {p: _pkg_version(p) for p in _CRITICAL}
-    trio_changed = any(snapshot.get(p) and snapshot[p] != now.get(p) for p in _TORCH_TRIO)
-    if trio_changed:
-        if all(snapshot.get(p) for p in _TORCH_TRIO):
-            await _log(resp, "torch stack changed during install — restoring matched CUDA build")
-            args = [sys.executable, "-m", "pip", "install",
-                    *(f"{p}=={snapshot[p].split('+')[0]}" for p in _TORCH_TRIO)]
-            idx = _torch_index_url()
-            if idx:
-                args += ["--index-url", idx]
-            await _run(resp, args)
-        else:
-            await _log(resp, "torch stack changed but no clean snapshot to restore from — skipping")
-    for p in ("numpy", "opencv-python"):
-        if snapshot.get(p) and snapshot[p] != now.get(p):
-            await _log(resp, f"{p} changed ({now.get(p)} -> restoring {snapshot[p]})")
-            await _run(resp, [sys.executable, "-m", "pip", "install", f"{p}=={snapshot[p]}"])
+    """No-op. PromptChain no longer runs pip at runtime (the ComfyUI Registry
+    forbids it), so the critical torch/numpy stack is never disturbed by an
+    install and has nothing to restore. Kept for call-site/import compatibility."""
+    return None
 
 
 async def install_pack(resp: web.StreamResponse, injectable: str,
                        snapshot: dict[str, str | None]) -> bool:
-    """Install one injectable's packs + models into custom_nodes/ and models/,
-    streaming progress on the already-open SSE `resp`. The caller owns the SSE
-    lifecycle and the pre-install critical-deps `snapshot`. Returns True on
-    success; on failure it emits an {"error": …} event and returns False.
+    """Copy one injectable's bundled packs into custom_nodes/ and download its
+    models, streaming progress on the already-open SSE `resp`. The caller owns
+    the SSE lifecycle. Returns True on success; on failure it emits an
+    {"error": …} event and returns False.
 
-    Shared by the single-pack route and the section installer so both run the
-    identical clone/copy → pip → install.py → restore → download sequence.
-    Every step skips work already done (cloned dirs, present models, satisfied
-    pip), so re-running or installing an overlapping section is cheap."""
+    Registry-compliant: PromptChain never runs pip or git at runtime — bundled
+    packs are copied and their Python deps are declared in requirements.txt
+    (installed with the pack). Every step skips work already done, so re-running
+    or installing an overlapping section is cheap. `snapshot` is now unused."""
     spec = NODE_PACKS[injectable]
-    repos = spec.get("repos", [])
     bundles = spec.get("bundle", [])
 
-    git = shutil.which("git")
-    if repos and not git:
-        await _send(resp, {"error": "git not found on PATH — can't clone node packs"})
-        return False
-
     cn = _custom_nodes_dir()
-    await _log(resp, f"Installing {spec['label']} ({len(repos) + len(bundles)} pack(s))")
+    await _log(resp, f"Installing {spec['label']} ({len(bundles)} pack(s))")
 
-    pack_dirs = []  # every pack dir we ensured is present in custom_nodes/
-
-    # 1) git-clone url-based packs, pinned to a known-good commit.
-    for url in repos:
-        name = _repo_dir_name(url)
-        dest = cn / name
-        await _send(resp, {"stage": "clone", "repo": name})
-        if dest.is_dir():
-            await _log(resp, f"{name}: already present, skipping clone")
-        else:
-            code = await _run(resp, [git, "clone", "--depth", "1", url, str(dest)])
-            if code != 0:
-                await _send(resp, {"error": f"git clone failed for {name} (exit {code})"})
-                return False
-            # Pin a FRESHLY-cloned pack to the commit our inject + extra_pip +
-            # model list were written against, so a later upstream change can't
-            # silently break a new install. Only fresh clones — an existing
-            # user checkout is left untouched. A pin miss is non-fatal (GitHub
-            # serves fetch-by-sha, but keep the clone HEAD if it ever fails).
-            pin = (spec.get("pins") or {}).get(name)
-            if pin:
-                await _send(resp, {"stage": "pin", "repo": name})
-                await _run(resp, [git, "-C", str(dest), "fetch", "--depth", "1", "origin", pin])
-                if await _run(resp, [git, "-C", str(dest), "checkout", "--quiet", pin]) != 0:
-                    await _log(resp, f"  warning: could not pin {name} to {pin[:10]} — using clone HEAD")
-        pack_dirs.append(dest)
-
-    # 2) copy bundled packs straight out of PromptChain (no git / no network).
-    # Only when absent — a copy the user already runs is never touched, so a
-    # bundled pack can never collide with their own install.
+    # Copy bundled packs straight out of PromptChain (no git, no network, no
+    # pip). Only when absent — a copy the user already runs is never touched, so
+    # a bundled pack can never collide with their own install.
     for name in bundles:
         src = _bundled_packs_dir() / name
         dest = cn / name
@@ -631,63 +600,10 @@ async def install_pack(resp: web.StreamResponse, injectable: str,
         else:
             shutil.copytree(src, dest)
             await _log(resp, f"{name}: copied into custom_nodes")
-        pack_dirs.append(dest)
 
-    # 3) install each ensured pack's requirements + run its install.py.
-    for dest in pack_dirs:
-        name = dest.name
-        req = dest / "requirements.txt"
-        if req.is_file():
-            await _send(resp, {"stage": "pip", "repo": name})
-            kept, notes = _filtered_requirements(req)
-            for n in notes:
-                await _log(resp, f"  {n}")
-            if kept:
-                code = await _run(resp, [sys.executable, "-m", "pip", "install", *kept])
-                if code != 0:
-                    # pip can die mid-transaction (e.g. locked dll on
-                    # Windows) AFTER it already swapped packages — restore
-                    # the critical stack before bailing, not only on success.
-                    await _restore_critical(resp, snapshot)
-                    await _send(resp, {"error": f"pip install failed for {name} (exit {code})"})
-                    return False
-        else:
-            await _log(resp, f"{name}: no requirements.txt")
-
-        install_py = dest / "install.py"
-        if install_py.is_file():
-            await _send(resp, {"stage": "install_script", "repo": name})
-            await _run(resp, [sys.executable, "install.py"], cwd=str(dest))
-
-    # Packages installed WITH their deps (e.g. ultralytics needs opencv/pillow/
-    # etc.). The torch stack is restored by _restore_critical below if a dep
-    # drags it, so this is safe — unlike extra_pip, which is --no-deps.
-    pip_with_deps = spec.get("pip") or []
-    if pip_with_deps:
-        await _send(resp, {"stage": "pip", "repo": "deps"})
-        await _log(resp, f"Installing: {', '.join(pip_with_deps)}")
-        code = await _run(resp, [sys.executable, "-m", "pip", "install", *pip_with_deps])
-        if code != 0:
-            await _restore_critical(resp, snapshot)
-            await _send(resp, {"error": f"pip install failed for {', '.join(pip_with_deps)} (exit {code})"})
-            return False
-
-    # Extra packages a pack imports but deliberately omits from requirements
-    # (e.g. PuLID-Flux hard-imports facenet_pytorch, kept out of its reqs
-    # because its pins would downgrade torch). Installed --no-deps so they
-    # can't touch the protected torch stack.
-    extra_pip = spec.get("extra_pip") or []
-    if extra_pip:
-        await _send(resp, {"stage": "pip", "repo": "extra"})
-        await _log(resp, f"Installing extra deps (--no-deps): {', '.join(extra_pip)}")
-        code = await _run(resp, [sys.executable, "-m", "pip", "install", "--no-deps", *extra_pip])
-        if code != 0:
-            await _restore_critical(resp, snapshot)
-            await _send(resp, {"error": f"pip install failed for extra deps (exit {code})"})
-            return False
-
-    await _send(resp, {"stage": "fix_deps"})
-    await _restore_critical(resp, snapshot)
+    # Python deps are NOT pip-installed here — the ComfyUI Registry forbids a
+    # node running pip at runtime. Every bundled pack's deps are declared in
+    # PromptChain's own requirements.txt, installed WITH the pack by Manager/pip.
 
     models = spec.get("models") or []
     if models:

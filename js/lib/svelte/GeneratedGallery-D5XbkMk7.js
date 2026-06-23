@@ -507,10 +507,29 @@ function GeneratedGallery($$anchor, $$props) {
   }
   function retryThumb(e) {
     const img = e.currentTarget;
-    if (img.dataset.pcrRetried) return;
-    img.dataset.pcrRetried = "1";
-    img.src = img.src + (img.src.includes("?") ? "&" : "?") + "r=1";
+    const n = +img.dataset.pcrRetry || 0;
+    if (n >= 3) return;
+    img.dataset.pcrRetry = String(n + 1);
+    const u = new URL(img.src, location.href);
+    u.searchParams.set("r", String(n + 1));
+    img.src = u.toString();
   }
+  function healBrokenThumbs() {
+    if (!galleryEl) return;
+    for (const img of galleryEl.querySelectorAll("img")) {
+      if (img.complete && img.naturalWidth === 0) {
+        img.dataset.pcrRetry = "0";
+        const u = new URL(img.src, location.href);
+        u.searchParams.set("r", "heal");
+        img.src = u.toString();
+      }
+    }
+  }
+  user_effect(() => {
+    const onRecorded = () => healBrokenThumbs();
+    window.addEventListener("promptchain:generation-recorded", onRecorded);
+    return () => window.removeEventListener("promptchain:generation-recorded", onRecorded);
+  });
   var fragment = root();
   var div = first_child(fragment);
   var node = child(div);
@@ -782,4 +801,4 @@ export {
   clampGalleryRowHeight as c,
   zoomGalleryRowHeight as z
 };
-//# sourceMappingURL=GeneratedGallery-Dw0CC3-N.js.map
+//# sourceMappingURL=GeneratedGallery-D5XbkMk7.js.map

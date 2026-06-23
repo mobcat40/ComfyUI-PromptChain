@@ -383,16 +383,41 @@
   });
 
   function thumbUrl(hash) { return apiURL(`/promptchain/thumb/${hash}`); }
-  // A thumbnail <img> can latch onto a 404 from a request that raced the record
-  // (the thumb is generated server-side as part of recording); a broken <img>
-  // never retries itself. Cache-bust and re-fetch ONCE on the error event — the
-  // thumb is on disk by now. Event-driven, no polling.
+  // A thumbnail <img> can latch broken if its request raced the record (the
+  // thumb is generated server-side as part of recording). A broken <img> never
+  // retries itself, so cache-bust and re-fetch on the natural error event —
+  // bounded, event-driven, no polling.
   function retryThumb(e) {
     const img = e.currentTarget;
-    if (img.dataset.pcrRetried) return;
-    img.dataset.pcrRetried = "1";
-    img.src = img.src + (img.src.includes("?") ? "&" : "?") + "r=1";
+    const n = +img.dataset.pcrRetry || 0;
+    if (n >= 3) return;
+    img.dataset.pcrRetry = String(n + 1);
+    const u = new URL(img.src, location.href);
+    u.searchParams.set("r", String(n + 1));
+    img.src = u.toString();
   }
+
+  // A thumb that exhausted its retries while the record was still committing
+  // stays broken forever. The authoritative "record committed" signal is the
+  // generation-recorded event (fired AFTER recordGeneration's awaited POST, so
+  // the thumb is provably on disk by now) — re-fetch any latched-broken <img>
+  // when it lands. Event-driven recovery, no timers.
+  function healBrokenThumbs() {
+    if (!galleryEl) return;
+    for (const img of galleryEl.querySelectorAll("img")) {
+      if (img.complete && img.naturalWidth === 0) {
+        img.dataset.pcrRetry = "0";
+        const u = new URL(img.src, location.href);
+        u.searchParams.set("r", "heal");
+        img.src = u.toString();
+      }
+    }
+  }
+  $effect(() => {
+    const onRecorded = () => healBrokenThumbs();
+    window.addEventListener("promptchain:generation-recorded", onRecorded);
+    return () => window.removeEventListener("promptchain:generation-recorded", onRecorded);
+  });
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->

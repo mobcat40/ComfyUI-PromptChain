@@ -25,6 +25,7 @@
     onToggleImage = () => {},
     onToggleAssistant = () => {},
     onTogglePose = () => {},
+    onToggleRegion = () => {},
     onOpenFullscreen = () => {},
     onResetIterate = null,
     docDropdownEl = null,
@@ -131,6 +132,7 @@
     else if (action === "output") onToggleOutput();
     else if (action === "assistant") { if (aiAssistantEnabled) onToggleAssistant(); }
     else if (action === "pose") { if (shared.hasPoseStudio) onTogglePose(); }
+    else if (action === "region") { if (shared.hasRegionBox) onToggleRegion(); }
     else if (action === "collapse") onToggleCollapse();
     else if (action === "maximize") onOpenFullscreen();
   }
@@ -217,6 +219,18 @@
           use:actionClick={"pose"}
         >
           {@html '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 6c-2.61.7-5.67 1-8.5 1s-5.89-.3-8.5-1L3 8c1.86.5 4 .83 6 1v13h2v-6h2v6h2V9c2-.17 4.14-.5 6-1l-.5-2zM12 6c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>'}
+        </span>
+
+        <span
+          class="pcr-menubar-btn"
+          class:pcr-menubar-btn-active={shared.regionPanelVisible}
+          class:pcr-menubar-btn-disabled={!shared.hasRegionBox}
+          style:color={shared.regionPanelVisible ? "#42b9c4" : ""}
+          title={shared.hasRegionBox ? "Toggle Region Box panel" : "Add a Region Box node to use this"}
+          data-action="region"
+          use:actionClick={"region"}
+        >
+          {@html '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5v4h2V5h4V3H5c-1.1 0-2 .9-2 2zm2 10H3v4c0 1.1.9 2 2 2h4v-2H5v-4zm14 4h-4v2h4c1.1 0 2-.9 2-2v-4h-2v4zm0-16h-4v2h4v4h2V5c0-1.1-.9-2-2-2zM7 7v10h10V7H7zm8 8H9V9h6v6z"/></svg>'}
         </span>
 
         <span

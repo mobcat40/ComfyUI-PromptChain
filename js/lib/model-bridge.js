@@ -89,6 +89,39 @@ function ensureComboOption(widget, val) {
   }
 }
 
+// A model filename is "<base>-<variant>.<ext>", where <variant> is a GGUF quant
+// (Q5_K_M, Q8_0, IQ2_XXS…) or a safetensors precision (fp8_scaled,
+// fp8_e4m3fn_scaled, fp16, bf16…). The base identifies the model file (e.g. a
+// Wan high-noise expert) independent of which variant was downloaded.
+const _VARIANT_RE = /^(.*)[-_]((?:Q\d+(?:_[0-9A-Za-z]+)*|IQ\d+[A-Za-z0-9_]*|fp8(?:_[a-z0-9]+)*|fp16|bf16|fp32|fp4|f16|f32)(?:_scaled)?)\.(gguf|safetensors|ckpt)$/i;
+
+export function variantParts(name) {
+  const m = _VARIANT_RE.exec(name || "");
+  return m ? { base: m[1].toLowerCase(), token: m[2].toLowerCase(), ext: m[3].toLowerCase() } : null;
+}
+
+// Templates bake one variant; the user may have downloaded another. Remap the
+// baked filename to whichever variant of the SAME model file is actually
+// installed (read from the loader widget's own combo list). `ref` carries the
+// variant chosen by a sibling loader so a multi-expert recipe (Wan high+low
+// noise) stays on a single quant when several are on disk. No-op when the baked
+// file is already installed or no same-base variant exists.
+export function resolveInstalledVariant(baked, installed, ref) {
+  if (!Array.isArray(installed) || installed.includes(baked)) return baked;
+  const bp = variantParts(baked);
+  if (!bp) return baked;
+  const candidates = installed.filter((o) => {
+    const op = variantParts(o);
+    return op && op.base === bp.base && op.ext === bp.ext;
+  });
+  if (!candidates.length) return baked;
+  const pick = (ref?.token && candidates.find((o) => variantParts(o).token === ref.token))
+    || candidates.find((o) => o === baked)
+    || candidates[0];
+  if (ref) ref.token = variantParts(pick).token;
+  return pick;
+}
+
 // Checkpoint-loadable archs all share CheckpointLoaderSimple, so they can be swapped
 // in place without rebuilding. Flux/Z-Image use different loaders → not swappable here.
 const CHECKPOINT_LOADERS = new Set(["CheckpointLoaderSimple", "CheckpointLoader"]);
@@ -241,6 +274,9 @@ export function applyTemplate(pcNode, template, modelFilename) {
     ? Math.max(0, (pcNode.size?.[0] || 0) + SPAWN_GAP - minOffsetX)
     : 0;
 
+  // Keeps multi-expert loaders (Wan high+low noise) on a single downloaded quant.
+  const _variantRef = { token: "" };
+
   const createdNodes = new Array(template.nodes.length).fill(null);
   for (let i = 0; i < template.nodes.length; i++) {
     const tplNode = template.nodes[i];
@@ -254,6 +290,7 @@ export function applyTemplate(pcNode, template, modelFilename) {
       pcNode.pos[1] + tplNode.offset[1],
     ];
     if (tplNode.size) newNode.size = [...tplNode.size];
+    if (tplNode.title) newNode.title = tplNode.title;
     if (tplNode.properties) Object.assign(newNode.properties, tplNode.properties);
     graph.add(newNode);
 
@@ -266,13 +303,29 @@ export function applyTemplate(pcNode, template, modelFilename) {
         if (typeof val === "string" && val.includes("{model_name}")) {
           val = val.replace(/\{model_name\}/g, slugify(modelName));
         }
+        // Remap a baked GGUF quant / safetensors precision to the variant the
+        // user actually downloaded — fixes locked multi-expert templates (Wan)
+        // pointing at a quant that isn't on disk. Reads the loader's installed
+        // list before ensureComboOption appends the (possibly absent) baked name.
+        if (typeof val === "string" && /\.(gguf|safetensors|ckpt)$/i.test(val)) {
+          val = resolveInstalledVariant(val, newNode.widgets[w].options?.values, _variantRef);
+        }
         ensureComboOption(newNode.widgets[w], val);
         newNode.widgets[w].value = val;
         newNode.widgets[w].callback?.(val);
       }
     }
 
-    if (template._presetNodes) {
+    // A locked template is a self-contained recipe: it bakes both its model
+    // filenames (see lockModels guard below) AND its sampler widget values.
+    // The model config's node presets carry ONE recipe per family (e.g. Wan's
+    // vanilla 20-step / CFG 3.5), which would clobber a sibling template's
+    // distinct recipe — applying the vanilla preset over the Fast 4-step /
+    // CFG 1.0 template left the LightX2V LoRAs running at CFG 3.5 and produced
+    // burnt video. So skip preset overrides for locked templates; the model-
+    // settings panel still reads slider RANGES from the config and current
+    // values from the live (template-baked) nodes.
+    if (template._presetNodes && !template.lockModels) {
       const nodeType = tplNode.type;
       const presetWidgets = template._presetNodes[nodeType];
       if (presetWidgets && newNode.widgets) {
@@ -289,7 +342,11 @@ export function applyTemplate(pcNode, template, modelFilename) {
     createdNodes[i] = newNode;
   }
 
-  if (modelFilename) {
+  // Single-loader templates inject the picked model into their loader. MoE/video
+  // templates (e.g. Wan's high+low noise experts) set lockModels and keep their
+  // own per-expert filenames — injecting one picked file would clobber the
+  // second expert and break the pair.
+  if (modelFilename && !template.lockModels) {
     const LOADER_TYPES = new Set([
       "CheckpointLoaderSimple", "CheckpointLoader",
       "UNETLoader", "DiffusersLoader",
@@ -372,6 +429,13 @@ async function injectTemplatePrompt(pcNode, promptId) {
   const recipeHeader = text.split("\n").find((l) => l.trim()) || "";
   if (recipeHeader && docText.includes(recipeHeader)) return; // same template re-applied
 
+  // A recipe's "Negative Prompt:" section is the model's standard negative
+  // (e.g. Wan's anti-static string). It sits below {cursor}, so the existing-
+  // doc path below would drop it — capture it now to re-apply afterward.
+  const NEG_RE = /(^|\n)[ \t]*negative\s+prompt\s*:/i;
+  const negMatch = text.match(NEG_RE);
+  const negSection = negMatch ? text.slice(negMatch.index).replace(/^\n/, "") : "";
+
   const cursorIdx = text.indexOf("{cursor}");
   let insertText, anchor;
   if (!docText.trim()) {
@@ -393,5 +457,18 @@ async function injectTemplatePrompt(pcNode, promptId) {
     });
   } else if (promptWidget) {
     promptWidget.value = docText.trim() ? insertText + docText : insertText;
+  }
+
+  // Existing prompt with no negative of its own: append the recipe's standard
+  // negative (the empty-doc path already inserted it inline).
+  if (negSection && docText.trim() && !NEG_RE.test(docText)) {
+    if (view) {
+      const end = view.state.doc.length;
+      const tail = view.state.doc.toString().endsWith("\n") ? "" : "\n";
+      view.dispatch({ changes: { from: end, to: end, insert: tail + negSection } });
+    } else if (promptWidget) {
+      const cur = String(promptWidget.value || "");
+      promptWidget.value = cur + (cur.endsWith("\n") ? "" : "\n") + negSection;
+    }
   }
 }

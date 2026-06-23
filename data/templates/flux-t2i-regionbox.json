@@ -1,0 +1,92 @@
+{
+  "name": "Regional — Region Boxes",
+  "category": "Generation",
+  "order": 1,
+  "scope": {
+    "type": "family",
+    "architecture": "flux",
+    "family": "flux_dev"
+  },
+  "created_at": 1781740800,
+  "id": "flux-t2i-regionbox",
+  "nodes": [
+    {
+      "type": "KSampler",
+      "offset": [1560, 0],
+      "size": [270, 400],
+      "widgets_values": [3257151735, "randomize", 40, 1, "euler", "simple", 1],
+      "properties": { "Node name for S&R": "KSampler" }
+    },
+    {
+      "type": "VAEDecode",
+      "offset": [1900, 0],
+      "size": [210, 46],
+      "widgets_values": [],
+      "properties": { "Node name for S&R": "VAEDecode" }
+    },
+    {
+      "type": "SaveImage",
+      "offset": [1900, 120],
+      "size": [320, 380],
+      "widgets_values": ["flux1/%date:yyyy-MM-dd_hhmmss%"],
+      "properties": {}
+    },
+    {
+      "type": "DualCLIPLoader",
+      "offset": [820, 140],
+      "size": [300, 130],
+      "widgets_values": ["t5xxl_fp16.safetensors", "clip_l.safetensors", "flux", "default"],
+      "properties": { "Node name for S&R": "DualCLIPLoader" }
+    },
+    {
+      "type": "UNETLoader",
+      "offset": [820, 0],
+      "size": [300, 82],
+      "widgets_values": ["flux1-dev.safetensors", "default"],
+      "properties": { "Node name for S&R": "UNETLoader" }
+    },
+    {
+      "type": "EmptySD3LatentImage",
+      "offset": [820, 320],
+      "size": [270, 106],
+      "widgets_values": [832, 1216, 1],
+      "properties": { "Node name for S&R": "EmptySD3LatentImage" }
+    },
+    {
+      "type": "VAELoader",
+      "offset": [820, 470],
+      "size": [246, 58],
+      "widgets_values": ["ae.safetensors"],
+      "properties": { "Node name for S&R": "VAELoader" }
+    },
+    {
+      "type": "PromptChain_RegionalConditioning",
+      "offset": [1200, 0],
+      "size": [300, 150],
+      "widgets_values": [22],
+      "properties": { "Node name for S&R": "PromptChain_RegionalConditioning" }
+    },
+    {
+      "type": "PromptChain_RegionBox",
+      "offset": [1190, 200],
+      "size": [340, 400],
+      "widgets_values": ["", 832, 1216, 0],
+      "properties": { "Node name for S&R": "PromptChain_RegionBox" }
+    }
+  ],
+  "connections": [
+    { "from_node_idx": 4, "from_slot": 0, "to_node_idx": 0, "to_slot": 0 },
+    { "from_node_idx": 3, "from_slot": 0, "to_node_idx": 7, "to_slot": 0 },
+    { "from_node_idx": 7, "from_slot": 0, "to_node_idx": 0, "to_slot": 1 },
+    { "from_node_idx": 7, "from_slot": 1, "to_node_idx": 0, "to_slot": 2 },
+    { "from_node_idx": 8, "from_slot": 0, "to_node_idx": 7, "to_slot": 2 },
+    { "from_node_idx": 8, "from_slot": 1, "to_node_idx": 7, "to_slot": 3 },
+    { "from_node_idx": 5, "from_slot": 0, "to_node_idx": 0, "to_slot": 3 },
+    { "from_node_idx": 0, "from_slot": 0, "to_node_idx": 1, "to_slot": 0 },
+    { "from_node_idx": 6, "from_slot": 0, "to_node_idx": 1, "to_slot": 1 },
+    { "from_node_idx": 1, "from_slot": 0, "to_node_idx": 2, "to_slot": 0 }
+  ],
+  "anchorConnections": [
+    { "from_slot": 3, "to_node_idx": 7, "to_slot": 1 }
+  ]
+}

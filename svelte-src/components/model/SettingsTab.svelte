@@ -128,6 +128,23 @@
     editors[nodeType][widgetName] = val;
   }
 
+  // Ideogram's noise schedule is computed by Ideogram4Scheduler, which carries its
+  // OWN width/height that must match the latent or the schedule and the image size
+  // disagree. The resolution row writes only the latent node, so slave the
+  // scheduler's width/height to it here (it is intentionally not shown as a second
+  // resolution row). No-op on any graph without an Ideogram4Scheduler section.
+  function mirrorIdeogramScheduler(latentNode) {
+    const sched = detected.find((d) => d.type === "Ideogram4Scheduler");
+    if (!sched) return;
+    for (const dim of ["width", "height"]) {
+      const v = readWidgetValue(latentNode, dim);
+      if (v !== undefined) {
+        writeWidgetValue(sched.node, dim, v);
+        setEditorValue("Ideogram4Scheduler", dim, v);
+      }
+    }
+  }
+
   function setRangeValue(nodeType, widgetName, lo, hi) {
     if (!rangeValues[nodeType]) rangeValues[nodeType] = {};
     rangeValues[nodeType][`${widgetName}_range`] = [lo, hi];
@@ -150,6 +167,22 @@
   function togglePresetMenu(nodeType) {
     presetMenuOpen[nodeType] = !presetMenuOpen[nodeType];
   }
+
+  // Close an open preset menu when the pointer goes down anywhere outside its
+  // wrap. Capture phase so it runs before the toggle button's own handler; the
+  // wrap holds both the button and the menu, so toggling/selecting still works.
+  // (The modal's own outside-click ignores clicks inside the menu, so this is
+  // the only thing that dismisses it on an unrelated click.) Event-driven.
+  $effect(() => {
+    function onDocDown(e) {
+      if (e.target?.closest?.(".pcr-resolution-preset-wrap")) return;
+      for (const k of Object.keys(presetMenuOpen)) {
+        if (presetMenuOpen[k]) presetMenuOpen[k] = false;
+      }
+    }
+    document.addEventListener("pointerdown", onDocDown, true);
+    return () => document.removeEventListener("pointerdown", onDocDown, true);
+  });
 
   // Collapsible section state. The incoming prop is a plain object (not
   // $state), so mutating it directly doesn't re-render. Drive a local $state
@@ -270,20 +303,22 @@
       {#if !rangeMode}
         {@const hasResolution = Object.values(config.widgets).some(d => d.type === "resolution")}
         {#if hasResolution}
-          {@const w = readWidgetValue(node, "width")}
-          {@const h = readWidgetValue(node, "height")}
+          {@const w = editors[type]?.width}
+          {@const h = editors[type]?.height}
           {#if w !== undefined && h !== undefined}
             {@const savedW = savedWidgets["width"]}
             {@const savedH = savedWidgets["height"]}
-            {@const presets = savedWidgets["_resolutions"] || []}
+            {@const presets = editors[type]?.["_resolutions"] || []}
+            {@const isPreset = presets.some(p => p.width === w && p.height === h)}
             <div class="pcr-model-panel-row pcr-resolution-row">
               <span class="pcr-model-panel-label">resolution</span>
               <div class="pcr-resolution-controls">
                 <div class="pcr-resolution-preset-wrap">
                   <button class="pcr-resolution-preset-btn"
-                    class:pcr-resolution-preset-active={presets.some(p => p.width === w && p.height === h)}
+                    class:pcr-resolution-preset-active={isPreset}
+                    class:pcr-resolution-preset-dimmed={!isPreset}
                     onclick={(e) => { e.stopPropagation(); togglePresetMenu(type); }}>
-                    {presets.some(p => p.width === w && p.height === h) ? `${w}×${h}` : "Presets"}
+                    {isPreset ? `${w}×${h}` : "Presets"}
                   </button>
                   {#if presetMenuOpen[type]}
                     <div class="pcr-resolution-preset-menu" style="display:block">
@@ -303,6 +338,7 @@
                                 writeWidgetValue(node, "height", p.height);
                                 setEditorValue(type, "width", p.width);
                                 setEditorValue(type, "height", p.height);
+                                mirrorIdeogramScheduler(node);
                                 presetMenuOpen[type] = false;
                               }}>
                               <span class="pcr-resolution-preset-item-label">{p.width}×{p.height}</span>
@@ -318,35 +354,38 @@
                         {/if}
                       {/each}
                       <div class="pcr-resolution-preset-add"
-                        class:pcr-resolution-preset-add-disabled={presets.some(p => p.width === w && p.height === h)}
+                        class:pcr-resolution-preset-add-disabled={isPreset}
                         onclick={() => {
-                          if (!presets.some(p => p.width === w && p.height === h)) {
-                            presets.push({ width: w, height: h });
-                            editors[type]["_resolutions"] = [...presets];
+                          if (!isPreset) {
+                            editors[type]["_resolutions"] = [...presets, { width: w, height: h }];
                           }
                           presetMenuOpen[type] = false;
                         }}>
-                        {presets.some(p => p.width === w && p.height === h) ? `${w}×${h} already saved` : "+ Add Current"}
+                        {isPreset ? `${w}×${h} already saved` : "+ Add Current"}
                       </div>
                     </div>
                   {/if}
                 </div>
                 <input type="number" class="pcr-resolution-input"
-                  class:pcr-resolution-input-dimmed={presets.some(p => p.width === w && p.height === h)}
+                  class:pcr-resolution-input-dimmed={isPreset}
+                  class:pcr-resolution-input-active={!isPreset}
                   value={w} step={8}
                   onchange={(e) => {
                     const v = parseInt(e.target.value) || 512;
                     setEditorValue(type, "width", v);
                     writeWidgetValue(node, "width", v);
+                    mirrorIdeogramScheduler(node);
                   }} />
                 <span class="pcr-resolution-sep">×</span>
                 <input type="number" class="pcr-resolution-input"
-                  class:pcr-resolution-input-dimmed={presets.some(p => p.width === w && p.height === h)}
+                  class:pcr-resolution-input-dimmed={isPreset}
+                  class:pcr-resolution-input-active={!isPreset}
                   value={h} step={8}
                   onchange={(e) => {
                     const v = parseInt(e.target.value) || 512;
                     setEditorValue(type, "height", v);
                     writeWidgetValue(node, "height", v);
+                    mirrorIdeogramScheduler(node);
                   }} />
               </div>
             </div>
@@ -726,8 +765,17 @@
     color: #5dcaff;
     min-width: 90px;
   }
+  /* custom (non-preset) resolution: dim the dropdown, light up the W×H boxes */
+  .pcr-resolution-preset-dimmed {
+    opacity: 0.45;
+  }
   .pcr-resolution-input-dimmed {
     opacity: 0.4;
+  }
+  .pcr-resolution-input-active {
+    border-color: #5dcaff;
+    color: #fff;
+    background: #222b33;
   }
   .pcr-resolution-preset-menu {
     position: fixed;

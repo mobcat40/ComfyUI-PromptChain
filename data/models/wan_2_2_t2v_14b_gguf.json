@@ -1,0 +1,65 @@
+{
+  "display_name": "Wan 2.2 T2V - 14B (GGUF)",
+  "model_name": "Wan 2.2 T2V GGUF",
+  "version": "14B",
+  "architecture": "wan22",
+  "family": "wan22_t2v_gguf",
+  "author": "Alibaba/Wan (GGUF by QuantStack)",
+  "description": "14B text-to-video, GGUF-quantized for lower VRAM. Dual-expert MoE loaded via UnetLoaderGGUF (requires the ComfyUI-GGUF node pack). Pick a quantization to download (Q5_K_M recommended for 24GB).",
+  "license": "Apache 2.0",
+  "tags": ["wan", "video", "t2v", "text-to-video", "MoE", "14B", "gguf"],
+  "url": "https://huggingface.co/QuantStack/Wan2.2-T2V-A14B-GGUF",
+  "release_date": "2025-12-01",
+  "tag_sources": [],
+  "tag_format": "spaces",
+  "prompt_style": "natural",
+  "trigger": "",
+  "negative": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走",
+  "notes": "GGUF requires UnetLoaderGGUF (ComfyUI-GGUF). Templates bake Q5_K_M; if you download a different quant, pick it in the loader dropdown. Same recipe as the safetensors T2V (shift 5.0, vanilla 20 steps / fast 4-step LoRA v1.1). umt5 + VAE are the standard safetensors files.",
+  "files": [
+    {
+      "label": "Diffusion Model (High Noise) - GGUF",
+      "folder": "unet",
+      "primary": true,
+      "variants": [
+        { "precision": "Q5_K_M", "filename": "Wan2.2-T2V-A14B-HighNoise-Q5_K_M.gguf", "size_bytes": 10800000000, "source": { "provider": "huggingface", "repo": "QuantStack/Wan2.2-T2V-A14B-GGUF", "path": "HighNoise/Wan2.2-T2V-A14B-HighNoise-Q5_K_M.gguf" }, "sha256": null },
+        { "precision": "Q8_0", "filename": "Wan2.2-T2V-A14B-HighNoise-Q8_0.gguf", "size_bytes": 16000000000, "source": { "provider": "huggingface", "repo": "QuantStack/Wan2.2-T2V-A14B-GGUF", "path": "HighNoise/Wan2.2-T2V-A14B-HighNoise-Q8_0.gguf" }, "sha256": null },
+        { "precision": "Q6_K", "filename": "Wan2.2-T2V-A14B-HighNoise-Q6_K.gguf", "size_bytes": 13000000000, "source": { "provider": "huggingface", "repo": "QuantStack/Wan2.2-T2V-A14B-GGUF", "path": "HighNoise/Wan2.2-T2V-A14B-HighNoise-Q6_K.gguf" }, "sha256": null },
+        { "precision": "Q4_K_M", "filename": "Wan2.2-T2V-A14B-HighNoise-Q4_K_M.gguf", "size_bytes": 9000000000, "source": { "provider": "huggingface", "repo": "QuantStack/Wan2.2-T2V-A14B-GGUF", "path": "HighNoise/Wan2.2-T2V-A14B-HighNoise-Q4_K_M.gguf" }, "sha256": null }
+      ]
+    },
+    {
+      "label": "Diffusion Model (Low Noise) - GGUF",
+      "folder": "unet",
+      "variants": [
+        { "precision": "Q5_K_M", "filename": "Wan2.2-T2V-A14B-LowNoise-Q5_K_M.gguf", "size_bytes": 10800000000, "source": { "provider": "huggingface", "repo": "QuantStack/Wan2.2-T2V-A14B-GGUF", "path": "LowNoise/Wan2.2-T2V-A14B-LowNoise-Q5_K_M.gguf" }, "sha256": null },
+        { "precision": "Q8_0", "filename": "Wan2.2-T2V-A14B-LowNoise-Q8_0.gguf", "size_bytes": 16000000000, "source": { "provider": "huggingface", "repo": "QuantStack/Wan2.2-T2V-A14B-GGUF", "path": "LowNoise/Wan2.2-T2V-A14B-LowNoise-Q8_0.gguf" }, "sha256": null },
+        { "precision": "Q6_K", "filename": "Wan2.2-T2V-A14B-LowNoise-Q6_K.gguf", "size_bytes": 13000000000, "source": { "provider": "huggingface", "repo": "QuantStack/Wan2.2-T2V-A14B-GGUF", "path": "LowNoise/Wan2.2-T2V-A14B-LowNoise-Q6_K.gguf" }, "sha256": null },
+        { "precision": "Q4_K_M", "filename": "Wan2.2-T2V-A14B-LowNoise-Q4_K_M.gguf", "size_bytes": 9000000000, "source": { "provider": "huggingface", "repo": "QuantStack/Wan2.2-T2V-A14B-GGUF", "path": "LowNoise/Wan2.2-T2V-A14B-LowNoise-Q4_K_M.gguf" }, "sha256": null }
+      ]
+    },
+    {
+      "label": "Text Encoder (UMT5-XXL)",
+      "folder": "text_encoders",
+      "variants": [
+        { "precision": "fp8", "filename": "umt5_xxl_fp8_e4m3fn_scaled.safetensors", "size_bytes": 6735906897, "source": { "provider": "huggingface", "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged", "path": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors" }, "sha256": null },
+        { "precision": "fp16", "filename": "umt5_xxl_fp16.safetensors", "size_bytes": 11401671879, "source": { "provider": "huggingface", "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged", "path": "split_files/text_encoders/umt5_xxl_fp16.safetensors" }, "sha256": null }
+      ]
+    },
+    { "label": "VAE", "folder": "vae", "filename": "wan_2.1_vae.safetensors", "size_bytes": 253815318, "source": { "provider": "huggingface", "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged", "path": "split_files/vae/wan_2.1_vae.safetensors" }, "sha256": null },
+    { "label": "LightX2V 4-step LoRA - High Noise (Fast, rank64 build)", "folder": "loras", "optional": true, "filename": "wan2.2_t2v_A14b_high_noise_lora_rank64_lightx2v_4step_1217.safetensors", "size_bytes": 643825664, "source": { "provider": "huggingface", "repo": "lightx2v/Wan2.2-Distill-Loras", "path": "wan2.2_t2v_A14b_high_noise_lora_rank64_lightx2v_4step_1217.safetensors" }, "sha256": null },
+    { "label": "LightX2V 4-step LoRA - Low Noise (Fast, rank64 build)", "folder": "loras", "optional": true, "filename": "wan2.2_t2v_A14b_low_noise_lora_rank64_lightx2v_4step_1217.safetensors", "size_bytes": 643825664, "source": { "provider": "huggingface", "repo": "lightx2v/Wan2.2-Distill-Loras", "path": "wan2.2_t2v_A14b_low_noise_lora_rank64_lightx2v_4step_1217.safetensors" }, "sha256": null }
+  ],
+  "nodes": {
+    "KSamplerAdvanced": {
+      "steps": 20,
+      "cfg": 3.5,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "steps_range": [10, 40],
+      "cfg_range": [1.0, 6.0],
+      "sampler_name_options": ["euler", "uni_pc", "dpmpp_2m"],
+      "scheduler_options": ["simple", "normal", "beta"]
+    }
+  }
+}

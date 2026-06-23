@@ -22,6 +22,7 @@
   let panelEl;
   let dividerEl;
   let imgEl;
+  let videoEl;
   let imgContainerEl;
   let isVisible = $state(!!node.properties?.pcrImagePreview);
   let panelWidth = $state(node.properties?.pcrImagePanelWidth || DEFAULT_WIDTH);
@@ -106,6 +107,13 @@
     } catch { return { filename: "", subfolder: "" }; }
   }
 
+  // Video outputs (Wan/AnimateDiff/…) arrive through the same executed event as
+  // images but name an .mp4/.webm file — render those in a <video>, not <img>.
+  let isVideoUrl = $derived.by(() => {
+    if (!currentImageUrl) return false;
+    return /\.(mp4|webm|m4v|mov)(\?|$)/i.test(parseImageUrl(currentImageUrl).filename);
+  });
+
   let filenameDisplay = $derived.by(() => {
     if (shared.isGenerating) return "Generating\u2026";
     if (!currentImageUrl) return "";
@@ -169,6 +177,13 @@
     naturalWidth = imgEl?.naturalWidth || 0;
     naturalHeight = imgEl?.naturalHeight || 0;
     if (!isPreviewMode) resetZoom();
+  }
+
+  function handleVideoLoaded() {
+    imageLoaded = true;
+    imageError = false;
+    naturalWidth = videoEl?.videoWidth || 0;
+    naturalHeight = videoEl?.videoHeight || 0;
   }
 
   function handleImageError() {
@@ -475,7 +490,21 @@
       onpointerup={handlePanEnd}
       ondblclick={(e) => { e.stopPropagation(); resetZoom(true); }}
     >
-      {#if currentImageUrl}
+      {#if currentImageUrl && isVideoUrl}
+        <!-- svelte-ignore a11y_media_has_caption -->
+        <video
+          bind:this={videoEl}
+          src={currentImageUrl}
+          style:display={imageLoaded ? "block" : "none"}
+          onloadeddata={handleVideoLoaded}
+          onerror={handleImageError}
+          autoplay
+          loop
+          muted
+          playsinline
+          controls
+        ></video>
+      {:else if currentImageUrl}
         <img
           bind:this={imgEl}
           src={currentImageUrl}
@@ -620,7 +649,8 @@
     overflow: hidden;
     background: var(--pcr-fs-editor-surface, transparent);
   }
-  .pcr-image-container img {
+  .pcr-image-container img,
+  .pcr-image-container video {
     width: 100%;
     height: 100%;
     object-fit: contain;

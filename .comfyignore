@@ -1,0 +1,24 @@
+# Files excluded from the published ComfyUI Registry tarball (gitignore syntax).
+# Dev-only / build artifacts — never needed by an installed pack.
+#
+# NOTE: bundled_packs/, data/ (tag DB + thumbs), and js/ assets stay IN — they're
+# the batteries-included feature set and are intentionally shipped.
+
+# dev test harnesses
+tests/
+
+# comfy-node-publish build artifact
+node.zip
+
+# dev-only natlang probe scripts — never imported at runtime. The 6 runtime-imported
+# scripts (natlang_decompose_probe, natlang_compose_from_plan, natlang_scene_composer,
+# natlang_hybrid_v1, natlang_rails_v2, tag_rails_v1) are deliberately NOT listed.
+scripts/natlang_char_router_probe.py
+scripts/natlang_fragment_rewrite_harness.py
+scripts/natlang_harmonize_probe.py
+scripts/natlang_locate_infill_probe.py
+scripts/natlang_planner_probe.py
+scripts/natlang_resolve_probe.py
+scripts/natlang_scan_probe.py
+scripts/natlang_vibe_probe.py
+scripts/natlang_dispatch.py

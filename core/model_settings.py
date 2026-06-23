@@ -7,10 +7,13 @@ Three layers:
   User:       {user_dir}/PromptChain/models/{hash}.json — user overrides
 
 Each config embeds quick_hash and sha256 in its files array. Lookups go
-through a hash-based config index, not filenames.
+through a hash + filename config index.
 
-User overrides discovered overrides system. On save, only the delta
-from the base config is stored so updates still propagate.
+User settings override the resolved base config. When a file matches both a
+curated system preset (by filename) and an auto-discovered config (by the
+embedded hash), the system preset wins — it holds the authoritative family,
+templates, and node ranges. On save, only the delta from the base config is
+stored so shipped updates still propagate.
 """
 from __future__ import annotations
 
@@ -55,20 +58,40 @@ def _user_dir() -> Path:
 # old filename-based reverse index.
 
 _config_index: Optional[dict] = None
+_config_index_signature: Optional[tuple] = None
+
+
+def _config_dir_signature() -> tuple:
+    # Freshness check mirroring get_db's mtime watch: a directory's mtime
+    # changes when configs are added, removed, or atomically replaced
+    # (atomic_write_json renames into place; git /deploy pulls write new
+    # files), so shipped presets are picked up without a server restart.
+    # In-place content edits to an existing file don't bump the dir mtime —
+    # those still need invalidate_config_index() or a restart.
+    sig = []
+    for directory in (_system_dir(), _discovered_dir()):
+        try:
+            sig.append(directory.stat().st_mtime_ns)
+        except OSError:
+            sig.append(0)
+    return tuple(sig)
 
 
 def _get_config_index() -> dict:
-    global _config_index
-    if _config_index is not None:
+    global _config_index, _config_index_signature
+    sig = _config_dir_signature()
+    if _config_index is not None and sig == _config_index_signature:
         return _config_index
     _config_index = _build_config_index()
+    _config_index_signature = sig
     return _config_index
 
 
 def invalidate_config_index():
     """Force rebuild on next lookup (e.g. after adding/removing configs)."""
-    global _config_index
+    global _config_index, _config_index_signature
     _config_index = None
+    _config_index_signature = None
 
 
 def _build_config_index() -> dict:
@@ -83,8 +106,11 @@ def _build_config_index() -> dict:
         "by_filename": {},    # filename.lower() → config dict
     }
     # Discovered first, then system — system overwrites, giving curated
-    # configs priority over auto-detected ones.
-    for directory in (_discovered_dir(), _system_dir()):
+    # configs priority over auto-detected ones. Each config is stamped with
+    # its source tier so the resolver can prefer a curated system preset over
+    # an auto-discovered config when both match the same physical file.
+    for directory, tier in ((_discovered_dir(), "discovered"),
+                            (_system_dir(), "system")):
         if not directory.is_dir():
             continue
         for path in directory.glob("*.json"):
@@ -93,6 +119,7 @@ def _build_config_index() -> dict:
             data = _read_json(path)
             if not data:
                 continue
+            data["_source_tier"] = tier
 
             # Legacy hash-named configs without files array:
             # treat stem as quick_hash
@@ -127,17 +154,23 @@ def _index_single_entry(index: dict, entry: dict, config: dict):
     if fname:
         key = fname.lower()
         existing = index["by_filename"].get(key)
-        # Two configs claiming the same filename is ambiguous; keep first
-        # (deterministic by scan order) and surface the conflict so the
-        # user can see why a particular config won.
         if existing is not None and existing is not config:
-            logger.debug(
-                "filename collision %s: kept %s, ignored %s",
-                fname,
-                _ascii_safe(existing.get("display_name", "?")),
-                _ascii_safe(config.get("display_name", "?")),
-            )
-            return
+            existing_system = existing.get("_source_tier") == "system"
+            new_system = config.get("_source_tier") == "system"
+            # A curated system preset always wins over an auto-discovered
+            # config for the same filename — the discovered one carries the
+            # file's hash but lacks the authoritative family/templates. Within
+            # the same tier, keep first (deterministic by scan order) and log.
+            if existing_system and not new_system:
+                return
+            if not (new_system and not existing_system):
+                logger.debug(
+                    "filename collision %s: kept %s, ignored %s",
+                    fname,
+                    _ascii_safe(existing.get("display_name", "?")),
+                    _ascii_safe(config.get("display_name", "?")),
+                )
+                return
         index["by_filename"][key] = config
 
 
@@ -392,20 +425,34 @@ def load(model_hash: str) -> Optional[dict]:
     return merged
 
 
-def _find_base_config(model_hash: str) -> Optional[dict]:
-    """Find the base config (system or discovered) for a model hash.
+def _resolve_base_config(model_hash: str) -> Optional[dict]:
+    """Resolve the curated/discovered base config for a hash (no install gate).
 
-    Checks the config index by quick_hash first, then falls back to
-    filename matching via the fingerprint index. For multi-file models,
-    verifies all required files are installed before returning.
+    A model file can match an auto-discovered config by hash (the CivitAI scan
+    embeds the file's quick_hash) and a curated system preset by filename
+    (HuggingFace presets carry no hash). When both match, the curated system
+    preset wins — it holds the authoritative family, templates, and node
+    ranges. No install gate here so save()/delta resolves the same base load()
+    surfaces.
     """
-    config = find_config_by_hash(model_hash)
-    if not config:
-        # Fallback: configs without quick_hash (e.g. HuggingFace-only models)
-        # can still be matched by filename from the fingerprint scan
-        fp_info = fingerprint.find_by_hash(model_hash)
-        if fp_info:
-            config = find_config_by_filename(fp_info["filename"])
+    by_hash = find_config_by_hash(model_hash)
+    by_name = None
+    fp_info = fingerprint.find_by_hash(model_hash)
+    if fp_info:
+        by_name = find_config_by_filename(fp_info["filename"])
+    for candidate in (by_hash, by_name):
+        if candidate is not None and candidate.get("_source_tier") == "system":
+            return candidate
+    return by_hash or by_name
+
+
+def _find_base_config(model_hash: str) -> Optional[dict]:
+    """Find the base config for a model hash, gated on its files being present.
+
+    For multi-file models, verifies all required files are installed before
+    returning so a half-downloaded model doesn't surface a dead template.
+    """
+    config = _resolve_base_config(model_hash)
     if config:
         if "files" in config and not _all_files_installed(config["files"]):
             import logging
@@ -435,7 +482,7 @@ def save(model_hash: str, config: dict):
     user_dir = _user_dir()
     user_dir.mkdir(parents=True, exist_ok=True)
 
-    system_config = find_config_by_hash(model_hash)
+    system_config = _resolve_base_config(model_hash)
     delta = _compute_delta(config, system_config) if system_config else config
 
     if not delta and system_config:
@@ -628,18 +675,21 @@ def list_version_details(model_name: str) -> list[dict]:
 
 
 def _file_exists_in_folder(filename: str, folder_type: str, min_size: int = 0) -> bool:
-    """True if filename exists in folder_type and is at least min_size bytes.
+    """True if filename exists in folder_type and isn't grossly undersized.
 
-    A truncated download left at its final path (no .part suffix) would
-    otherwise pass mere-existence checks and make its catalog entry
-    disappear, blocking the user from resuming it.
+    Catches a truncated download left at its final path (no .part suffix) that
+    would otherwise pass a mere-existence check and make its catalog entry
+    disappear, blocking resume. But catalog config sizes are ROUNDED ESTIMATES,
+    not exact byte counts (a Q8 GGUF listed as 16 GB is really ~15.4 GB), so the
+    floor is half the estimate — enough to reject a real stub while accepting a
+    complete file that's a few percent under the guess.
     """
     try:
         for folder in folder_paths.get_folder_paths(folder_type):
             path = os.path.join(folder, filename)
             if not os.path.isfile(path):
                 continue
-            if min_size and os.path.getsize(path) < min_size:
+            if min_size and os.path.getsize(path) < min_size * 0.5:
                 continue
             return True
     except Exception:
@@ -655,6 +705,10 @@ def _all_files_installed(files: list[dict]) -> bool:
     entries need at least one variant present.
     """
     for entry in files:
+        # Optional files (e.g. a Fast-template LoRA) don't gate "installed":
+        # a vanilla download without them must still surface the config.
+        if entry.get("optional"):
+            continue
         folder_type = entry.get("folder", "")
         if not folder_type:
             continue
@@ -667,6 +721,103 @@ def _all_files_installed(files: list[dict]) -> bool:
             if not _file_installed(entry, folder_type):
                 return False
     return True
+
+
+_PRIMARY_FOLDERS = ("diffusion_models", "unet", "checkpoints")
+
+
+def _precision_tier(precision: str) -> str:
+    """High-precision primaries pull the high-precision companion; everything
+    else (fp8*, fp4, GGUF quants) pulls the lighter one. Mirrors the client's
+    precisionTier so companion files pair to the chosen primary consistently."""
+    return "high" if re.search(r"fp16|bf16|fp32", precision or "", re.I) else "low"
+
+
+def _resolve_files_for_precision(files: list[dict], precision: str) -> list[dict]:
+    """The concrete files a precision needs — primary variant + companions paired
+    by tier. Mirror of the client resolveFilesForPrecision so install state is
+    computed against the exact same file set the download modal would fetch."""
+    tier = _precision_tier(precision)
+    resolved = []
+    for f in files:
+        variants = f.get("variants")
+        if not variants:
+            resolved.append(f)
+            continue
+        match = next((v for v in variants if v.get("precision") == precision), None) \
+            or next((v for v in variants if _precision_tier(v.get("precision")) == tier), None) \
+            or variants[0]
+        if not match:
+            continue
+        resolved.append({
+            "label": f.get("label"),
+            "folder": f.get("folder"),
+            "filename": match.get("filename"),
+            "size_bytes": match.get("size_bytes", 0),
+            "quick_hash": match.get("quick_hash"),
+            "optional": f.get("optional", False),
+            "source": match.get("source"),
+        })
+    return resolved
+
+
+def _precision_install_status(files: list[dict]) -> dict:
+    """Per declared primary precision → 'installed' | 'partial' | 'missing'.
+
+    Status is keyed on the precision's OWN model weight (the primary variant —
+    the quant / diffusion file). Shared companions (text encoder, VAE) are
+    reused across every precision, so a precision whose weight isn't downloaded
+    is 'missing' even when those companions happen to be on disk from another
+    model. Only when the weight IS present do we split installed (all companions
+    too) from 'partial' (a resumable download missing a companion).
+    """
+    # Only a variant-bearing MODEL file (diffusion/unet/checkpoint) defines
+    # selectable precisions. A single-weight model whose only variants live on a
+    # companion — e.g. the 5B, whose lone variant file is the shared umt5 text
+    # encoder — has no model precisions; surfacing the encoder's fp8/fp16 as if
+    # they were model choices is meaningless (and falsely "partial" when the
+    # shared encoder happens to be on disk from another model).
+    primary = next((f for f in files if f.get("variants") and f.get("folder") in _PRIMARY_FOLDERS), None)
+    if not primary:
+        return {}
+    primary_folder = primary.get("folder", "")
+    precisions: list[str] = []
+    for v in primary.get("variants", []):
+        p = v.get("precision")
+        if p and p not in precisions:
+            precisions.append(p)
+
+    status = {}
+    for p in precisions:
+        variant = next((v for v in primary.get("variants", []) if v.get("precision") == p), None)
+        if not (variant and _file_installed(variant, primary_folder)):
+            status[p] = "missing"
+            continue
+        required = [
+            f for f in _resolve_files_for_precision(files, p)
+            if not f.get("optional") and f.get("folder") and (f.get("filename") or f.get("quick_hash"))
+        ]
+        present = sum(1 for f in required if _file_installed(f, f["folder"]))
+        status[p] = "installed" if present == len(required) else "partial"
+    return status
+
+
+def _primary_file_present(files: list[dict]) -> bool:
+    """True if any primary model weight (diffusion/unet/checkpoint) is on disk.
+
+    Drives the 'resume' hint for entries without precision variants: a shared
+    encoder/VAE being present is NOT a started download — only the model's own
+    weight is, so we never glow an un-downloaded model amber."""
+    for f in files:
+        if f.get("folder") not in _PRIMARY_FOLDERS:
+            continue
+        variants = f.get("variants")
+        if variants:
+            if any(_file_installed(v, f["folder"]) for v in variants):
+                return True
+        elif (f.get("filename") or f.get("quick_hash")) and _file_installed(f, f["folder"]):
+            return True
+    return False
 
 
 def _base_version_key(version: str) -> tuple:
@@ -725,6 +876,8 @@ def _collect_uninstalled_presets() -> list[dict]:
             entry["civitai_model_id"] = data["civitai_model_id"]
         if data.get("thumbnail"):
             entry["thumbnail"] = data["thumbnail"]
+        entry["precision_status"] = _precision_install_status(entry["files"])
+        entry["partial"] = _primary_file_present(entry["files"])
         entries.append(entry)
 
     return entries
@@ -798,31 +951,44 @@ def is_catalog_filename(filename: str) -> bool:
     return filename.lower() in _get_config_index()["by_filename"]
 
 
+def _entry_matches_filename(entry: dict, filename_lower: str) -> bool:
+    """True if a file entry owns this filename — as its flat filename or any
+    of its precision variants."""
+    flat = entry.get("filename")
+    if flat:
+        return flat.lower() == filename_lower
+    return any(v.get("filename", "").lower() == filename_lower
+               for v in entry.get("variants", []))
+
+
 def is_primary_model_file(filename: str) -> bool:
-    """True if this filename is the primary file for its config.
+    """True if this filename is the model's primary (picker-facing) file.
 
-    Multi-file models list several component files (dual experts, text
-    encoders, VAEs, LoRAs). The primary file is the first diffusion_models
-    or unet entry. Only it should appear in the picker — secondaries are
-    hidden to avoid duplicate entries.
+    A multi-file config lists several components (dual MoE experts, text
+    encoder, VAE, LoRAs). Only the primary surfaces in the picker; its
+    precision variants become the selectable versions and every other
+    component is hidden so one model reads as one selection.
 
-    Returns True for files not in any config (standalone models).
+    The primary is declared with "primary": true on a file entry — needed
+    when a config has more than one diffusion_models/unet entry (e.g. a MoE
+    high+low pair). Configs with a single, unambiguous diffusion entry omit
+    the flag and fall back to "first diffusion_models/unet entry wins". Files
+    in no config (standalone models) are always primary.
     """
     config = find_config_by_filename(filename)
     if not config or "files" not in config:
         return True
 
     lower = filename.lower()
-    for entry in config["files"]:
-        if entry.get("folder") not in ("diffusion_models", "unet"):
-            continue
-        flat = entry.get("filename")
-        if flat:
-            return flat.lower() == lower
-        for v in entry.get("variants", []):
-            if v.get("filename", "").lower() == lower:
-                return True
-        return False
+    files = config["files"]
+
+    flagged = [e for e in files if e.get("primary")]
+    if flagged:
+        return any(_entry_matches_filename(e, lower) for e in flagged)
+
+    for entry in files:
+        if entry.get("folder") in ("diffusion_models", "unet"):
+            return _entry_matches_filename(entry, lower)
     return True
 
 

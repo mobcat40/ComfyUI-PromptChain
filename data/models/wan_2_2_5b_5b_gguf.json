@@ -1,0 +1,52 @@
+{
+  "display_name": "Wan 2.2 TI2V - 5B (GGUF)",
+  "model_name": "Wan 2.2 5B GGUF",
+  "version": "5B",
+  "architecture": "wan22",
+  "family": "wan22_5b_gguf",
+  "author": "Alibaba/Wan (GGUF by QuantStack)",
+  "description": "5B hybrid text-and-image-to-video, GGUF-quantized. Single dense model loaded via UnetLoaderGGUF (requires ComfyUI-GGUF). The lightest local Wan - runs in a few GB. Uses the dedicated wan2.2_vae.",
+  "license": "Apache 2.0",
+  "tags": ["wan", "video", "ti2v", "t2v", "i2v", "5B", "gguf", "low-vram"],
+  "url": "https://huggingface.co/QuantStack/Wan2.2-TI2V-5B-GGUF",
+  "release_date": "2025-12-01",
+  "tag_sources": [],
+  "tag_format": "spaces",
+  "prompt_style": "natural",
+  "trigger": "",
+  "negative": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走",
+  "notes": "GGUF requires UnetLoaderGGUF (ComfyUI-GGUF). Templates bake Q5_K_M; pick a different quant in the loader dropdown if downloaded. Single dense KSampler: 20 steps, CFG 5.0, uni_pc/simple, shift 8.0, 1280x704, 121 frames, 24fps. REQUIRES wan2.2_vae. Separate I2V and T2V templates.",
+  "files": [
+    {
+      "label": "Diffusion Model - GGUF",
+      "folder": "unet",
+      "variants": [
+        { "precision": "Q5_K_M", "filename": "Wan2.2-TI2V-5B-Q5_K_M.gguf", "size_bytes": 3700000000, "source": { "provider": "huggingface", "repo": "QuantStack/Wan2.2-TI2V-5B-GGUF", "path": "Wan2.2-TI2V-5B-Q5_K_M.gguf" }, "sha256": null },
+        { "precision": "Q8_0", "filename": "Wan2.2-TI2V-5B-Q8_0.gguf", "size_bytes": 5400000000, "source": { "provider": "huggingface", "repo": "QuantStack/Wan2.2-TI2V-5B-GGUF", "path": "Wan2.2-TI2V-5B-Q8_0.gguf" }, "sha256": null },
+        { "precision": "Q6_K", "filename": "Wan2.2-TI2V-5B-Q6_K.gguf", "size_bytes": 4300000000, "source": { "provider": "huggingface", "repo": "QuantStack/Wan2.2-TI2V-5B-GGUF", "path": "Wan2.2-TI2V-5B-Q6_K.gguf" }, "sha256": null },
+        { "precision": "Q4_K_M", "filename": "Wan2.2-TI2V-5B-Q4_K_M.gguf", "size_bytes": 3100000000, "source": { "provider": "huggingface", "repo": "QuantStack/Wan2.2-TI2V-5B-GGUF", "path": "Wan2.2-TI2V-5B-Q4_K_M.gguf" }, "sha256": null }
+      ]
+    },
+    {
+      "label": "Text Encoder (UMT5-XXL)",
+      "folder": "text_encoders",
+      "variants": [
+        { "precision": "fp8", "filename": "umt5_xxl_fp8_e4m3fn_scaled.safetensors", "size_bytes": 6735906897, "source": { "provider": "huggingface", "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged", "path": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors" }, "sha256": null },
+        { "precision": "fp16", "filename": "umt5_xxl_fp16.safetensors", "size_bytes": 11401671879, "source": { "provider": "huggingface", "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged", "path": "split_files/text_encoders/umt5_xxl_fp16.safetensors" }, "sha256": null }
+      ]
+    },
+    { "label": "VAE (Wan 2.2)", "folder": "vae", "filename": "wan2.2_vae.safetensors", "size_bytes": 1429407336, "source": { "provider": "huggingface", "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged", "path": "split_files/vae/wan2.2_vae.safetensors" }, "sha256": null }
+  ],
+  "nodes": {
+    "KSampler": {
+      "steps": 20,
+      "cfg": 5.0,
+      "sampler_name": "uni_pc",
+      "scheduler": "simple",
+      "steps_range": [15, 40],
+      "cfg_range": [1.0, 8.0],
+      "sampler_name_options": ["uni_pc", "euler", "dpmpp_2m"],
+      "scheduler_options": ["simple", "normal", "beta"]
+    }
+  }
+}
