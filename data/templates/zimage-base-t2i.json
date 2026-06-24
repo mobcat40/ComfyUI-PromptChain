@@ -58,8 +58,8 @@
         273825219479396,
         "randomize",
         50,
-        3,
-        "res_multistep",
+        4,
+        "dpmpp_sde",
         "beta",
         1
       ],

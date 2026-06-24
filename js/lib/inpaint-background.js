@@ -300,7 +300,7 @@ export async function prepareInpaint(entry) {
   // they route to the engine picker instead of erroring at Apply.
   const sourceUsable = !!findAnchor(data.prompt)
     && entries.some((n) => ["CheckpointLoaderSimple", "CheckpointLoader", "UNETLoader"].includes(n?.class_type))
-    && entries.some((n) => ["CLIPTextEncode", "PromptChain_AttentionCouple", "PromptChain_RegionalConditioning",
+    && entries.some((n) => ["CLIPTextEncode", "CLIPLoader", "PromptChain_AttentionCouple", "PromptChain_RegionalConditioning",
       "CheckpointLoaderSimple", "CheckpointLoader"].includes(n?.class_type));
   // Engine models make any image inpaintable — a picked SDXL checkpoint
   // builds a standalone MaskedDetail graph, no render metadata needed (side-
@@ -485,8 +485,13 @@ export function buildInpaintPrompt(apiPrompt, data, options, maskName) {
   // conditioning — both carry the clip-skip line), else the checkpoint.
   const encId = idByClass("CLIPTextEncode");
   const regionalId = idByClass("PromptChain_AttentionCouple", "PromptChain_RegionalConditioning");
+  // Z-Image / split graphs have no CLIPTextEncode and no checkpoint clip slot — fall
+  // back to a standalone CLIPLoader (the lumina2/qwen encoder) so the source path can
+  // encode the inpaint prompt against the image's own model.
+  const clipLoaderId = idByClass("CLIPLoader");
   const clipRef = (encId && isLink(graph[encId].inputs.clip) && graph[encId].inputs.clip)
     || (regionalId && isLink(graph[regionalId].inputs.clip) && graph[regionalId].inputs.clip)
+    || (clipLoaderId && [clipLoaderId, 0])
     || (ckptId && [ckptId, 1]);
   // VAE: whatever decodes today, else the anchor's own vae input (MaskedDetail
   // and USDU carry one; a pruned inpaint graph has no VAEDecode), else the

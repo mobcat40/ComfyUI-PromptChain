@@ -167,10 +167,13 @@ export function analyzeUpscaleCaps(data) {
   const poseState = typeof poseNode?.widgets_values?.[1] === "string" ? poseNode.widgets_values[1] : "";
   const hasPose = poseState.trim().length > 2;
 
-  const hasCouple = has("PromptChain_AttentionCouple");
+  const hasCouple = has("PromptChain_AttentionCouple") || has("PromptChain_ZImageRegionalCouple");
   const hasRegionalNodes = hasCouple || has("PromptChain_RegionalConditioning");
-  const hasDepthCN = hasPre("DepthAnythingV2Preprocessor")
-    || nodes.some((n) => n.type === "ControlNetApplyAdvanced" && n.properties?.pcrControlType === "depth");
+  // Depth mode builds an SDXL union ControlNet (ensureDepthBranch) — only valid when
+  // the source already HAS a classic depth apply, OR we can build one on SDXL. Do NOT
+  // light it up just because the DepthAnything preprocessor is installed (that would
+  // offer depth for Z-Image/Flux, whose models reject an SDXL ControlNet → "y is None").
+  const hasDepthCN = nodes.some((n) => n.type === "ControlNetApplyAdvanced" && n.properties?.pcrControlType === "depth");
   // Split loaders (UNETLoader) mean Flux/other — the SDXL union depth cluster
   // would load the wrong net there, so only keep-existing depth is allowed.
   const isSdxl = has("CheckpointLoaderSimple") || has("CheckpointLoader");
@@ -192,9 +195,13 @@ export function analyzeUpscaleCaps(data) {
       : { ok: false, reason: isSdxl
           ? "Needs the ControlNet preprocessor pack and an SDXL union ControlNet model."
           : "Depth injection isn't wired for this model family yet." },
-    regional: (hasRegionalNodes && hasPose)
+    // Regional upscale grafts the SDXL union depth ControlNet (ensureDepthBranch),
+    // so it's SDXL-only; non-SDXL regional sources fall back to the prompt pass.
+    regional: (hasRegionalNodes && hasPose && isSdxl)
       ? { ok: true }
-      : { ok: false, reason: hasRegionalNodes
+      : { ok: false, reason: !isSdxl
+          ? "Regional-aware upscale isn't wired for this model family yet — use the prompt pass."
+          : hasRegionalNodes
           ? "No 3D pose in this image's workflow."
           : "The image wasn't generated with regional conditioning." },
   };
@@ -279,7 +286,11 @@ export function engineAssetSupport() {
     && dualClips.some((o) => /clip_l/i.test(o))
     && dualClips.some((o) => /t5xxl/i.test(o))
     && comboProbe("VAELoader", "vae_name").some((o) => /(^|[\\/])ae\.(safetensors|sft)$/i.test(o));
-  return { sdxl, qwen, flux1 };
+  const zimage = !!reg["UltimateSDUpscaleNoUpscale"] && !!reg["ModelSamplingAuraFlow"] && esrgan
+    && comboProbe("UNETLoader", "unet_name").some((o) => /z.?image/i.test(o))
+    && comboProbe("CLIPLoader", "clip_name").some((o) => /qwen.*3[._]4b|lumina2/i.test(o))
+    && comboProbe("VAELoader", "vae_name").some((o) => /(^|[\\/])ae\.(safetensors|sft)$/i.test(o));
+  return { sdxl, qwen, flux1, zimage };
 }
 
 // The modal's defaults for a picked engine model. SDXL: the CN-locked tile
@@ -298,6 +309,31 @@ function engineModelDefaults(architecture, config) {
       sampler: "euler",
       scheduler: "simple",
       advanced: { steps: ks.steps ?? 40, cfg: ks.cfg ?? 4 },
+    };
+  }
+  if (architecture === "zimage") {
+    // Family from the filename: Turbo is step-distilled (cfg 1.3, ~8 steps,
+    // 0.7 denoise — low denoise truncates its sigma schedule to a tail the
+    // few-step field can't resolve, so it blotches); Base is non-distilled
+    // (cfg 3.0, more steps) and re-details cleanly at a low-denoise tail.
+    const turbo = /turbo|8steps/i.test(config?.filename || "");
+    const usdu = nodes.UltimateSDUpscale || {};
+    return {
+      denoise: turbo ? 0.7 : 0.15,
+      denoiseMax: turbo ? 0.8 : 0.4,
+      // Base (non-distilled) wants a stochastic sampler for real skin texture;
+      // res_multistep (Turbo's few-step sampler) sterilizes base skin.
+      sampler: turbo ? "res_multistep" : "dpmpp_sde",
+      scheduler: "beta",
+      advanced: {
+        steps: usdu.steps ?? (turbo ? 8 : 20),
+        cfg: turbo ? 1.3 : 3.0,
+        tile_width: usdu.tile_width ?? 1024,
+        tile_height: usdu.tile_height ?? 1024,
+        mask_blur: 32,
+        tile_padding: 64,
+        seam_fix_mode: "None",
+      },
     };
   }
   if (architecture === "flux") {
@@ -359,6 +395,7 @@ export async function fetchEngineModels() {
     if (!listRes.ok) return [];
     const models = ((await listRes.json())?.models || [])
       .filter((m) => m.architecture === "sdxl" || m.architecture === "qwen_edit"
+        || m.architecture === "zimage"
         // flux = the whole FLUX.1 family; edit/control/util variants don't
         // belong in a faithful tile pass (kontext re-renders, schnell is
         // step-distilled, fill/canny/depth/redux are tool models).
@@ -384,7 +421,7 @@ export async function fetchEngineModels() {
         displayName: config.display_name
           ? (tag ? `${config.display_name} (${tag})` : config.display_name)
           : m.filename,
-        defaults: engineModelDefaults(m.architecture, config),
+        defaults: engineModelDefaults(m.architecture, { ...config, filename: m.filename }),
         gen: {
           sampler: ks.sampler_name || null,
           scheduler: ks.scheduler || null,
@@ -534,7 +571,12 @@ export async function prepareUpscale(entry) {
     // The modal's prompt editor scopes templates/autocomplete to this when
     // the source engine is selected (a picked engine model overrides it).
     caps.sourceModelInfo = hash ? { hash, architecture } : null;
-    caps.defaultDenoise = typeof settings.denoise === "number" ? settings.denoise : 0.3;
+    // Z-Image Turbo is step-distilled: at low denoise ComfyUI truncates the sigma
+    // schedule to its low-σ tail, which the few-step field can't resolve -> blotchy
+    // skin. 0.7 lands back in its trained high-σ regime (clean, heavier repaint).
+    // Base is non-distilled and resolves a low-denoise tail fine.
+    caps.defaultDenoise = typeof settings.denoise === "number" ? settings.denoise
+    : (architecture === "zimage" ? (family === "zimage_base" ? 0.15 : 0.7) : 0.3);
     // Recommendation chain: a USDU-specific saved value > the MODEL's own
     // recommended gen sampler (its config's KSampler section) > generic arch
     // default. The model knows itself better than our tiling default does.
@@ -577,7 +619,8 @@ export async function prepareUpscale(entry) {
   caps.engineModels = (await engineModelsPromise).filter((m) =>
     (m.architecture === "sdxl" && support.sdxl)
     || (m.architecture === "qwen_edit" && support.qwen)
-    || (m.architecture === "flux" && support.flux1));
+    || (m.architecture === "flux" && support.flux1)
+    || (m.architecture === "zimage" && support.zimage));
   caps.enginePromptDefaults = { qwen: QWEN_ENHANCE_INSTRUCTION, sdxlFallback: SDXL_TILE_NEUTRAL_POSITIVE };
   // Climb-model picker: the whole installed ESRGAN-family list, with the
   // empirically-settled v1 pick as the recommendation. Degradation-trained
@@ -1609,6 +1652,75 @@ function buildFlux1TileStage(graph, LG, place, opts) {
   return { usdu, sideInputIds: [unet.id, clip.id, vae.id, posEnc.id, negEnc.id, guidance.id] };
 }
 
+// Z-Image tile cluster (DiT, mirrors flux1): UNET -> ModelSamplingAuraFlow(3)
+// feeds the USDU model directly; CLIP (lumina2) drives a neutral positive +
+// empty negative; shared ae VAE. No tile ControlNet and no FluxGuidance —
+// Z-Image carries cfg natively. Turbo vs Base differ only in the cfg/steps/
+// denoise the modal hands in (per-family defaults from engineModelDefaults).
+function buildZImageTileStage(graph, LG, place, opts) {
+  const reg = LG.registered_node_types || {};
+  if (!reg["UltimateSDUpscaleNoUpscale"] || !reg["ModelSamplingAuraFlow"]) return null;
+  const unet = LG.createNode("UNETLoader");
+  const unetW = unet?.widgets?.find((x) => x.name === "unet_name");
+  const unetOpts = unetW?.options?.values || [];
+  let unetFile = opts.unetName || null;
+  if (unetFile && Array.isArray(unetOpts) && !unetOpts.includes(unetFile)) unetOpts.push(unetFile);
+  if (!unetFile) {
+    unetFile = unetOpts.find((o) => /z.?image.*turbo/i.test(o))
+      || unetOpts.find((o) => /z.?image/i.test(o));
+  }
+  const clip = LG.createNode("CLIPLoader");
+  const clipFile = (clip?.widgets?.find((x) => x.name === "clip_name")?.options?.values || [])
+    .find((o) => /qwen.*3[._]4b|lumina2/i.test(o));
+  const vae = LG.createNode("VAELoader");
+  const vaeFile = (vae?.widgets?.find((x) => x.name === "vae_name")?.options?.values || [])
+    .find((o) => /(^|[\\/])ae\.(safetensors|sft)$/i.test(o));
+  const aura = LG.createNode("ModelSamplingAuraFlow");
+  const posEnc = LG.createNode("CLIPTextEncode");
+  const negEnc = LG.createNode("CLIPTextEncode");
+  const usdu = LG.createNode("UltimateSDUpscaleNoUpscale");
+  if (!(unet && unetFile && clip && clipFile && vae && vaeFile && aura && posEnc && negEnc && usdu)) return null;
+  place(unet, 0, 0);
+  place(clip, 0, 180);
+  place(vae, 0, 360);
+  place(aura, 300, 0);
+  place(posEnc, 580, -80);
+  place(negEnc, 580, 100);
+  place(usdu, 860, 280);
+  setNamedWidget(unet, "unet_name", unetFile);
+  setNamedWidget(unet, "weight_dtype", "default");
+  setNamedWidget(clip, "clip_name", clipFile);
+  setNamedWidget(clip, "type", "lumina2");
+  setNamedWidget(vae, "vae_name", vaeFile);
+  setNamedWidget(aura, "shift", 3);
+  setNamedWidget(posEnc, "text", opts.positiveText || SDXL_TILE_NEUTRAL_POSITIVE);
+  setNamedWidget(negEnc, "text", "");
+  unet.connect(0, aura, inputIdx(aura, "model", 0));
+  clip.connect(0, posEnc, inputIdx(posEnc, "clip", 0));
+  clip.connect(0, negEnc, inputIdx(negEnc, "clip", 0));
+  opts.imageNode.connect(opts.imageSlot || 0, usdu, inputIdx(usdu, "upscaled_image", 0));
+  aura.connect(0, usdu, inputIdx(usdu, "model", 1));
+  posEnc.connect(0, usdu, inputIdx(usdu, "positive", 2));
+  negEnc.connect(0, usdu, inputIdx(usdu, "negative", 3));
+  vae.connect(0, usdu, inputIdx(usdu, "vae", 4));
+  setNamedWidget(usdu, "seed", Math.floor(Math.random() * 2 ** 32));
+  setNamedWidget(usdu, "steps", opts.steps ?? 8);
+  setNamedWidget(usdu, "cfg", opts.cfg ?? 1.3);
+  setNamedWidget(usdu, "sampler_name", opts.sampler || "res_multistep");
+  setNamedWidget(usdu, "scheduler", opts.scheduler || "beta");
+  setNamedWidget(usdu, "denoise", typeof opts.denoise === "number" ? opts.denoise : 0.7);
+  setNamedWidget(usdu, "tile_width", opts.tileWidth ?? 1024);
+  setNamedWidget(usdu, "tile_height", opts.tileHeight ?? 1024);
+  setNamedWidget(usdu, "mask_blur", opts.maskBlur ?? 32);
+  setNamedWidget(usdu, "tile_padding", opts.tilePadding ?? 64);
+  setNamedWidget(usdu, "seam_fix_mode", opts.seamFixMode || "None");
+  if (opts.modeType) setNamedWidget(usdu, "mode_type", opts.modeType);
+  if (typeof opts.seamFixDenoise === "number") setNamedWidget(usdu, "seam_fix_denoise", opts.seamFixDenoise);
+  setNamedWidget(usdu, "force_uniform_tiles", true);
+  setNamedWidget(usdu, "tiled_decode", false);
+  return { usdu, sideInputIds: [unet.id, clip.id, vae.id, aura.id, posEnc.id, negEnc.id] };
+}
+
 // The modal's tuning knobs in tile-stage shape — shared by every tile engine.
 function tileStageOpts(options) {
   return {
@@ -1735,6 +1847,19 @@ function buildSdxlCkptEngineGraph(data, options = {}) {
 function buildFlux1EngineGraph(data, options = {}) {
   return buildTiledEngineGraph(data, options, (graph, LG, place, fit) =>
     buildFlux1TileStage(graph, LG, place, {
+      imageNode: fit,
+      unetName: options.engineModel?.filename || null,
+      positiveText: (options.prompt || "").trim() || SDXL_TILE_NEUTRAL_POSITIVE,
+      ...tileStageOpts(options),
+    }));
+}
+
+// "Re-detail with Z-Image Base/Turbo": picked Z-Image UNET in the
+// res_multistep/beta regime. Base (cfg 3, 0.15 denoise) holds structure
+// cleanly at low denoise; Turbo (cfg 1.3, 0.7) repaints harder. No tile CN.
+function buildZImageEngineGraph(data, options = {}) {
+  return buildTiledEngineGraph(data, options, (graph, LG, place, fit) =>
+    buildZImageTileStage(graph, LG, place, {
       imageNode: fit,
       unetName: options.engineModel?.filename || null,
       positiveText: (options.prompt || "").trim() || SDXL_TILE_NEUTRAL_POSITIVE,
@@ -1897,12 +2022,14 @@ export async function buildUpscaleGraph(prepared, options = {}) {
     const engine = options.engine || "source";
     // Picker engines build standalone graphs — any source image works,
     // graftable or not.
-    if (engine === "sdxl-ckpt" || engine === "qwen-edit" || engine === "flux1-unet") {
+    if (engine === "sdxl-ckpt" || engine === "qwen-edit" || engine === "flux1-unet" || engine === "zimage-unet") {
       const built = engine === "sdxl-ckpt"
         ? buildSdxlCkptEngineGraph(data, { ...options, savePrefix })
         : engine === "flux1-unet"
           ? buildFlux1EngineGraph(data, { ...options, savePrefix })
-          : buildQwenEditEngineGraph(data, { ...options, savePrefix });
+          : engine === "zimage-unet"
+            ? buildZImageEngineGraph(data, { ...options, savePrefix })
+            : buildQwenEditEngineGraph(data, { ...options, savePrefix });
       if (built) return built;
       toast("warn", "Couldn't build that upscale engine — using a plain model upscale instead.");
       return buildEsrganFloorGraph(data, savePrefix, options.previewOnly, "ultrasharp", options.climbModel);

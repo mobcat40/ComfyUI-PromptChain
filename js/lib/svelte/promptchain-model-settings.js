@@ -1420,6 +1420,10 @@ function TemplatesTab($$anchor, $$props) {
       name: get(newName).trim(),
       scope,
       created_at: Math.floor(Date.now() / 1e3),
+      // A user-saved template's widget values are deliberate, so its settings win
+      // over the model config's generic presets (applyTemplate honors lockSettings).
+      // This is NOT lockModels — model-swap-in-place still applies to user templates.
+      lockSettings: true,
       ...tplCategory ? { category: tplCategory } : {},
       ...graphData
     };

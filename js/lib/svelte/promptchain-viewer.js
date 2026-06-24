@@ -720,18 +720,19 @@ function UpscaleOptionsModal($$anchor, $$props) {
     var _a, _b;
     return ((_b = (_a = caps()) == null ? void 0 : _a.engineModels) == null ? void 0 : _b.find((m) => m.hash === get(engineSel))) || null;
   });
-  let engineKind = user_derived(() => get(engineEntry) ? get(engineEntry).architecture === "qwen_edit" ? "qwen" : get(engineEntry).architecture === "flux" ? "flux1" : "sdxl" : get(engineSel) === "source" ? "source" : "plain");
+  let engineKind = user_derived(() => get(engineEntry) ? get(engineEntry).architecture === "qwen_edit" ? "qwen" : get(engineEntry).architecture === "zimage" ? "zimage" : get(engineEntry).architecture === "flux" ? "flux1" : "sdxl" : get(engineSel) === "source" ? "source" : "plain");
   let sourceGraftable = user_derived(() => {
     var _a;
     return get(engineKind) === "source" && !!((_a = caps()) == null ? void 0 : _a.graftable);
   });
-  let tileEngine = user_derived(() => get(engineKind) === "sdxl" || get(engineKind) === "flux1");
+  let tileEngine = user_derived(() => get(engineKind) === "sdxl" || get(engineKind) === "flux1" || get(engineKind) === "zimage");
   let engineGroups = user_derived(() => {
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     return {
       sdxl: (((_a = caps()) == null ? void 0 : _a.engineModels) || []).filter((m) => m.architecture === "sdxl"),
       flux1: (((_b = caps()) == null ? void 0 : _b.engineModels) || []).filter((m) => m.architecture === "flux"),
-      qwen: (((_c = caps()) == null ? void 0 : _c.engineModels) || []).filter((m) => m.architecture === "qwen_edit")
+      zimage: (((_c = caps()) == null ? void 0 : _c.engineModels) || []).filter((m) => m.architecture === "zimage"),
+      qwen: (((_d = caps()) == null ? void 0 : _d.engineModels) || []).filter((m) => m.architecture === "qwen_edit")
     };
   });
   let engineChoices = user_derived(() => {
@@ -764,6 +765,12 @@ function UpscaleOptionsModal($$anchor, $$props) {
           options: get(engineGroups).flux1.map((m) => ({ value: m.hash, label: m.displayName }))
         }
       ] : [],
+      ...get(engineGroups).zimage.length ? [
+        {
+          label: "Z-Image — tiled re-detail",
+          options: get(engineGroups).zimage.map((m) => ({ value: m.hash, label: m.displayName }))
+        }
+      ] : [],
       ...get(engineGroups).qwen.length ? [
         {
           label: "Qwen Edit — instruction enhance",
@@ -783,11 +790,11 @@ function UpscaleOptionsModal($$anchor, $$props) {
   });
   let recSampler = user_derived(() => {
     var _a;
-    return get(engineKind) === "sdxl" ? "dpmpp_2m" : get(engineKind) === "flux1" || get(engineKind) === "qwen" ? "euler" : (_a = caps()) == null ? void 0 : _a.recommendedSampler;
+    return get(engineKind) === "sdxl" ? "dpmpp_2m" : get(engineKind) === "zimage" ? "res_multistep" : get(engineKind) === "flux1" || get(engineKind) === "qwen" ? "euler" : (_a = caps()) == null ? void 0 : _a.recommendedSampler;
   });
   let recScheduler = user_derived(() => {
     var _a;
-    return get(engineKind) === "sdxl" ? "karras" : get(engineKind) === "flux1" || get(engineKind) === "qwen" ? "simple" : (_a = caps()) == null ? void 0 : _a.recommendedScheduler;
+    return get(engineKind) === "sdxl" ? "karras" : get(engineKind) === "zimage" ? "beta" : get(engineKind) === "flux1" || get(engineKind) === "qwen" ? "simple" : (_a = caps()) == null ? void 0 : _a.recommendedScheduler;
   });
   let advDefaults = user_derived(() => {
     var _a, _b;
@@ -853,7 +860,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
   function basePrefillFor(kind) {
     var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k;
     if (kind === "qwen") return ((_b = (_a = caps()) == null ? void 0 : _a.enginePromptDefaults) == null ? void 0 : _b.qwen) || "";
-    if (kind === "sdxl" || kind === "flux1") {
+    if (kind === "sdxl" || kind === "flux1" || kind === "zimage") {
       const srcArch = ((_c = caps()) == null ? void 0 : _c.architecture) || ((_e = (_d = caps()) == null ? void 0 : _d.sourceModelInfo) == null ? void 0 : _e.architecture) || "";
       const descriptive = srcArch === "qwen_edit" ? "" : (_f = caps()) == null ? void 0 : _f.prefillPrompt;
       return descriptive || ((_h = (_g = caps()) == null ? void 0 : _g.enginePromptDefaults) == null ? void 0 : _h.sdxlFallback) || "";
@@ -872,7 +879,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
     var _a, _b, _c, _d, _e, _f, _g;
     set(engineSel, value, true);
     const entry = ((_b = (_a = caps()) == null ? void 0 : _a.engineModels) == null ? void 0 : _b.find((m) => m.hash === value)) || null;
-    const kind = entry ? entry.architecture === "qwen_edit" ? "qwen" : entry.architecture === "flux" ? "flux1" : "sdxl" : value === "source" ? "source" : "plain";
+    const kind = entry ? entry.architecture === "qwen_edit" ? "qwen" : entry.architecture === "zimage" ? "zimage" : entry.architecture === "flux" ? "flux1" : "sdxl" : value === "source" ? "source" : "plain";
     set(advanced, {}, true);
     const d = entry == null ? void 0 : entry.defaults;
     set(denoise, (d == null ? void 0 : d.denoise) ?? ((_c = caps()) == null ? void 0 : _c.defaultDenoise) ?? 0.3, true);
@@ -1137,7 +1144,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
     base.condition = get(condition);
     base.engine = get(engineKind) === "source" ? "source" : (
       // Consolidated plain entry: Restore decides which floor builds.
-      get(engineKind) === "plain" ? get(climbStage) === "seedvr2" && ((_b = caps()) == null ? void 0 : _b.seedvr2Available) ? "seedvr2" : "ultrasharp" : get(engineKind) === "qwen" ? "qwen-edit" : get(engineKind) === "flux1" ? "flux1-unet" : "sdxl-ckpt"
+      get(engineKind) === "plain" ? get(climbStage) === "seedvr2" && ((_b = caps()) == null ? void 0 : _b.seedvr2Available) ? "seedvr2" : "ultrasharp" : get(engineKind) === "qwen" ? "qwen-edit" : get(engineKind) === "zimage" ? "zimage-unet" : get(engineKind) === "flux1" ? "flux1-unet" : "sdxl-ckpt"
     );
     if (get(engineEntry)) base.engineModel = {
       hash: get(engineEntry).hash,
@@ -1584,7 +1591,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
             var consequent_12 = ($$anchor4) => {
               var span_2 = root_16$5();
               var text_7 = child(span_2);
-              template_effect(() => set_text(text_7, get(engineKind) === "flux1" ? "the climb model below pushes to the target, then this FLUX.1 model re-details every tile with the prompt below — low denoise holds structure without a ControlNet" : "the climb model below pushes to the target, then this checkpoint re-details every tile (structure locked by a tile ControlNet) with the prompt below"));
+              template_effect(() => set_text(text_7, get(engineKind) === "flux1" ? "the climb model below pushes to the target, then this FLUX.1 model re-details every tile with the prompt below — low denoise holds structure without a ControlNet" : get(engineKind) === "zimage" ? "the climb model below pushes to the target, then this Z-Image model re-details every tile with the prompt below — Base holds structure at low denoise; Turbo (distilled) needs ~0.7 or it blotches" : "the climb model below pushes to the target, then this checkpoint re-details every tile (structure locked by a tile ControlNet) with the prompt below"));
               append($$anchor4, span_2);
             };
             var consequent_13 = ($$anchor4) => {
@@ -6584,12 +6591,16 @@ function EditModal($$anchor, $$props) {
   }
   async function openUpscaleHandoff() {
     if (!onOpenUpscale()) return;
-    const maskCanvas = get(selActive) ? selMaskCanvas : activeContentMaskCanvas();
-    const bbox = maskCanvas && maskBBox(maskCanvas);
+    const liveMask = get(selActive) ? selMaskCanvas : activeContentMaskCanvas();
+    const bbox = liveMask && maskBBox(liveMask);
     if (!bbox) {
       set(errorMsg, "Select a region, or paint on the active layer first.");
       return;
     }
+    const maskCanvas = document.createElement("canvas");
+    maskCanvas.width = get(width);
+    maskCanvas.height = get(height);
+    maskCanvas.getContext("2d").drawImage(liveMask, 0, 0);
     set(errorMsg, "");
     const pad = 32;
     const x = Math.max(0, bbox.x - pad);

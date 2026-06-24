@@ -65,15 +65,18 @@
   // standalone engine graph; "ultrasharp"/"seedvr2" = plain pass.
   let engineEntry = $derived(caps?.engineModels?.find((m) => m.hash === engineSel) || null);
   let engineKind = $derived(engineEntry
-    ? (engineEntry.architecture === "qwen_edit" ? "qwen" : engineEntry.architecture === "flux" ? "flux1" : "sdxl")
+    ? (engineEntry.architecture === "qwen_edit" ? "qwen"
+      : engineEntry.architecture === "zimage" ? "zimage"
+      : engineEntry.architecture === "flux" ? "flux1" : "sdxl")
     : (engineSel === "source" ? "source" : "plain"));
   let sourceGraftable = $derived(engineKind === "source" && !!caps?.graftable);
   // Tile engines share the USDU recipe surface (denoise/climb/tile knobs);
   // qwen is the whole-frame re-render with its own reduced surface.
-  let tileEngine = $derived(engineKind === "sdxl" || engineKind === "flux1");
+  let tileEngine = $derived(engineKind === "sdxl" || engineKind === "flux1" || engineKind === "zimage");
   let engineGroups = $derived({
     sdxl: (caps?.engineModels || []).filter((m) => m.architecture === "sdxl"),
     flux1: (caps?.engineModels || []).filter((m) => m.architecture === "flux"),
+    zimage: (caps?.engineModels || []).filter((m) => m.architecture === "zimage"),
     qwen: (caps?.engineModels || []).filter((m) => m.architecture === "qwen_edit"),
   });
   // Degenerate picker (no models, nothing to choose) stays hidden.
@@ -89,13 +92,16 @@
     ...(engineGroups.flux1.length
       ? [{ label: "FLUX.1 — tiled re-detail", options: engineGroups.flux1.map((m) => ({ value: m.hash, label: m.displayName })) }]
       : []),
+    ...(engineGroups.zimage.length
+      ? [{ label: "Z-Image — tiled re-detail", options: engineGroups.zimage.map((m) => ({ value: m.hash, label: m.displayName })) }]
+      : []),
     ...(engineGroups.qwen.length
       ? [{ label: "Qwen Edit — instruction enhance", options: engineGroups.qwen.map((m) => ({ value: m.hash, label: m.displayName })) }]
       : []),
     { label: "Plain upscale", options: [{ value: "plain", label: "Model climb only — no re-detail pass" }] },
   ]);
-  let recSampler = $derived(engineKind === "sdxl" ? "dpmpp_2m" : engineKind === "flux1" || engineKind === "qwen" ? "euler" : caps?.recommendedSampler);
-  let recScheduler = $derived(engineKind === "sdxl" ? "karras" : engineKind === "flux1" || engineKind === "qwen" ? "simple" : caps?.recommendedScheduler);
+  let recSampler = $derived(engineKind === "sdxl" ? "dpmpp_2m" : engineKind === "zimage" ? "res_multistep" : engineKind === "flux1" || engineKind === "qwen" ? "euler" : caps?.recommendedSampler);
+  let recScheduler = $derived(engineKind === "sdxl" ? "karras" : engineKind === "zimage" ? "beta" : engineKind === "flux1" || engineKind === "qwen" ? "simple" : caps?.recommendedScheduler);
   let advDefaults = $derived(engineEntry ? (engineEntry.defaults?.advanced || {}) : (caps?.advancedDefaults || {}));
   let denoiseMax = $derived(tileEngine
     ? (engineEntry?.defaults?.denoiseMax || 0.4)
@@ -195,7 +201,7 @@
   // silently drop every region the moment the user touched the text.
   function basePrefillFor(kind) {
     if (kind === "qwen") return caps?.enginePromptDefaults?.qwen || "";
-    if (kind === "sdxl" || kind === "flux1") {
+    if (kind === "sdxl" || kind === "flux1" || kind === "zimage") {
       // An edit-model source's prompt is an INSTRUCTION ("make the person in
       // image 1 do a pose…"), not a scene description — pushing it into a
       // tile pass conditions the tiles on the instruction's words. Neutral
@@ -220,7 +226,7 @@
   function pickEngine(value) {
     engineSel = value;
     const entry = caps?.engineModels?.find((m) => m.hash === value) || null;
-    const kind = entry ? (entry.architecture === "qwen_edit" ? "qwen" : entry.architecture === "flux" ? "flux1" : "sdxl")
+    const kind = entry ? (entry.architecture === "qwen_edit" ? "qwen" : entry.architecture === "zimage" ? "zimage" : entry.architecture === "flux" ? "flux1" : "sdxl")
       : (value === "source" ? "source" : "plain");
     advanced = {};
     // Restore/climbModel deliberately survive: they describe the SOURCE and
@@ -450,6 +456,7 @@
       // Consolidated plain entry: Restore decides which floor builds.
       : engineKind === "plain" ? (climbStage === "seedvr2" && caps?.seedvr2Available ? "seedvr2" : "ultrasharp")
       : engineKind === "qwen" ? "qwen-edit"
+      : engineKind === "zimage" ? "zimage-unet"
       : engineKind === "flux1" ? "flux1-unet" : "sdxl-ckpt";
     if (engineEntry) base.engineModel = { hash: engineEntry.hash, filename: engineEntry.filename };
     if (tileEngine && climbStage !== "ultrasharp") base.climbStage = climbStage;
@@ -783,6 +790,8 @@
                 <span class="pcr-up-cond-hint">
                   {engineKind === "flux1"
                     ? "the climb model below pushes to the target, then this FLUX.1 model re-details every tile with the prompt below — low denoise holds structure without a ControlNet"
+                    : engineKind === "zimage"
+                    ? "the climb model below pushes to the target, then this Z-Image model re-details every tile with the prompt below — Base holds structure at low denoise; Turbo (distilled) needs ~0.7 or it blotches"
                     : "the climb model below pushes to the target, then this checkpoint re-details every tile (structure locked by a tile ControlNet) with the prompt below"}
                 </span>
               {:else if engineKind === "qwen"}

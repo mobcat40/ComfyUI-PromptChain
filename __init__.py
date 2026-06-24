@@ -10,6 +10,7 @@ from comfy_api.latest import ComfyExtension, io
 from .nodes.promptchain import PromptChainNode
 from .nodes.pose_studio import PoseStudioNode
 from .nodes.attention_couple import AttentionCoupleNode
+from .nodes.attention_couple_zimage import ZImageRegionalCoupleNode
 from .nodes.regional_detailer import RegionalDetailerNode, MaskedDetailNode
 from .nodes.regional_conditioning import RegionalConditioningNode
 from .nodes.region_box import RegionBoxNode
@@ -224,7 +225,7 @@ _threading.Thread(target=_preload, daemon=True).start()
 class PromptChainExtension(ComfyExtension):
     @override
     async def get_node_list(self) -> list[type[io.ComfyNode]]:
-        return [PromptChainNode, PoseStudioNode, AttentionCoupleNode, RegionalDetailerNode, MaskedDetailNode, RegionalConditioningNode, RegionBoxNode, DefocusMaskNode, IdeogramSamplerNode, IdeogramCaptionNode]
+        return [PromptChainNode, PoseStudioNode, AttentionCoupleNode, ZImageRegionalCoupleNode, RegionalDetailerNode, MaskedDetailNode, RegionalConditioningNode, RegionBoxNode, DefocusMaskNode, IdeogramSamplerNode, IdeogramCaptionNode]
 
 
 async def comfy_entrypoint() -> PromptChainExtension:

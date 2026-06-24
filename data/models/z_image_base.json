@@ -19,7 +19,7 @@
   "default_prompt_id": "zimage-photorealistic-default",
   "negative": "",
   "quality_position": "end",
-  "notes": "CFG 3.0, Steps 25-50, res_multistep+beta. Uses Qwen3 4B encoder, no clip skip.",
+  "notes": "CFG 4.0, Steps 25-50, dpmpp_sde+beta (base is non-distilled — a stochastic sampler gives real skin texture; res_multistep is Turbo's and sterilizes it). Uses Qwen3 4B encoder, no clip skip.",
   "files": [
     {
       "label": "Diffusion Model",
@@ -89,23 +89,23 @@
   "nodes": {
     "KSampler": {
       "steps": 50,
-      "cfg": 3.0,
-      "sampler_name": "res_multistep",
+      "cfg": 4.0,
+      "sampler_name": "dpmpp_sde",
       "scheduler": "beta",
       "steps_range": [
         25,
         50
       ],
       "cfg_range": [
-        2.0,
-        4.0
+        3.0,
+        5.0
       ],
       "sampler_name_options": [
-        "res_multistep",
-        "euler",
+        "dpmpp_sde",
         "euler_ancestral",
+        "euler",
         "dpmpp_2m",
-        "dpmpp_sde"
+        "res_multistep"
       ],
       "scheduler_options": [
         "beta",

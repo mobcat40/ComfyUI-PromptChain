@@ -415,6 +415,12 @@
       "from_slot": 0,
       "to_node_idx": 11,
       "to_slot": 0
+    },
+    {
+      "from_node_idx": 9,
+      "from_slot": 1,
+      "to_node_idx": 0,
+      "to_slot": 4
     }
   ],
   "anchorConnections": [

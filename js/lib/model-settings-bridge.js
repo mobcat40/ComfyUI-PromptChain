@@ -728,15 +728,23 @@ function applyArchSamplerDefaults(defaults, architecture, family) {
     defaults.sampler_name = "euler";
     defaults.scheduler = "simple";
   } else if (arch === "zimage") {
-    // Both Z-Image families use res_multistep/beta, but base is non-distilled
-    // (cfg ~3, more steps) while Turbo is distilled (cfg 1.3, ~8 steps).
-    defaults.sampler_name = "res_multistep";
+    // Sampler is FAMILY-AWARE: res_multistep is Turbo's deterministic few-step sampler;
+    // on non-distilled BASE it sterilizes skin (no micro-texture). Base wants a
+    // stochastic sampler (dpmpp_sde) for realistic skin; Turbo keeps res_multistep.
     defaults.scheduler = "beta";
     if (family === "zimage_base") {
+      defaults.sampler_name = "dpmpp_sde";
       defaults.cfg = 3.0;
+      // Non-distilled: a low-denoise tile pass resolves the truncated tail cleanly.
+      if ("denoise" in defaults) defaults.denoise = 0.15;
     } else {
+      defaults.sampler_name = "res_multistep";
       defaults.cfg = 1.3;
       if ("steps" in defaults) defaults.steps = 8;
+      // Distilled: at low denoise ComfyUI runs only the schedule's low-σ tail, which
+      // the few-step field never resolves -> blotchy skin. 0.7 re-enters its trained
+      // high-σ regime where tiles come out clean (heavier repaint is the trade).
+      if ("denoise" in defaults) defaults.denoise = 0.7;
     }
   }
 }
@@ -1335,7 +1343,16 @@ export function injectUpscaler(pcNode, modelConfig, opts = {}) {
   let splitModelNode = null, splitVaeNode = null;
   if (!ckptNode) {
     let ms = traceInput(condAnchor, "model")?.node;
-    while (ms && (ms.comfyClass === "ApplyPulidAdvanced" || ms.comfyClass === "ApplyPulid" || ms.comfyClass === "ApplyPuLIDFlux2")) {
+    // Trace past PuLID AND the pose-control / regional-couple model patches: the
+    // tile pass must re-detail through the CLEAN model. Leaving ZImageFunControlnet
+    // in re-applies the source's full-frame pose DEPTH to every tile, baking the
+    // mannequin silhouette into the upscale; the couple re-applies full-canvas
+    // regional masks that are wrong per-tile. (SDXL avoids this by finding its
+    // CheckpointLoader above; Z-Image's UNETLoader chain has no such anchor.) Stop
+    // at ModelSamplingAuraFlow — Z-Image still needs its sigma shift.
+    const STRIP_FOR_TILE = new Set(["ApplyPulidAdvanced", "ApplyPulid", "ApplyPuLIDFlux2",
+      "ZImageFunControlnet", "PromptChain_ZImageRegionalCouple", "PromptChain_AttentionCouple"]);
+    while (ms && STRIP_FOR_TILE.has(ms.comfyClass)) {
       ms = traceInput(ms, "model")?.node;
     }
     splitModelNode = ms;
@@ -1791,40 +1808,106 @@ function injectRegional(pcNode, modelConfig) {
   const negSrc = traceInput(ksNode, "negative");
   if (!modelSrc?.node || !posSrc?.node || !negSrc?.node) return false;
 
-  const couple = LG.createNode("PromptChain_AttentionCouple");
+  // CLIP source: reuse whatever fed the positive encode (respects clip-skip);
+  // else the clip feeding any CLIPTextEncode; else any CLIP output. Shared by
+  // both regional terminals below.
+  const traceClip = () => {
+    let s = traceInput(posSrc.node, "clip");
+    if (!s?.node) {
+      const enc = (graph._nodes || []).find(n => n.comfyClass === "CLIPTextEncode" && n.inputs?.some(i => i.name === "clip" && i.link != null));
+      if (enc) s = traceInput(enc, "clip");
+    }
+    if (!s?.node) {
+      for (const n of graph._nodes || []) { const o = outIdx(n, "CLIP"); if (o >= 0) { s = { node: n, slot: o }; break; } }
+    }
+    return s;
+  };
+  // Repair stale/misnamed PromptChain outputs so 'regions' lands at its true slot.
+  const repairPcOutputs = () => {
+    const refPc = LG.createNode(pcNode.comfyClass || pcNode.type);
+    if (refPc?.outputs) {
+      for (let i = 0; i < refPc.outputs.length; i++) {
+        if (!pcNode.outputs?.[i]) pcNode.addOutput(refPc.outputs[i].name, refPc.outputs[i].type);
+        else if (pcNode.outputs[i].name !== refPc.outputs[i].name) pcNode.outputs[i].name = refPc.outputs[i].name;
+      }
+      while ((pcNode.outputs?.length || 0) > refPc.outputs.length) pcNode.removeOutput(pcNode.outputs.length - 1);
+    }
+  };
+
+  // DiT / joint-attention models (Flux, Z-Image, SD3, …) have NO UNet attn2 for
+  // the Attention Couple to patch, so the couple would silently do nothing. They
+  // use ComfyUI-native masked conditioning instead (PromptChain_RegionalConditioning)
+  // — the exact terminal the Flux/Z-Image 3D-regional templates ship. It emits the
+  // global prompt plus each $mannequin{} masked to its figure and REPLACES the
+  // conditioning feeding the sampler; the depth ControlNet on these archs rides the
+  // MODEL line (e.g. ZImageFunControlnet), so there's no conditioning-side apply to
+  // route through, and the model line is left untouched.
+  // Z-Image (single-stream DiT) gets a TRUE attention couple via the shared model-line
+  // splice below (PromptChain_ZImageRegionalCouple patches NextDiT's joint attention so
+  // $blocks cohere into ONE scene). Other DiTs (Flux/SD3/…) have no ported couple yet, so
+  // they fall back to ComfyUI-native masked conditioning here.
+  const arch = modelConfig?.architecture || "";
+  const NATIVE_REGIONAL_ARCH = new Set(["flux", "flux2", "sd3", "hidream", "qwen_image", "qwen_edit"]);
+  if (NATIVE_REGIONAL_ARCH.has(arch)) {
+    const rc = LG.createNode("PromptChain_RegionalConditioning");
+    if (!rc) return false;
+    rc.pos = [(pcNode.pos?.[0] || 0) - 360, (pcNode.pos?.[1] || 0) + 360];
+    graph.add(rc);
+    rc.size = [300, 230];
+
+    const clipSrc = traceClip();
+    if (clipSrc?.node) clipSrc.node.connect(clipSrc.slot, rc, "clip");
+
+    repairPcOutputs();
+    const regOut = outIdx(pcNode, "regions");
+    if (regOut >= 0) pcNode.connect(regOut, rc, "regions");
+
+    // masks ← the existing Poser scene (force-add MASKS if its def is stale).
+    let maskOut = outIdx(poseNode, "MASKS");
+    if (maskOut < 0) { poseNode.addOutput("MASKS", "MASK"); maskOut = outIdx(poseNode, "MASKS"); }
+    if (maskOut >= 0) poseNode.connect(maskOut, rc, "masks");
+    // pose ← POSE_JSON: figure names so renamed $blocks bind to the right mask.
+    const poseJsonOut = outIdx(poseNode, "POSE_JSON");
+    const poseInIdx = rc.inputs?.findIndex(i => i.name === "pose");
+    if (poseJsonOut >= 0 && poseInIdx != null && poseInIdx >= 0) poseNode.connect(poseJsonOut, rc, poseInIdx);
+
+    // Replace the conditioning feeding the sampler with the regional outputs,
+    // KEEPING any ControlNet apply in between (none on the DiT model-patch path).
+    const reroute = (rcOut, src, ksInput) => {
+      if (src.node?.comfyClass === "ControlNetApplyAdvanced") rc.connect(outIdx(rc, rcOut), src.node, ksInput);
+      else rc.connect(outIdx(rc, rcOut), ksNode, ksInput);
+    };
+    reroute("positive", posSrc, "positive");
+    reroute("negative", negSrc, "negative");
+
+    poseNode._pcrReconcileRegions?.();
+    graph.setDirtyCanvas(true, true);
+    return true;
+  }
+
+  // Z-Image patches the DiT's joint attention; SDXL/SD1.5 patch UNet attn2. Both
+  // sit on the MODEL line and output (MODEL, positive, negative), so the wiring below
+  // is shared — only the node class differs.
+  const coupleType = arch === "zimage" ? "PromptChain_ZImageRegionalCouple" : "PromptChain_AttentionCouple";
+  const couple = LG.createNode(coupleType);
   if (!couple) return false;
   couple.pos = [(pcNode.pos?.[0] || 0) - 340, (pcNode.pos?.[1] || 0) + 360];
   graph.add(couple);
   couple.size = [300, 230];
 
-  // MODEL line: source -> couple -> sampler.
+  // MODEL line: source -> couple -> sampler (couple inserts after any depth ControlNet
+  // already feeding the sampler's model, so depth + regional compose).
   modelSrc.node.connect(modelSrc.slot, couple, "model");
   couple.connect(outIdx(couple, "MODEL"), ksNode, "model");
 
-  // CLIP: reuse whatever fed the positive encode; else the clip feeding an existing
-  // CLIPTextEncode (respects the clip-skip layer); else any CLIP output.
-  let clipSrc = traceInput(posSrc.node, "clip");
-  if (!clipSrc?.node) {
-    const enc = (graph._nodes || []).find(n => n.comfyClass === "CLIPTextEncode" && n.inputs?.some(i => i.name === "clip" && i.link != null));
-    if (enc) clipSrc = traceInput(enc, "clip");
-  }
-  if (!clipSrc?.node) {
-    for (const n of graph._nodes || []) { const s = outIdx(n, "CLIP"); if (s >= 0) { clipSrc = { node: n, slot: s }; break; } }
-  }
+  // CLIP: reuse whatever fed the positive encode; else any CLIPTextEncode's clip
+  // (respects clip-skip); else any CLIP output.
+  const clipSrc = traceClip();
   if (clipSrc?.node) clipSrc.node.connect(clipSrc.slot, couple, "clip");
 
-  // Repair stale/corrupted PromptChain outputs first: older builds could leave a
-  // duplicated or misnamed 'regions' (e.g. positive renamed to regions at slot 1),
-  // which would make us read the wrong backend slot. Rename by position to the
-  // canonical def and drop extras so 'regions' lands at its true slot.
-  const refPc = LG.createNode(pcNode.comfyClass || pcNode.type);
-  if (refPc?.outputs) {
-    for (let i = 0; i < refPc.outputs.length; i++) {
-      if (!pcNode.outputs?.[i]) pcNode.addOutput(refPc.outputs[i].name, refPc.outputs[i].type);
-      else if (pcNode.outputs[i].name !== refPc.outputs[i].name) pcNode.outputs[i].name = refPc.outputs[i].name;
-    }
-    while ((pcNode.outputs?.length || 0) > refPc.outputs.length) pcNode.removeOutput(pcNode.outputs.length - 1);
-  }
+  // Repair stale/corrupted PromptChain outputs so 'regions' lands at its true slot
+  // (older builds could leave a duplicated or misnamed output at slot 1).
+  repairPcOutputs();
 
   // regions ← PromptChain; masks ← the existing Poser scene.
   const regOut = outIdx(pcNode, "regions");
@@ -1862,7 +1945,10 @@ function injectRegional(pcNode, modelConfig) {
   // every face the couple just painted with ONE global prompt, stripping the
   // per-character identity back out — swap it for the regional one. A graph
   // with no detailer gets none; face detailing stays its own [add] choice.
-  injectRegionalDetailer(pcNode, true, modelConfig);
+  // SKIP on Z-Image: the RegionalDetailer runs an SDXL-shaped cfg sampler (no
+  // AuraFlow model-sampling) that fries DiT faces — same reason it's omitted from
+  // the Flux/Z-Image regional templates.
+  if (arch !== "zimage") injectRegionalDetailer(pcNode, true, modelConfig);
 
   graph.setDirtyCanvas(true, true);
   return true;
@@ -2184,7 +2270,12 @@ function injectZImageControlNet(pcNode, controlType, isBase = false) {
   if (!graph) return false;
   const LG = window.LiteGraph || graph.constructor?.LiteGraph;
   if (!LG) return false;
-  const cfg = ZIMAGE_CONTROLNET_TYPES[controlType];
+  // "depth-pose" = the depth branch driven by a 3D Poser figure instead of a
+  // LoadImage — the rendered figure goes THROUGH the depth preprocessor, and its
+  // MASKS/POSE outputs are what a follow-up Regional inject binds to.
+  const usePose = controlType === "depth-pose";
+  const baseControl = usePose ? "depth" : controlType;
+  const cfg = ZIMAGE_CONTROLNET_TYPES[baseControl];
   if (!cfg) return false;
 
   const downstream = findDownstreamNodes(pcNode);
@@ -2210,9 +2301,16 @@ function injectZImageControlNet(pcNode, controlType, isBase = false) {
     }
   }
 
-  let loadImage = graph._nodes?.find(n => n.comfyClass === "LoadImage" && n.title === "ControlNet Reference");
-  const newLoadImage = !loadImage;
-  if (!loadImage) loadImage = LG.createNode("LoadImage");
+  let loadImage = null, newLoadImage = false, poseNode = null;
+  if (usePose) {
+    poseNode = LG.createNode("PromptChain_PoseStudio");
+    if (!poseNode) return false;
+  } else {
+    loadImage = graph._nodes?.find(n => n.comfyClass === "LoadImage" && n.title === "ControlNet Reference");
+    newLoadImage = !loadImage;
+    if (!loadImage) loadImage = LG.createNode("LoadImage");
+  }
+  const sourceNode = poseNode || loadImage;
 
   const preNode = LG.createNode(resolvePre(cfg.pre));
   const patchLoader = LG.createNode("ModelPatchLoader");
@@ -2226,7 +2324,11 @@ function injectZImageControlNet(pcNode, controlType, isBase = false) {
   const dy = existing * 660;
   const preH = preNode.size?.[1] || 130;
   const loaderY = preH + 65;
-  if (newLoadImage) {
+  if (poseNode) {
+    poseNode.pos = [baseX - 1383, baseY + dy];
+    graph.add(poseNode);
+    poseNode.size = [360, 470];
+  } else if (newLoadImage) {
     loadImage.title = "ControlNet Reference";
     loadImage.pos = [baseX - 1223, baseY];
     graph.add(loadImage);
@@ -2245,8 +2347,8 @@ function injectZImageControlNet(pcNode, controlType, isBase = false) {
   zcnNode.size = [270, 130];
   if (preview) preview.size = [250, 360];
 
-  const settingsType = `zimage-${controlType}`;
-  zcnNode.title = `ControlNet — ${CN_LABELS[settingsType] || controlType}`;
+  const settingsType = `zimage-${baseControl}`;
+  zcnNode.title = `ControlNet — ${usePose ? "Depth (pose)" : (CN_LABELS[settingsType] || controlType)}`;
   zcnNode.properties = { ...(zcnNode.properties || {}), pcrControlType: settingsType };
 
   // ModelPatchLoader.name combo reads models/model_patches. Pick the patch for
@@ -2269,7 +2371,7 @@ function injectZImageControlNet(pcNode, controlType, isBase = false) {
     if (w.name === "resolution") { w.value = 1024; w.callback?.(1024); }
   }
 
-  loadImage.connect(0, preNode, preNode.inputs?.findIndex(i => i.name === "image") ?? 0);
+  sourceNode.connect(0, preNode, preNode.inputs?.findIndex(i => i.name === "image") ?? 0);
   preNode.connect(0, zcnNode, zcnNode.inputs?.findIndex(i => i.name === "image") ?? -1);
   if (preview) preNode.connect(0, preview, 0);
   patchLoader.connect(0, zcnNode, zcnNode.inputs?.findIndex(i => i.name === "model_patch") ?? 1);
@@ -2596,6 +2698,14 @@ export async function showModelModal(pcNode, modelInfo, anchorEl, { tab = null }
         }
       };
 
+      // Regional needs NO downloaded model or third-party pack — only our own
+      // AttentionCouple/RegionalConditioning (always registered) plus a 3D Poser
+      // in the graph (checked inside the inject). Skip the install gate: its
+      // baseType is "ControlNet", whose models are the xinsir SDXL nets, so a
+      // Flux/Z-Image user would otherwise be prompted to fetch SDXL checkpoints
+      // the regional terminal never loads.
+      if (controlType === "regional") { runInject(); return; }
+
       // Is the required pack fully installed before we build? Ask the server,
       // which knows BOTH whether the proof nodes are registered AND whether the
       // model weights are on disk. The client can only see registered node
@@ -2774,6 +2884,8 @@ export async function showModelModal(pcNode, modelInfo, anchorEl, { tab = null }
           label: "ControlNet",
           children: [
             { label: "Depth", value: `${cnPrefix}:depth` },
+            { label: "Depth + 3D pose", value: `${cnPrefix}:depth-pose` },
+            { label: "Regional", value: "ControlNet:regional" },
             { label: "Canny", value: `${cnPrefix}:canny` },
             { label: "Pose", value: `${cnPrefix}:pose` },
             { label: "Soft Edge", value: `${cnPrefix}:softedge` },

@@ -3233,18 +3233,35 @@ async function mountViewport(node, container) {
   const _depthBox = new THREE.Box3(), _depthV = new THREE.Vector3();
   const computeDepthRange = () => {
     camera.updateMatrixWorld();
-    _depthBox.makeEmpty();
-    for (const f of figures) for (const m of f.meshes || []) if (m.visible) _depthBox.expandByObject(m);
-    if (propsGroup.children.length) _depthBox.expandByObject(propsGroup);
-    if (_depthBox.isEmpty()) return { near: camera.near, far: camera.far };
-    const mn = _depthBox.min, mx = _depthBox.max;
+    // View-depth range from the POSED bone world-positions, not the mesh box:
+    // expandByObject() on a SkinnedMesh uses the static BIND pose (and was collapsing
+    // to the camera near/far fallback), so the range never matched the posed figures
+    // -> the shader remapped them into a tiny bright sliver and they came out ~20% grey
+    // on black instead of near-white. Bones are reliably posed in world space.
     let zmin = Infinity, zmax = -Infinity;
-    for (let i = 0; i < 8; i++) {
-      _depthV.set(i & 1 ? mx.x : mn.x, i & 2 ? mx.y : mn.y, i & 4 ? mx.z : mn.z).applyMatrix4(camera.matrixWorldInverse);
-      const d = -_depthV.z; if (d < zmin) zmin = d; if (d > zmax) zmax = d;
+    const accDepth = () => { _depthV.applyMatrix4(camera.matrixWorldInverse); const d = -_depthV.z; if (d < zmin) zmin = d; if (d > zmax) zmax = d; };
+    for (const f of figures) {
+      const bones = f.skel?.bones;
+      if (!bones) continue;
+      for (const b of bones) { b.getWorldPosition(_depthV); accDepth(); }
     }
-    const pad = Math.max(0.08, (zmax - zmin) * 0.2); // slack for posed limbs the bind-box misses
-    return { near: Math.max(0.01, zmin - pad), far: zmax + pad };
+    if (propsGroup.children.length) {
+      _depthBox.makeEmpty(); _depthBox.expandByObject(propsGroup);
+      if (!_depthBox.isEmpty()) {
+        const mn = _depthBox.min, mx = _depthBox.max;
+        for (let i = 0; i < 8; i++) { _depthV.set(i & 1 ? mx.x : mn.x, i & 2 ? mx.y : mn.y, i & 4 ? mx.z : mn.z); accDepth(); }
+      }
+    }
+    if (zmin === Infinity) { // no bones (non-skinned) -> bind-box, then camera
+      _depthBox.makeEmpty();
+      for (const f of figures) for (const m of f.meshes || []) if (m.visible) _depthBox.expandByObject(m);
+      if (_depthBox.isEmpty()) return { near: camera.near, far: camera.far };
+      const mn = _depthBox.min, mx = _depthBox.max;
+      for (let i = 0; i < 8; i++) { _depthV.set(i & 1 ? mx.x : mn.x, i & 2 ? mx.y : mn.y, i & 4 ? mx.z : mn.z); accDepth(); }
+    }
+    // bones sit INSIDE the body; pad outward so the surface spans full white→black.
+    const surf = 0.2;
+    return { near: Math.max(0.01, zmin - surf), far: zmax + surf };
   };
   // When true-depth is on, the Poser's IMAGE already IS the depth map, so the
   // downstream DepthAnythingV2 estimator must not re-process it — bypass it (mode 4

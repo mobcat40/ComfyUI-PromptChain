@@ -325,7 +325,11 @@ export function applyTemplate(pcNode, template, modelFilename) {
     // burnt video. So skip preset overrides for locked templates; the model-
     // settings panel still reads slider RANGES from the config and current
     // values from the live (template-baked) nodes.
-    if (template._presetNodes && !template.lockModels) {
+    // lockSettings (set on USER-saved templates) skips the SAME preset override —
+    // a user's saved sampler/cfg/etc. are deliberate and must win over the model
+    // config's generic defaults — WITHOUT lockModels' model-filename freeze, so
+    // model-swap-in-place still works on a user template.
+    if (template._presetNodes && !template.lockModels && !template.lockSettings) {
       const nodeType = tplNode.type;
       const presetWidgets = template._presetNodes[nodeType];
       if (presetWidgets && newNode.widgets) {

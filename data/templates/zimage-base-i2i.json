@@ -11,32 +11,54 @@
   "nodes": [
     {
       "type": "CLIPTextEncode",
-      "offset": [1170, 0],
-      "size": [225, 116],
-      "widgets_values": [""],
+      "offset": [
+        1170,
+        0
+      ],
+      "size": [
+        225,
+        116
+      ],
+      "widgets_values": [
+        ""
+      ],
       "properties": {
         "Node name for S&R": "CLIPTextEncode"
       }
     },
     {
       "type": "CLIPTextEncode",
-      "offset": [1170, 200],
-      "size": [225, 116],
-      "widgets_values": [""],
+      "offset": [
+        1170,
+        200
+      ],
+      "size": [
+        225,
+        116
+      ],
+      "widgets_values": [
+        ""
+      ],
       "properties": {
         "Node name for S&R": "CLIPTextEncode"
       }
     },
     {
       "type": "KSampler",
-      "offset": [1890, 470],
-      "size": [321, 565],
+      "offset": [
+        1890,
+        470
+      ],
+      "size": [
+        321,
+        565
+      ],
       "widgets_values": [
         0,
         "randomize",
         50,
-        3,
-        "res_multistep",
+        4,
+        "dpmpp_sde",
         "beta",
         0.55
       ],
@@ -46,8 +68,14 @@
     },
     {
       "type": "VAEDecode",
-      "offset": [1930, 150],
-      "size": [225, 72],
+      "offset": [
+        1930,
+        150
+      ],
+      "size": [
+        225,
+        72
+      ],
       "widgets_values": [],
       "properties": {
         "Node name for S&R": "VAEDecode"
@@ -55,8 +83,14 @@
     },
     {
       "type": "SaveImage",
-      "offset": [2300, 0],
-      "size": [276, 322],
+      "offset": [
+        2300,
+        0
+      ],
+      "size": [
+        276,
+        322
+      ],
       "widgets_values": [
         "Z-Image/img2img/%date:yyyy-MM-dd_hhmmss%"
       ],
@@ -64,8 +98,14 @@
     },
     {
       "type": "CLIPLoader",
-      "offset": [1490, 0],
-      "size": [334, 117],
+      "offset": [
+        1490,
+        0
+      ],
+      "size": [
+        334,
+        117
+      ],
       "widgets_values": [
         "qwen_3_4b.safetensors",
         "lumina2",
@@ -77,17 +117,31 @@
     },
     {
       "type": "ModelSamplingAuraFlow",
-      "offset": [1900, 302],
-      "size": [295, 80],
-      "widgets_values": [3],
+      "offset": [
+        1900,
+        302
+      ],
+      "size": [
+        295,
+        80
+      ],
+      "widgets_values": [
+        3
+      ],
       "properties": {
         "Node name for S&R": "ModelSamplingAuraFlow"
       }
     },
     {
       "type": "VAEEncode",
-      "offset": [1540, 430],
-      "size": [225, 72],
+      "offset": [
+        1540,
+        430
+      ],
+      "size": [
+        225,
+        72
+      ],
       "widgets_values": [],
       "properties": {
         "Node name for S&R": "VAEEncode"
@@ -95,17 +149,31 @@
     },
     {
       "type": "VAELoader",
-      "offset": [1910, 0],
-      "size": [260, 82],
-      "widgets_values": ["ae.safetensors"],
+      "offset": [
+        1910,
+        0
+      ],
+      "size": [
+        260,
+        82
+      ],
+      "widgets_values": [
+        "ae.safetensors"
+      ],
       "properties": {
         "Node name for S&R": "VAELoader"
       }
     },
     {
       "type": "UNETLoader",
-      "offset": [1480, 222],
-      "size": [340, 82],
+      "offset": [
+        1480,
+        222
+      ],
+      "size": [
+        340,
+        82
+      ],
       "widgets_values": [
         "z_image_bf16.safetensors",
         "default"
@@ -116,30 +184,107 @@
     },
     {
       "type": "LoadImage",
-      "offset": [840, 0],
-      "size": [270, 340],
-      "widgets_values": ["", "image"],
+      "offset": [
+        840,
+        0
+      ],
+      "size": [
+        270,
+        340
+      ],
+      "widgets_values": [
+        "",
+        "image"
+      ],
       "properties": {
         "Node name for S&R": "LoadImage"
       }
     }
   ],
   "connections": [
-    { "from_node_idx": 0, "from_slot": 0, "to_node_idx": 2, "to_slot": 1 },
-    { "from_node_idx": 1, "from_slot": 0, "to_node_idx": 2, "to_slot": 2 },
-    { "from_node_idx": 2, "from_slot": 0, "to_node_idx": 3, "to_slot": 0 },
-    { "from_node_idx": 3, "from_slot": 0, "to_node_idx": 4, "to_slot": 0 },
-    { "from_node_idx": 5, "from_slot": 0, "to_node_idx": 0, "to_slot": 0 },
-    { "from_node_idx": 5, "from_slot": 0, "to_node_idx": 1, "to_slot": 0 },
-    { "from_node_idx": 6, "from_slot": 0, "to_node_idx": 2, "to_slot": 0 },
-    { "from_node_idx": 7, "from_slot": 0, "to_node_idx": 2, "to_slot": 3 },
-    { "from_node_idx": 8, "from_slot": 0, "to_node_idx": 3, "to_slot": 1 },
-    { "from_node_idx": 8, "from_slot": 0, "to_node_idx": 7, "to_slot": 1 },
-    { "from_node_idx": 9, "from_slot": 0, "to_node_idx": 6, "to_slot": 0 },
-    { "from_node_idx": 10, "from_slot": 0, "to_node_idx": 7, "to_slot": 0 }
+    {
+      "from_node_idx": 0,
+      "from_slot": 0,
+      "to_node_idx": 2,
+      "to_slot": 1
+    },
+    {
+      "from_node_idx": 1,
+      "from_slot": 0,
+      "to_node_idx": 2,
+      "to_slot": 2
+    },
+    {
+      "from_node_idx": 2,
+      "from_slot": 0,
+      "to_node_idx": 3,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 3,
+      "from_slot": 0,
+      "to_node_idx": 4,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 5,
+      "from_slot": 0,
+      "to_node_idx": 0,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 5,
+      "from_slot": 0,
+      "to_node_idx": 1,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 6,
+      "from_slot": 0,
+      "to_node_idx": 2,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 7,
+      "from_slot": 0,
+      "to_node_idx": 2,
+      "to_slot": 3
+    },
+    {
+      "from_node_idx": 8,
+      "from_slot": 0,
+      "to_node_idx": 3,
+      "to_slot": 1
+    },
+    {
+      "from_node_idx": 8,
+      "from_slot": 0,
+      "to_node_idx": 7,
+      "to_slot": 1
+    },
+    {
+      "from_node_idx": 9,
+      "from_slot": 0,
+      "to_node_idx": 6,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 10,
+      "from_slot": 0,
+      "to_node_idx": 7,
+      "to_slot": 0
+    }
   ],
   "anchorConnections": [
-    { "from_slot": 1, "to_node_idx": 0, "to_slot": 1 },
-    { "from_slot": 2, "to_node_idx": 1, "to_slot": 1 }
+    {
+      "from_slot": 1,
+      "to_node_idx": 0,
+      "to_slot": 1
+    },
+    {
+      "from_slot": 2,
+      "to_node_idx": 1,
+      "to_slot": 1
+    }
   ]
 }

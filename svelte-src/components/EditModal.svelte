@@ -1346,9 +1346,18 @@
   }
   async function openUpscaleHandoff() {
     if (!onOpenUpscale) return;
-    const maskCanvas = selActive ? selMaskCanvas : activeContentMaskCanvas();
-    const bbox = maskCanvas && maskBBox(maskCanvas);
+    const liveMask = selActive ? selMaskCanvas : activeContentMaskCanvas();
+    const bbox = liveMask && maskBBox(liveMask);
     if (!bbox) { errorMsg = "Select a region, or paint on the active layer first."; return; }
+    // Snapshot the mask. When it's the live selection canvas, a GROW (grow-canvas)
+    // apply calls deselect() — which clearRect()s selMaskCanvas — BEFORE the region
+    // is feather-clipped with r.maskCanvas. Clipping against the emptied mask erased
+    // the whole region, so the first apply produced a BLANK "Upscale" layer; the
+    // second worked only because the selection was already gone (a fresh
+    // activeContentMaskCanvas was used). An independent copy is immune to deselect().
+    const maskCanvas = document.createElement("canvas");
+    maskCanvas.width = width; maskCanvas.height = height;
+    maskCanvas.getContext("2d").drawImage(liveMask, 0, 0);
     errorMsg = "";
     // Pad the crop so the upscaler's edge tiles get surrounding context; the
     // feathered clip on return drops the pad again.
