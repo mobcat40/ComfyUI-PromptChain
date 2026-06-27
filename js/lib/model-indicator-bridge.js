@@ -38,7 +38,7 @@ api.addEventListener("promptchain_recognition_done", () => {
 // indicator resolves the model in upscale-only graphs (no KSampler at all).
 const KSAMPLER_TYPES = new Set([
   "KSampler", "KSamplerAdvanced",
-  "PromptChain_RegionalDetailer", "SamplerCustomAdvanced", "UltimateSDUpscale",
+  "PromptChain_RegionalDetailer", "SamplerCustomAdvanced", "UltimateSDUpscale", "UltimateSDUpscaleNoUpscale",
   "PromptChain_IdeogramSampler",
 ]);
 const MODEL_WIDGET_NAMES = ["ckpt_name", "unet_name", "model_name"];

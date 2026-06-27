@@ -58,7 +58,7 @@
         826502184750291,
         "randomize",
         40,
-        5.0,
+        3.5,
         "er_sde",
         "beta",
         0.6
@@ -127,7 +127,7 @@
         82.65625
       ],
       "widgets_values": [
-        "krea2_raw_fp8_scaled.safetensors",
+        "krea2_raw_bf16.safetensors",
         "default"
       ],
       "properties": {
@@ -203,6 +203,24 @@
       "properties": {
         "Node name for S&R": "ModelSamplingFlux"
       }
+    },
+    {
+      "type": "LoraLoaderModelOnly",
+      "offset": [
+        1239.9999069433584,
+        470.0
+      ],
+      "size": [
+        371.65625,
+        82
+      ],
+      "widgets_values": [
+        "krea2_filter_bypass_projector_scale.safetensors",
+        0.5
+      ],
+      "properties": {
+        "Node name for S&R": "LoraLoaderModelOnly"
+      }
     }
   ],
   "connections": [
@@ -244,6 +262,12 @@
     },
     {
       "from_node_idx": 6,
+      "from_slot": 0,
+      "to_node_idx": 11,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 11,
       "from_slot": 0,
       "to_node_idx": 10,
       "to_slot": 0

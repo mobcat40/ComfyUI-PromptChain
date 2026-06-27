@@ -54,7 +54,7 @@ let focusedGroup = null;
 // Node types whose execution should anchor the fullscreen preview to the
 // PromptChain feeding them. Mirrored from main.js — the canonical set.
 const KSAMPLER_TYPES = new Set([
-  "KSampler", "KSamplerAdvanced", "PromptChain_RegionalDetailer", "SamplerCustomAdvanced", "UltimateSDUpscale",
+  "KSampler", "KSamplerAdvanced", "PromptChain_RegionalDetailer", "SamplerCustomAdvanced", "UltimateSDUpscale", "UltimateSDUpscaleNoUpscale",
   "PromptChain_IdeogramSampler",
 ]);
 

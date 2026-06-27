@@ -148,7 +148,7 @@ let _lastPreviewUrl = null;
 // generating-node map never includes the video node, so hideProgress() never
 // fires and the preview stays stuck on "Generating…" after a video finishes.
 const OUTPUT_NODE_TYPES = new Set(["SaveImage", "PreviewImage", "SaveVideo", "SaveWEBM"]);
-const KSAMPLER_TYPES = new Set(["KSampler", "KSamplerAdvanced", "PromptChain_RegionalDetailer", "SamplerCustomAdvanced", "UltimateSDUpscale", "PromptChain_IdeogramSampler"]);
+const KSAMPLER_TYPES = new Set(["KSampler", "KSamplerAdvanced", "PromptChain_RegionalDetailer", "SamplerCustomAdvanced", "UltimateSDUpscale", "UltimateSDUpscaleNoUpscale", "PromptChain_IdeogramSampler"]);
 const IMAGE_LATENT_TYPES = new Set(["IMAGE", "LATENT"]);
 const LOAD_IMAGE_TYPES = new Set(["LoadImage"]);
 
