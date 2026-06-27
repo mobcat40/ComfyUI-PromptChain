@@ -163,14 +163,17 @@ NODE_PACKS: dict[str, dict] = {
     },
     "Krea2Realism": {
         "label": "Krea 2 Realism",
-        # Models-only (no custom node). The Realism mode — the krea2_turbo Realism
-        # templates + the editor inpaint/i2i/upscale toggle — swaps in the
-        # abliterated Qwen3-VL encoder (uncensored at encode), a realism LoRA, and
-        # the projector-scale "filter bypass" LoRA. RES4LYF's ClownsharKSampler is
-        # deliberately NOT bundled (its scipy/kornia deps can't be pip-installed at
-        # runtime); the recipe uses the built-in res_multistep sampler instead. The
-        # 268-byte projector LoRA has no upstream URL — it ships in this repo
-        # (data/loras/) and is copied straight into models/loras/ on install.
+        # Models-only pack. The Realism mode (krea2_turbo Realism templates + the
+        # editor i2i toggle) swaps in the abliterated Qwen3-VL encoder (uncensored
+        # at encode), a realism LoRA, and the projector-scale "filter bypass" LoRA.
+        # The t2i/i2i recipe re-renders full-frame with the author's
+        # ClownsharKSampler_Beta — that's RES4LYF, a REQUIRED PREREQUISITE the user
+        # installs via ComfyUI Manager. We don't bundle RES4LYF: its license forbids
+        # commercial use (incompatible with PromptChain's AGPL), and the user
+        # obtaining it directly from the author avoids any redistribution. The
+        # inpaint/upscale realism paths use their built-in sampler and need only
+        # these model files. The 268-byte projector LoRA has no upstream URL — it
+        # ships in this repo (data/loras/) and is copied into models/loras/.
         "proof_nodes": [],
         "models": [
             {"url": "https://huggingface.co/ahmed22xa/Huihui-Qwen3-VL-4B-Instruct-abliterated-comfy/resolve/main/Huihui-Qwen3-VL-4B-Instruct-abliterated-fp8_scaled.safetensors",

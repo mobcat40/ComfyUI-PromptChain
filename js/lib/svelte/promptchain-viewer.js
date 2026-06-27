@@ -4441,12 +4441,14 @@ function I2IModal($$anchor, $$props) {
   let engineKind = user_derived(() => get(engineEntry) ? get(engineEntry).architecture === "flux" ? "flux1" : get(engineEntry).architecture === "krea2" ? "krea2" : "sdxl" : "source");
   let realism = state(false);
   const realismAssetsInstalled = (() => {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k;
     try {
       const LG = window.LiteGraph;
       const clip = ((_e = (_d = (_c = (_b = (_a = LG == null ? void 0 : LG.createNode) == null ? void 0 : _a.call(LG, "CLIPLoader")) == null ? void 0 : _b.widgets) == null ? void 0 : _c.find((w) => w.name === "clip_name")) == null ? void 0 : _d.options) == null ? void 0 : _e.values) || [];
       const loras = ((_j = (_i = (_h = (_g = (_f = LG == null ? void 0 : LG.createNode) == null ? void 0 : _f.call(LG, "LoraLoaderModelOnly")) == null ? void 0 : _g.widgets) == null ? void 0 : _h.find((w) => w.name === "lora_name")) == null ? void 0 : _i.options) == null ? void 0 : _j.values) || [];
-      return clip.some((o) => /qwen3.?vl.*4b.*abliterated/i.test(o)) && loras.some((o) => /krea2-realism/i.test(o)) && loras.some((o) => /krea2_turbo_projector_scale/i.test(o));
+      return clip.some((o) => /qwen3.?vl.*4b.*abliterated/i.test(o)) && loras.some((o) => /krea2-realism/i.test(o)) && loras.some((o) => /krea2_turbo_projector_scale/i.test(o)) && // i2i realism re-renders full-frame with the author's ClownsharKSampler_Beta
+      // (RES4LYF) — gate on the node being registered too.
+      !!((_k = LG == null ? void 0 : LG.registered_node_types) == null ? void 0 : _k["ClownsharKSampler_Beta"]);
     } catch {
       return false;
     }

@@ -29,12 +29,13 @@
       }
     },
     {
-      "type": "KSampler",
+      "type": "ClownsharKSampler_Beta",
       "offset": [1700, 160],
-      "size": [330, 474],
-      "widgets_values": [1033759726676101, "randomize", 8, 1, "res_multistep", "beta", 1],
+      "size": [373.90625, 756],
+      "widgets_values": [0.5, "exponential/ddim", "beta57", 8, -1, 1, 1, 1033759726676101, "randomize", "standard", false],
       "properties": {
-        "Node name for S&R": "KSampler"
+        "Node name for S&R": "ClownsharKSampler_Beta",
+        "aux_id": "tashiscool/RES4LYF"
       }
     },
     {

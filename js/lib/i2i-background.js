@@ -125,7 +125,7 @@ function makeAdder(graph) {
 
 // Shared clean tail: encode the loaded image, partially denoise it, decode,
 // preview. `modelRef`/`clipRef`/`vaeRef` are [id, slot] links into `graph`.
-function attachI2ITail(graph, add, { inputRef, modelRef, clipRef, vaeRef, options, guidance, steps, cfg, sampler, scheduler }) {
+function attachI2ITail(graph, add, { inputRef, modelRef, clipRef, vaeRef, options, guidance, steps, cfg, sampler, scheduler, clown }) {
   const loadId = add("LoadImage", { image: inputRef });
   const encId = add("VAEEncode", { pixels: [loadId, 0], vae: vaeRef });
   const pc = PC_NODE(); pc.prompt = options.prompt || "";
@@ -135,12 +135,22 @@ function attachI2ITail(graph, add, { inputRef, modelRef, clipRef, vaeRef, option
   if (typeof guidance === "number") {
     posRef = [add("FluxGuidance", { conditioning: posRef, guidance }), 0];
   }
-  const ksId = add("KSampler", {
-    model: modelRef, positive: posRef, negative: negRef, latent_image: [encId, 0],
-    seed: Math.floor(Math.random() * 0xffffffffff),
-    steps, cfg, sampler_name: sampler, scheduler,
-    denoise: typeof options.denoise === "number" ? options.denoise : 0.55,
-  });
+  const denoise = typeof options.denoise === "number" ? options.denoise : 0.55;
+  // Realism full-frame i2i uses the author's ClownsharKSampler_Beta (RES4LYF) —
+  // the same node the realism t2i/i2i templates use. Full-frame (not a composited
+  // patch), so a sampler NODE is allowed here. cfg pinned 1 like Turbo.
+  const ksId = clown
+    ? add("ClownsharKSampler_Beta", {
+        model: modelRef, positive: posRef, negative: negRef, latent_image: [encId, 0],
+        eta: 0.5, sampler_name: "exponential/ddim", scheduler: "beta57",
+        steps: steps ?? 8, steps_to_run: -1, denoise, cfg: cfg ?? 1.0,
+        seed: Math.floor(Math.random() * 0xffffffffff), sampler_mode: "standard", bongmath: false,
+      })
+    : add("KSampler", {
+        model: modelRef, positive: posRef, negative: negRef, latent_image: [encId, 0],
+        seed: Math.floor(Math.random() * 0xffffffffff),
+        steps, cfg, sampler_name: sampler, scheduler, denoise,
+      });
   const decId = add("VAEDecode", { samples: [ksId, 0], vae: vaeRef });
   const previewId = add("PreviewImage", { images: [decId, 0] });
   return { ksId, previewId };
@@ -200,8 +210,8 @@ export function buildI2IEngineKrea2(data, options) {
   const filename = options.engineModel?.filename;
   if (!filename) throw new Error("no engine model picked");
   // Realism mode (krea2_turbo): abliterated Qwen3-VL encoder + wan_2.1 VAE +
-  // projector/realism LoRAs + res_multistep/beta sampling. i2i is full-frame (a
-  // whole new layer, not a composited patch), so the wan VAE is safe here.
+  // projector/realism LoRAs + the author's ClownsharKSampler_Beta tail. i2i is
+  // full-frame (a whole new layer, not a composited patch), so wan VAE is safe.
   const realism = !!options.realism;
   const clipOpts = probeCombo("CLIPLoader", "clip_name");
   const loraOpts = probeCombo("LoraLoaderModelOnly", "lora_name");
@@ -243,12 +253,11 @@ export function buildI2IEngineKrea2(data, options) {
   }
   const { ksId } = attachI2ITail(graph, add, {
     inputRef: data.input_ref, modelRef, clipRef: [clipId, 0], vaeRef: [vaeId, 0], options,
+    clown: realism,
     steps: numOr(options.steps, raw ? 40 : 8),
     cfg: numOr(options.cfg, raw ? 3.5 : 1.0),
-    // Realism uses res_multistep/beta (a portable built-in close to the t2i
-    // template's recipe); RES4LYF's ClownsharKSampler isn't bundleable.
-    sampler: options.sampler || (realism ? "res_multistep" : raw ? "er_sde" : "euler"),
-    scheduler: options.scheduler || (realism ? "beta" : raw ? "beta" : "simple"),
+    sampler: options.sampler || (raw ? "er_sde" : "euler"),
+    scheduler: options.scheduler || (raw ? "beta" : "simple"),
   });
   return { graph, detailId: ksId };
 }

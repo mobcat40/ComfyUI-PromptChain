@@ -61,7 +61,7 @@ SECTIONS: list[dict] = [
      "desc": "Clean 2× decoder + conditioning rebalance for the Krea 2 High-Detail templates",
      "members": [_np("Krea2HighDetail")]},
     {"id": "krea2_realism", "label": "Krea 2 Realism", "size": "~5.7 GB",
-     "desc": "Abliterated encoder + realism & filter-bypass LoRAs for the Krea 2 Turbo Realism mode (uncensored)",
+     "desc": "Abliterated encoder + realism & filter-bypass LoRAs for Krea 2 Turbo Realism (uncensored). t2i/i2i also need the RES4LYF node pack — install it via ComfyUI Manager.",
      "members": [_np("Krea2Realism")]},
     {"id": "controlnet", "label": "ControlNet", "size": "~5 GB SDXL · up to ~22 GB all",
      "desc": "Depth / pose / canny / edge guidance (SDXL · Flux · Z-Image)",

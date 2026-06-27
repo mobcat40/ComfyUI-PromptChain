@@ -52,7 +52,7 @@
     ? (engineEntry.architecture === "flux" ? "flux1" : engineEntry.architecture === "krea2" ? "krea2" : "sdxl")
     : "source");
   // Realism mode: a krea2_turbo-only recipe (abliterated encoder + wan_2.1 VAE +
-  // realism/bypass LoRAs + res_multistep sampling — full-frame i2i).
+  // realism/bypass LoRAs + ClownsharKSampler_Beta — full-frame i2i).
   let realism = $state(false);
   // Realism assets present? (abliterated encoder + realism + projector LoRAs).
   // Computed once — installed lists don't change without a restart. Hides the
@@ -64,7 +64,10 @@
       const loras = LG?.createNode?.("LoraLoaderModelOnly")?.widgets?.find((w) => w.name === "lora_name")?.options?.values || [];
       return clip.some((o) => /qwen3.?vl.*4b.*abliterated/i.test(o))
         && loras.some((o) => /krea2-realism/i.test(o))
-        && loras.some((o) => /krea2_turbo_projector_scale/i.test(o));
+        && loras.some((o) => /krea2_turbo_projector_scale/i.test(o))
+        // i2i realism re-renders full-frame with the author's ClownsharKSampler_Beta
+        // (RES4LYF) — gate on the node being registered too.
+        && !!LG?.registered_node_types?.["ClownsharKSampler_Beta"];
     } catch { return false; }
   })();
   let realismAvailable = $derived(engineKind === "krea2" && /turbo/i.test(engineEntry?.filename || "") && realismAssetsInstalled);
