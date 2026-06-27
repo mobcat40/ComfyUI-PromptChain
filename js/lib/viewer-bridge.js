@@ -8,6 +8,7 @@ import { ensureSvelteCSS, createModuleLoader } from "./lazy-load.js";
 import { prepareUpscale, buildUpscaleWorkflow } from "./upscale-from-image.js";
 import { upscaleImageInBackground, enlargeImageInBackground } from "./upscale-background.js";
 import { prepareInpaint, runInpaint, saveInpaintResult, uploadInputImage, inpaintRegion, sourcePromptText, sourcePromptTextFull, liveWorkflowPrompt } from "./inpaint-background.js";
+import { prepareI2I, runI2IInBackground } from "./i2i-background.js";
 import { prepareEdit, saveEditedImage } from "./edit-image.js";
 import { fetchReposeCaps } from "./repose-from-image.js";
 import { runReposeInBackground } from "./repose-background.js";
@@ -292,6 +293,14 @@ export async function openViewer(images, startIndex = 0, workflowId = "", onDele
       return prepared;
     },
     onInpaintRun: (prepared, options) => runInpaint(prepared, options),
+    onI2iPrepare: async (entry) => {
+      const prepared = await prepareI2I(entry);
+      if (prepared?.caps && prepared.data?.prompt) {
+        prepared.caps.referencePrompt = resolveReferencePrompt(prepared.data.prompt, workflowId);
+      }
+      return prepared;
+    },
+    onI2iRun: (prepared, options) => runI2IInBackground(prepared, options),
     onInpaintSave: (doneState, prefix) => saveInpaintResult(doneState, prefix),
     onInpaintUploadReference: (file) => uploadInputImage(file),
     onInpaintInstallPack: (injectable) => installInpaintPack(injectable),

@@ -943,6 +943,136 @@ function injectPuLID(pcNode) {
   return true;
 }
 
+// ── Krea 2 style LoRA (always-present "Style" panel section) ────────
+// One swappable model-only LoRA on the sampler's model line, paired with a
+// trigger word in the prompt. Selecting a style swaps both the LoRA file and
+// the tracked trigger fragment; null removes the node and the trigger. The
+// panel downloads the file first, so it's assumed on disk here (the combo-option
+// push covers a lora list ComfyUI hasn't rescanned yet).
+function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+
+function setStyleWidget(node, name, value, isCombo) {
+  const w = node.widgets?.find(x => x.name === name);
+  if (!w) return;
+  if (isCombo && w.options?.values && !w.options.values.includes(value)) w.options.values.push(value);
+  w.value = value;
+  w.callback?.(value);
+}
+
+function spliceStyleLora(graph, loraNode, ksNode) {
+  const modelIdx = ksNode.inputs?.findIndex(i => i.name === "model");
+  if (modelIdx == null || modelIdx < 0 || ksNode.inputs[modelIdx].link == null) return;
+  const link = getLink(graph, ksNode.inputs[modelIdx].link);
+  if (!link) return;
+  const source = graph.getNodeById(link.origin_id);
+  if (!source) return;
+  const sourceSlot = link.origin_slot ?? (source.outputs?.findIndex(o => o.type === "MODEL") ?? 0);
+  const loraIn = loraNode.inputs?.findIndex(i => i.name === "model") ?? 0;
+  ksNode.disconnectInput(modelIdx);
+  source.connect(sourceSlot, loraNode, loraIn);
+  loraNode.connect(0, ksNode, modelIdx);
+}
+
+function removeStyleLora(graph, loraNode, ksNode) {
+  // Reconnect the LoRA's upstream model source straight to the sampler so the
+  // model line survives the node's removal.
+  const loraIn = loraNode.inputs?.findIndex(i => i.name === "model") ?? 0;
+  const inLink = loraNode.inputs?.[loraIn]?.link;
+  const modelIdx = ksNode.inputs?.findIndex(i => i.name === "model");
+  if (inLink != null && modelIdx != null && modelIdx >= 0) {
+    const l = getLink(graph, inLink);
+    const source = l && graph.getNodeById(l.origin_id);
+    if (source) {
+      ksNode.disconnectInput(modelIdx);
+      source.connect(l.origin_slot ?? 0, ksNode, modelIdx);
+    }
+  }
+  graph.remove(loraNode);
+}
+
+// Keep a single tracked trigger (pcNode.properties.pcrStyleTrigger) in the
+// positive half of the prompt. Swapping replaces the old fragment with the new;
+// only the tracked substring is touched, never other user text.
+function swapStyleTrigger(pcNode, newTrigger) {
+  const prev = pcNode.properties?.pcrStyleTrigger || "";
+  if (prev === (newTrigger || "")) return;
+  const view = pcNode._pcrEditor;
+  const promptWidget = pcNode.widgets?.find(w => w.name === "prompt");
+  const doc = view ? view.state.doc.toString() : String(promptWidget?.value || "");
+
+  // Never insert past the "Negative Prompt:" marker — triggers are positive.
+  const NEG_RE = /(^|\n)[ \t]*negative\s+prompt\s*:/i;
+  const m = doc.match(NEG_RE);
+  const splitAt = m ? m.index : doc.length;
+  let pos = doc.slice(0, splitAt);
+  const tail = doc.slice(splitAt);
+
+  const strip = (text, trig) => trig
+    ? text.replace(new RegExp("(,\\s*)?" + escapeRegExp(trig) + "(\\s*,)?", "i"),
+        (_, a, b) => (a && b) ? ", " : "")
+    : text;
+  pos = strip(pos, prev);
+  if (newTrigger) pos = strip(pos, newTrigger); // guard against a pre-existing copy
+  pos = pos.replace(/,\s*,/g, ",").replace(/\s+$/, "");
+  if (newTrigger) pos = pos ? pos + ", " + newTrigger : newTrigger;
+
+  const next = tail ? (pos ? pos + tail : tail.replace(/^\n/, "")) : pos;
+
+  if (view) {
+    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: next } });
+  } else if (promptWidget) {
+    promptWidget.value = next;
+    promptWidget.callback?.(next);
+  }
+  pcNode.properties.pcrStyleTrigger = newTrigger || "";
+}
+
+// Apply / swap / clear the Krea 2 style LoRA. `lora` is a catalog entry
+// {id, filename, trigger, ...} or null to remove. Returns true on success.
+export function applyStyleLora(pcNode, lora, strength) {
+  const graph = pcNode.graph || app.graph;
+  if (!graph) return false;
+  const LG = window.LiteGraph || graph.constructor?.LiteGraph;
+  if (!LG) return false;
+
+  const ksNode = findDownstreamNodes(pcNode).find(
+    n => n.comfyClass === "KSampler" || n.comfyClass === "KSamplerAdvanced"
+  );
+  if (!ksNode) return false;
+
+  pcNode.properties = pcNode.properties || {};
+  const existing = (graph._nodes || []).find(
+    n => n.comfyClass === "LoraLoaderModelOnly" && n.properties?.pcrStyleLora
+  );
+
+  if (!lora) {
+    if (existing) removeStyleLora(graph, existing, ksNode);
+    swapStyleTrigger(pcNode, null);
+    pcNode.properties.pcrStyleLora = "";
+    graph.setDirtyCanvas(true, true);
+    return true;
+  }
+
+  let loraNode = existing;
+  if (!loraNode) {
+    loraNode = LG.createNode("LoraLoaderModelOnly");
+    if (!loraNode) return false;
+    loraNode.properties = loraNode.properties || {};
+    loraNode.properties.pcrStyleLora = true;
+    loraNode.title = "Style LoRA";
+    loraNode.pos = [pcNode.pos[0] + 420, pcNode.pos[1] + 520];
+    graph.add(loraNode);
+    spliceStyleLora(graph, loraNode, ksNode);
+  }
+  setStyleWidget(loraNode, "lora_name", lora.filename, true);
+  setStyleWidget(loraNode, "strength_model", strength, false);
+
+  swapStyleTrigger(pcNode, lora.trigger || null);
+  pcNode.properties.pcrStyleLora = lora.id || lora.filename;
+  graph.setDirtyCanvas(true, true);
+  return true;
+}
+
 // IPAdapter style transfer ("Style Reference", cubiq's ComfyUI_IPAdapter_plus).
 // The UnifiedLoader bundles the ipadapter weights + CLIP-Vision encoder into
 // one IPADAPTER pipe; IPAdapterAdvanced with weight_type "style transfer"
@@ -2703,6 +2833,7 @@ export async function showModelModal(pcNode, modelInfo, anchorEl, { tab = null }
       closeModelModal();
       window.dispatchEvent(new CustomEvent("pcr-open-model-picker", { detail: { nodeId: pcNode.id } }));
     },
+    onApplyStyleLora: (lora, strength) => applyStyleLora(pcNode, lora, strength),
     onInjectNode: async (type) => {
       // ControlNet items arrive as "ControlNet:<controlType>" (depth/canny/…);
       // the base type drives requirements + the install modal.

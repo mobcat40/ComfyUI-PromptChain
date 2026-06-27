@@ -1,6 +1,7 @@
-import { d as delegate, p as push, a as prop, s as state, c as proxy, u as user_effect, e as set, f as sibling, o as bind_this, t as template_effect, g as get, x as set_attribute, q as set_value, j as delegated, k as append, l as pop, m as user_derived, n as child, A as from_html, w as each, z as index, i as if_block, G as set_checked, y as set_text, h as set_class, v as first_child, D as comment, I as to_array, a1 as set_selected, R as text, E as untrack, M as unmount, L as mount } from "./disclose-version-uq4tn5Y6.js";
+import { d as delegate, p as push, a as prop, s as state, c as proxy, u as user_effect, e as set, f as sibling, o as bind_this, t as template_effect, g as get, x as set_attribute, q as set_value, j as delegated, k as append, l as pop, m as user_derived, n as child, A as from_html, w as each, z as index, i as if_block, G as set_checked, y as set_text, h as set_class, v as first_child, D as comment, a1 as set_selected, I as to_array, R as text, E as untrack, M as unmount, L as mount } from "./disclose-version-uq4tn5Y6.js";
 import { s as set_style } from "./style-Boi27oOu.js";
 import { F as FAMILIES, A as ARCHITECTURES } from "./model-constants-cVxhUf51.js";
+import { api } from "/scripts/api.js";
 import { S as SettingsSlider } from "./SettingsSlider-CKF_XmgB.js";
 import { b as bind_value } from "./input-DFQhebEz.js";
 import { b as bind_select_value } from "./select-Dp4ExMMc.js";
@@ -197,24 +198,29 @@ var root_28 = from_html(`<span style="color:#555;margin:0 2px">/</span> <div cla
 var root_24$1 = from_html(`<div class="pcr-model-panel-combo-wrap svelte-82atyh"><!> <select></select></div> <!>`, 1);
 var root_18$1 = from_html(`<div><span class="pcr-model-panel-label svelte-82atyh"> </span> <!></div>`);
 var root_2$5 = from_html(`<div class="pcr-model-panel-section svelte-82atyh"><div class="pcr-model-panel-section-title svelte-82atyh"> <!></div> <!> <!> <!></div>`);
-var root_30 = from_html(`<div class="pcr-settings-save-error svelte-82atyh"> </div>`);
-var root_31 = from_html(`<button class="pcr-model-panel-apply">Cancel</button> <button class="pcr-model-panel-save">Save Ranges</button>`, 1);
-var root_36 = from_html(`<div class="pcr-footer-dropdown-item svelte-82atyh"> </div>`);
-var root_35 = from_html(`<div class="pcr-footer-dropdown-item pcr-footer-dropdown-back svelte-82atyh"> </div> <!>`, 1);
-var root_39 = from_html(`<div class="pcr-footer-dropdown-item svelte-82atyh"> </div>`);
+var root_31 = from_html(`<option> </option>`);
+var root_32 = from_html(`<div class="pcr-model-panel-row svelte-82atyh"><span class="pcr-model-panel-label svelte-82atyh">strength</span> <!></div>`);
+var root_33 = from_html(`<div class="pcr-model-panel-row svelte-82atyh"><span class="pcr-style-status svelte-82atyh"> </span></div>`);
+var root_30 = from_html(`<div class="pcr-model-panel-section svelte-82atyh"><div class="pcr-model-panel-section-title svelte-82atyh">Style</div> <div class="pcr-model-panel-row svelte-82atyh"><span class="pcr-model-panel-label svelte-82atyh">LoRA</span> <div class="pcr-model-panel-combo-wrap svelte-82atyh"><select class="pcr-model-panel-select svelte-82atyh"><option>None</option><!></select></div></div> <!> <!></div>`);
+var root_34 = from_html(`<div class="pcr-settings-save-error svelte-82atyh"> </div>`);
+var root_35 = from_html(`<button class="pcr-model-panel-apply">Cancel</button> <button class="pcr-model-panel-save">Save Ranges</button>`, 1);
 var root_40 = from_html(`<div class="pcr-footer-dropdown-item svelte-82atyh"> </div>`);
-var root_41 = from_html(`<div class="pcr-footer-dropdown-item svelte-82atyh"> </div>`);
-var root_34 = from_html(`<div class="pcr-footer-dropdown-menu svelte-82atyh" style="display:block;position:absolute;bottom:100%;left:0;min-width:100%"><!></div>`);
-var root_33 = from_html(`<div style="position:relative"><button class="pcr-model-panel-apply">Add ▾</button> <!></div>`);
-var root_43 = from_html(`<div class="pcr-footer-dropdown-item svelte-82atyh">Restore Defaults</div>`);
-var root_44 = from_html(`<div class="pcr-footer-dropdown-item svelte-82atyh">Reset to System Defaults</div>`);
-var root_42 = from_html(`<div class="pcr-footer-dropdown-menu svelte-82atyh" style="display:block;position:absolute;bottom:100%;left:0;min-width:100%"><div class="pcr-footer-dropdown-item svelte-82atyh">Set Ranges</div> <!> <!></div>`);
-var root_32 = from_html(`<!> <div style="position:relative"><button class="pcr-model-panel-apply">Edit ▾</button> <!></div> <button class="pcr-model-panel-save">Save as Default</button>`, 1);
-var root$5 = from_html(`<div class="pcr-model-panel-body"><!> <!></div> <!> <div class="pcr-model-panel-footer svelte-82atyh"><!></div>`, 1);
+var root_39 = from_html(`<div class="pcr-footer-dropdown-item pcr-footer-dropdown-back svelte-82atyh"> </div> <!>`, 1);
+var root_43 = from_html(`<div class="pcr-footer-dropdown-item svelte-82atyh"> </div>`);
+var root_44 = from_html(`<div class="pcr-footer-dropdown-item svelte-82atyh"> </div>`);
+var root_45 = from_html(`<div class="pcr-footer-dropdown-item svelte-82atyh"> </div>`);
+var root_38 = from_html(`<div class="pcr-footer-dropdown-menu svelte-82atyh" style="display:block;position:absolute;bottom:100%;left:0;min-width:100%"><!></div>`);
+var root_37 = from_html(`<div style="position:relative"><button class="pcr-model-panel-apply">Add ▾</button> <!></div>`);
+var root_47 = from_html(`<div class="pcr-footer-dropdown-item svelte-82atyh">Restore Defaults</div>`);
+var root_48 = from_html(`<div class="pcr-footer-dropdown-item svelte-82atyh">Reset to System Defaults</div>`);
+var root_46 = from_html(`<div class="pcr-footer-dropdown-menu svelte-82atyh" style="display:block;position:absolute;bottom:100%;left:0;min-width:100%"><div class="pcr-footer-dropdown-item svelte-82atyh">Set Ranges</div> <!> <!></div>`);
+var root_36 = from_html(`<!> <div style="position:relative"><button class="pcr-model-panel-apply">Edit ▾</button> <!></div> <button class="pcr-model-panel-save">Save as Default</button>`, 1);
+var root$5 = from_html(`<div class="pcr-model-panel-body"><!> <!> <!></div> <!> <div class="pcr-model-panel-footer svelte-82atyh"><!></div>`, 1);
 function SettingsTab($$anchor, $$props) {
-  var _a, _b, _c;
+  var _a, _b, _c, _d, _e;
   push($$props, true);
-  let detected = prop($$props, "detected", 19, () => []), savedConfig = prop($$props, "savedConfig", 3, null), rangeMode = prop($$props, "rangeMode", 3, false), expandedSections = prop($$props, "expandedSections", 23, () => ({}));
+  let detected = prop($$props, "detected", 19, () => []), savedConfig = prop($$props, "savedConfig", 3, null), rangeMode = prop($$props, "rangeMode", 3, false), expandedSections = prop($$props, "expandedSections", 23, () => ({})), pcNode = prop($$props, "pcNode", 3, null), architecture = prop($$props, "architecture", 3, ""), family = prop($$props, "family", 3, ""), onApplyStyleLora = prop($$props, "onApplyStyleLora", 3, () => {
+  });
   const DISPLAY_NAMES = {
     sampler_name: "Sampler",
     stop_at_clip_layer: "Last Layer",
@@ -474,6 +480,128 @@ function SettingsTab($$anchor, $$props) {
     null
     // the group (e.g. ControlNet) drilled into
   );
+  const showStyleSection = user_derived(() => architecture() === "krea2" && family() === "krea2_turbo");
+  let styleCatalog = state(proxy([]));
+  let styleInstalled = state(proxy(
+    {}
+    // filename → exists
+  ));
+  let styleSelected = state(proxy(((_e = (_d = pcNode()) == null ? void 0 : _d.properties) == null ? void 0 : _e.pcrStyleLora) || ""));
+  let styleStrength = state(1);
+  let styleBusy = state(false);
+  let styleStatus = state("");
+  user_effect(() => {
+    if (!get(showStyleSection)) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/promptchain/loras/catalog?architecture=${encodeURIComponent(architecture())}&family=${encodeURIComponent(family())}`);
+        const data = await res.json();
+        if (cancelled) return;
+        set(styleCatalog, data.loras || [], true);
+        const cur = get(styleCatalog).find((l) => l.id === get(styleSelected));
+        if (cur) set(styleStrength, cur.strength_default ?? 1, true);
+        await refreshStyleInstalled();
+      } catch (e) {
+        console.warn("[PromptChain] style catalog load failed:", e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  });
+  async function refreshStyleInstalled() {
+    if (!get(styleCatalog).length) return;
+    try {
+      const res = await fetch("/promptchain/models/check-files", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          files: get(styleCatalog).map((l) => ({
+            filename: l.filename,
+            folder: l.folder || "loras",
+            size_bytes: l.size_bytes || 0
+          }))
+        })
+      });
+      const data = await res.json();
+      const map = {};
+      for (const r of data.results || []) map[r.filename] = r.exists;
+      set(styleInstalled, map, true);
+    } catch (e) {
+      console.warn("[PromptChain] style install check failed:", e);
+    }
+  }
+  function downloadStyle(lora) {
+    return new Promise((resolve) => {
+      const s = lora.source || {};
+      const url = s.provider === "huggingface" ? `https://huggingface.co/${s.repo}/resolve/main/${s.path}` : s.download_url || s.url || "";
+      if (!url) {
+        resolve(false);
+        return;
+      }
+      const cleanup = () => {
+        api.removeEventListener("promptchain_download_progress", onProgress);
+        api.removeEventListener("promptchain_download_done", onDone);
+      };
+      function onProgress({ detail }) {
+        if (detail.filename !== lora.filename) return;
+        set(styleStatus, `Downloading ${lora.label}: ${detail.progress}%`);
+      }
+      function onDone({ detail }) {
+        if (detail.filename !== lora.filename) return;
+        cleanup();
+        resolve(detail.status === "completed");
+      }
+      api.addEventListener("promptchain_download_progress", onProgress);
+      api.addEventListener("promptchain_download_done", onDone);
+      fetch("/promptchain/civitai/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, filename: lora.filename, folder: lora.folder || "loras" })
+      }).then((r) => r.json()).then((d) => {
+        if (d.error) {
+          cleanup();
+          set(styleStatus, d.error, true);
+          resolve(false);
+        }
+      }).catch((err) => {
+        cleanup();
+        set(styleStatus, err.message, true);
+        resolve(false);
+      });
+    });
+  }
+  async function onStyleChange(id) {
+    var _a2, _b2;
+    set(styleSelected, id, true);
+    if (!id) {
+      onApplyStyleLora()(null, get(styleStrength));
+      set(styleStatus, "");
+      return;
+    }
+    const lora = get(styleCatalog).find((l) => l.id === id);
+    if (!lora) return;
+    set(styleStrength, lora.strength_default ?? get(styleStrength) ?? 1, true);
+    if (!get(styleInstalled)[lora.filename]) {
+      set(styleBusy, true);
+      const ok = await downloadStyle(lora);
+      set(styleBusy, false);
+      if (!ok) {
+        set(styleStatus, get(styleStatus) || "Download failed", true);
+        set(styleSelected, ((_b2 = (_a2 = pcNode()) == null ? void 0 : _a2.properties) == null ? void 0 : _b2.pcrStyleLora) || "", true);
+        return;
+      }
+      set(styleInstalled, { ...get(styleInstalled), [lora.filename]: true }, true);
+      set(styleStatus, "");
+    }
+    onApplyStyleLora()(lora, get(styleStrength));
+  }
+  function onStyleStrength(v) {
+    set(styleStrength, v, true);
+    const lora = get(styleCatalog).find((l) => l.id === get(styleSelected));
+    if (lora && get(styleInstalled)[lora.filename]) onApplyStyleLora()(lora, v);
+  }
   let editMenuOpen = state(false);
   let injectable = user_derived(() => $$props.injectableNodes());
   var fragment = root$5();
@@ -1064,23 +1192,90 @@ function SettingsTab($$anchor, $$props) {
     template_effect(() => set_text(text2, `${(config().label || type()) ?? ""} `));
     append($$anchor2, div_2);
   });
-  var node_24 = sibling(div, 2);
+  var node_24 = sibling(node_2, 2);
   {
-    var consequent_20 = ($$anchor2) => {
+    var consequent_22 = ($$anchor2) => {
       var div_16 = root_30();
-      var text_11 = child(div_16);
-      template_effect(() => set_text(text_11, `Save failed: ${get(saveError) ?? ""}`));
+      var div_17 = sibling(child(div_16), 2);
+      var div_18 = sibling(child(div_17), 2);
+      var select_3 = child(div_18);
+      var option_3 = child(select_3);
+      option_3.value = option_3.__value = "";
+      var node_25 = sibling(option_3);
+      each(node_25, 17, () => get(styleCatalog), index, ($$anchor3, l) => {
+        var option_4 = root_31();
+        var text_11 = child(option_4);
+        var option_4_value = {};
+        template_effect(() => {
+          set_selected(option_4, get(l).id === get(styleSelected));
+          set_text(text_11, `${get(l).label ?? ""}${get(styleInstalled)[get(l).filename] ? "" : " ⬇"}`);
+          if (option_4_value !== (option_4_value = get(l).id)) {
+            option_4.value = (option_4.__value = get(l).id) ?? "";
+          }
+        });
+        append($$anchor3, option_4);
+      });
+      var node_26 = sibling(div_17, 2);
+      {
+        var consequent_20 = ($$anchor3) => {
+          var div_19 = root_32();
+          var node_27 = sibling(child(div_19), 2);
+          SettingsSlider(node_27, {
+            min: 0,
+            max: 1.5,
+            step: 0.05,
+            get value() {
+              return get(styleStrength);
+            },
+            onChange: (v) => onStyleStrength(v)
+          });
+          append($$anchor3, div_19);
+        };
+        if_block(node_26, ($$render) => {
+          if (get(styleSelected)) $$render(consequent_20);
+        });
+      }
+      var node_28 = sibling(node_26, 2);
+      {
+        var consequent_21 = ($$anchor3) => {
+          var div_20 = root_33();
+          var span_5 = child(div_20);
+          var text_12 = child(span_5);
+          template_effect(() => set_text(text_12, get(styleStatus)));
+          append($$anchor3, div_20);
+        };
+        if_block(node_28, ($$render) => {
+          if (get(styleStatus)) $$render(consequent_21);
+        });
+      }
+      template_effect(() => {
+        select_3.disabled = get(styleBusy);
+        set_selected(option_3, !get(styleSelected));
+      });
+      delegated("change", select_3, (e) => onStyleChange(e.target.value));
       append($$anchor2, div_16);
     };
     if_block(node_24, ($$render) => {
-      if (get(saveError)) $$render(consequent_20);
+      if (get(showStyleSection)) $$render(consequent_22);
     });
   }
-  var div_17 = sibling(node_24, 2);
-  var node_25 = child(div_17);
+  var node_29 = sibling(div, 2);
   {
-    var consequent_21 = ($$anchor2) => {
-      var fragment_17 = root_31();
+    var consequent_23 = ($$anchor2) => {
+      var div_21 = root_34();
+      var text_13 = child(div_21);
+      template_effect(() => set_text(text_13, `Save failed: ${get(saveError) ?? ""}`));
+      append($$anchor2, div_21);
+    };
+    if_block(node_29, ($$render) => {
+      if (get(saveError)) $$render(consequent_23);
+    });
+  }
+  var div_22 = sibling(node_29, 2);
+  var node_30 = child(div_22);
+  {
+    var consequent_24 = ($$anchor2) => {
+      var fragment_17 = root_35();
       var button_2 = first_child(fragment_17);
       var button_3 = sibling(button_2, 2);
       delegated("click", button_2, (e) => {
@@ -1091,37 +1286,37 @@ function SettingsTab($$anchor, $$props) {
       append($$anchor2, fragment_17);
     };
     var alternate_4 = ($$anchor2) => {
-      var fragment_18 = root_32();
-      var node_26 = first_child(fragment_18);
+      var fragment_18 = root_36();
+      var node_31 = first_child(fragment_18);
       {
-        var consequent_26 = ($$anchor3) => {
-          var div_18 = root_33();
-          var button_4 = child(div_18);
-          var node_27 = sibling(button_4, 2);
+        var consequent_29 = ($$anchor3) => {
+          var div_23 = root_37();
+          var button_4 = child(div_23);
+          var node_32 = sibling(button_4, 2);
           {
-            var consequent_25 = ($$anchor4) => {
-              var div_19 = root_34();
-              var node_28 = child(div_19);
+            var consequent_28 = ($$anchor4) => {
+              var div_24 = root_38();
+              var node_33 = child(div_24);
               {
-                var consequent_22 = ($$anchor5) => {
-                  var fragment_19 = root_35();
-                  var div_20 = first_child(fragment_19);
-                  var text_12 = child(div_20);
-                  var node_29 = sibling(div_20, 2);
-                  each(node_29, 17, () => get(addSubmenu).children, index, ($$anchor6, child$1) => {
-                    var div_21 = root_36();
-                    var text_13 = child(div_21);
-                    template_effect(() => set_text(text_13, get(child$1).label));
-                    delegated("click", div_21, (e) => {
+                var consequent_25 = ($$anchor5) => {
+                  var fragment_19 = root_39();
+                  var div_25 = first_child(fragment_19);
+                  var text_14 = child(div_25);
+                  var node_34 = sibling(div_25, 2);
+                  each(node_34, 17, () => get(addSubmenu).children, index, ($$anchor6, child$1) => {
+                    var div_26 = root_40();
+                    var text_15 = child(div_26);
+                    template_effect(() => set_text(text_15, get(child$1).label));
+                    delegated("click", div_26, (e) => {
                       e.stopPropagation();
                       set(addMenuOpen, false);
                       set(addSubmenu, null);
                       $$props.onInjectNode(get(child$1).value);
                     });
-                    append($$anchor6, div_21);
+                    append($$anchor6, div_26);
                   });
-                  template_effect(() => set_text(text_12, `‹ ${get(addSubmenu).label ?? ""}`));
-                  delegated("click", div_20, (e) => {
+                  template_effect(() => set_text(text_14, `‹ ${get(addSubmenu).label ?? ""}`));
+                  delegated("click", div_25, (e) => {
                     e.stopPropagation();
                     set(addSubmenu, null);
                   });
@@ -1129,46 +1324,46 @@ function SettingsTab($$anchor, $$props) {
                 };
                 var alternate_3 = ($$anchor5) => {
                   var fragment_20 = comment();
-                  var node_30 = first_child(fragment_20);
-                  each(node_30, 17, () => get(injectable), index, ($$anchor6, item) => {
+                  var node_35 = first_child(fragment_20);
+                  each(node_35, 17, () => get(injectable), index, ($$anchor6, item) => {
                     var fragment_21 = comment();
-                    var node_31 = first_child(fragment_21);
+                    var node_36 = first_child(fragment_21);
                     {
-                      var consequent_23 = ($$anchor7) => {
-                        var div_22 = root_39();
-                        var text_14 = child(div_22);
-                        template_effect(() => set_text(text_14, get(item)));
-                        delegated("click", div_22, (e) => {
+                      var consequent_26 = ($$anchor7) => {
+                        var div_27 = root_43();
+                        var text_16 = child(div_27);
+                        template_effect(() => set_text(text_16, get(item)));
+                        delegated("click", div_27, (e) => {
                           e.stopPropagation();
                           set(addMenuOpen, false);
                           $$props.onInjectNode(get(item));
                         });
-                        append($$anchor7, div_22);
+                        append($$anchor7, div_27);
                       };
-                      var consequent_24 = ($$anchor7) => {
-                        var div_23 = root_40();
-                        var text_15 = child(div_23);
-                        template_effect(() => set_text(text_15, `${get(item).label ?? ""} ▸`));
-                        delegated("click", div_23, (e) => {
+                      var consequent_27 = ($$anchor7) => {
+                        var div_28 = root_44();
+                        var text_17 = child(div_28);
+                        template_effect(() => set_text(text_17, `${get(item).label ?? ""} ▸`));
+                        delegated("click", div_28, (e) => {
                           e.stopPropagation();
                           set(addSubmenu, get(item), true);
                         });
-                        append($$anchor7, div_23);
+                        append($$anchor7, div_28);
                       };
                       var alternate_2 = ($$anchor7) => {
-                        var div_24 = root_41();
-                        var text_16 = child(div_24);
-                        template_effect(() => set_text(text_16, get(item).label));
-                        delegated("click", div_24, (e) => {
+                        var div_29 = root_45();
+                        var text_18 = child(div_29);
+                        template_effect(() => set_text(text_18, get(item).label));
+                        delegated("click", div_29, (e) => {
                           e.stopPropagation();
                           set(addMenuOpen, false);
                           $$props.onInjectNode(get(item).value);
                         });
-                        append($$anchor7, div_24);
+                        append($$anchor7, div_29);
                       };
-                      if_block(node_31, ($$render) => {
-                        if (typeof get(item) === "string") $$render(consequent_23);
-                        else if (get(item).children) $$render(consequent_24, 1);
+                      if_block(node_36, ($$render) => {
+                        if (typeof get(item) === "string") $$render(consequent_26);
+                        else if (get(item).children) $$render(consequent_27, 1);
                         else $$render(alternate_2, -1);
                       });
                     }
@@ -1176,15 +1371,15 @@ function SettingsTab($$anchor, $$props) {
                   });
                   append($$anchor5, fragment_20);
                 };
-                if_block(node_28, ($$render) => {
-                  if (get(addSubmenu)) $$render(consequent_22);
+                if_block(node_33, ($$render) => {
+                  if (get(addSubmenu)) $$render(consequent_25);
                   else $$render(alternate_3, -1);
                 });
               }
-              append($$anchor4, div_19);
+              append($$anchor4, div_24);
             };
-            if_block(node_27, ($$render) => {
-              if (get(addMenuOpen)) $$render(consequent_25);
+            if_block(node_32, ($$render) => {
+              if (get(addMenuOpen)) $$render(consequent_28);
             });
           }
           delegated("click", button_4, (e) => {
@@ -1193,63 +1388,63 @@ function SettingsTab($$anchor, $$props) {
             set(addSubmenu, null);
             set(editMenuOpen, false);
           });
-          append($$anchor3, div_18);
+          append($$anchor3, div_23);
         };
-        if_block(node_26, ($$render) => {
-          if (get(injectable).length) $$render(consequent_26);
+        if_block(node_31, ($$render) => {
+          if (get(injectable).length) $$render(consequent_29);
         });
       }
-      var div_25 = sibling(node_26, 2);
-      var button_5 = child(div_25);
-      var node_32 = sibling(button_5, 2);
+      var div_30 = sibling(node_31, 2);
+      var button_5 = child(div_30);
+      var node_37 = sibling(button_5, 2);
       {
-        var consequent_29 = ($$anchor3) => {
-          var div_26 = root_42();
-          var div_27 = child(div_26);
-          var node_33 = sibling(div_27, 2);
+        var consequent_32 = ($$anchor3) => {
+          var div_31 = root_46();
+          var div_32 = child(div_31);
+          var node_38 = sibling(div_32, 2);
           {
-            var consequent_27 = ($$anchor4) => {
-              var div_28 = root_43();
-              delegated("click", div_28, (e) => {
+            var consequent_30 = ($$anchor4) => {
+              var div_33 = root_47();
+              delegated("click", div_33, (e) => {
                 e.stopPropagation();
                 set(editMenuOpen, false);
                 handleApply();
               });
-              append($$anchor4, div_28);
+              append($$anchor4, div_33);
             };
-            if_block(node_33, ($$render) => {
-              if (savedConfig()) $$render(consequent_27);
+            if_block(node_38, ($$render) => {
+              if (savedConfig()) $$render(consequent_30);
             });
           }
-          var node_34 = sibling(node_33, 2);
+          var node_39 = sibling(node_38, 2);
           {
-            var consequent_28 = ($$anchor4) => {
-              var div_29 = root_44();
-              delegated("click", div_29, async (e) => {
+            var consequent_31 = ($$anchor4) => {
+              var div_34 = root_48();
+              delegated("click", div_34, async (e) => {
                 var _a2;
                 e.stopPropagation();
                 set(editMenuOpen, false);
                 await fetch(`/promptchain/models/settings/${((_a2 = savedConfig()) == null ? void 0 : _a2._hash) || ""}`, { method: "DELETE" });
                 $$props.onReopen({});
               });
-              append($$anchor4, div_29);
+              append($$anchor4, div_34);
             };
-            if_block(node_34, ($$render) => {
-              if (userSaved && hasSystem) $$render(consequent_28);
+            if_block(node_39, ($$render) => {
+              if (userSaved && hasSystem) $$render(consequent_31);
             });
           }
-          delegated("click", div_27, (e) => {
+          delegated("click", div_32, (e) => {
             e.stopPropagation();
             set(editMenuOpen, false);
             $$props.onReopen({ rangeMode: true });
           });
-          append($$anchor3, div_26);
+          append($$anchor3, div_31);
         };
-        if_block(node_32, ($$render) => {
-          if (get(editMenuOpen)) $$render(consequent_29);
+        if_block(node_37, ($$render) => {
+          if (get(editMenuOpen)) $$render(consequent_32);
         });
       }
-      var button_6 = sibling(div_25, 2);
+      var button_6 = sibling(div_30, 2);
       template_effect(() => button_6.disabled = get(saveDisabled));
       delegated("click", button_5, (e) => {
         e.stopPropagation();
@@ -1259,8 +1454,8 @@ function SettingsTab($$anchor, $$props) {
       delegated("click", button_6, handleSave);
       append($$anchor2, fragment_18);
     };
-    if_block(node_25, ($$render) => {
-      if (rangeMode()) $$render(consequent_21);
+    if_block(node_30, ($$render) => {
+      if (rangeMode()) $$render(consequent_24);
       else $$render(alternate_4, -1);
     });
   }
@@ -2995,6 +3190,18 @@ function ModelSettingsModal($$anchor, $$props) {
     },
     get onInjectNode() {
       return $$props.onInjectNode;
+    },
+    get pcNode() {
+      return $$props.pcNode;
+    },
+    get architecture() {
+      return get(detectedArch);
+    },
+    get family() {
+      return get(currentFamily);
+    },
+    get onApplyStyleLora() {
+      return $$props.onApplyStyleLora;
     },
     get onClose() {
       return $$props.onClose;

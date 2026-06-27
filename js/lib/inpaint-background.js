@@ -24,12 +24,12 @@ function toast(severity, detail) {
   app.extensionManager?.toast?.add({ severity, summary: "Inpaint", detail, life: 7000 });
 }
 
-function freshWorkflowId() {
+export function freshWorkflowId() {
   if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
   return `${Date.now().toString(16)}-${Math.random().toString(16).slice(2, 10)}`;
 }
 
-function createTracker() {
+export function createTracker() {
   const listeners = new Set();
   const tracker = {
     state: { phase: "building" },
@@ -770,10 +770,24 @@ export function buildKrea2InpaintPrompt(data, options, maskName) {
       return node?.widgets?.find((w) => w.name === widget)?.options?.values || [];
     } catch { return []; }
   };
+  // Realism mode (krea2_turbo): abliterated Qwen3-VL encoder + projector/realism
+  // LoRAs. VAE stays qwen_image_vae on purpose — MaskedDetail composites the
+  // re-detailed patch back into the qwen-decoded frame, so decoding it through
+  // wan_2.1 would shift colour/texture and leave a seam (same reason the krea2
+  // tile upscale keeps qwen_image_vae).
+  const realism = !!options.realism;
   const clipOpts = probe("CLIPLoader", "clip_name");
-  const clipFile = clipOpts.find((o) => /qwen3vl.*4b/i.test(o)) || clipOpts.find((o) => /qwen3.?vl.*4b/i.test(o));
+  const loraOpts = probe("LoraLoaderModelOnly", "lora_name");
+  const clipFile = realism
+    ? clipOpts.find((o) => /huihui.*qwen3.?vl.*4b.*abliterated|qwen3.?vl.*4b.*abliterated/i.test(o))
+    : (clipOpts.find((o) => /qwen3vl.*4b/i.test(o)) || clipOpts.find((o) => /qwen3.?vl.*4b/i.test(o)));
   const vaeFile = probe("VAELoader", "vae_name").find((o) => /qwen.*image.*vae/i.test(o));
-  if (!clipFile || !vaeFile) throw new Error("the Krea 2 text encoder / VAE aren't installed");
+  const projLora = realism && loraOpts.find((o) => /krea2_turbo_projector_scale/i.test(o));
+  const realLora = realism && loraOpts.find((o) => /krea2-realism/i.test(o));
+  if (!clipFile || !vaeFile) throw new Error(realism
+    ? "Realism mode needs the abliterated Qwen3-VL encoder installed (Huihui-Qwen3-VL-4B-Instruct-abliterated)"
+    : "the Krea 2 text encoder / VAE aren't installed");
+  if (realism && (!projLora || !realLora)) throw new Error("Realism mode needs the Krea2-realism-V1 + krea2_turbo_projector_scale LoRAs installed");
 
   const graph = {};
   let nextId = offscreenIdBase(); // render-node ids must stay off the live canvas — else execution images paint onto a live node sharing the id (see offscreen-graph.js)
@@ -807,6 +821,11 @@ export function buildKrea2InpaintPrompt(data, options, maskName) {
   if (raw) {
     const msfId = add("ModelSamplingFlux", { model: [unetId, 0], max_shift: 0.90625, base_shift: 0.5, width: 1024, height: 1024 });
     modelRef = [msfId, 0];
+  }
+  if (realism) {
+    const proj = add("LoraLoaderModelOnly", { model: modelRef, lora_name: projLora, strength_model: 0.5 });
+    const real = add("LoraLoaderModelOnly", { model: [proj, 0], lora_name: realLora, strength_model: 0.6 });
+    modelRef = [real, 0];
   }
   const detailId = add("PromptChain_MaskedDetail", {
     model: modelRef, vae: [vaeId, 0],

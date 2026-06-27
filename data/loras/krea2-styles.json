@@ -1,0 +1,95 @@
+{
+  "scope": { "type": "family", "architecture": "krea2", "family": "krea2_turbo" },
+  "loras": [
+    {
+      "id": "krea2-retroanime",
+      "label": "Retro Anime",
+      "filename": "krea2_retroanime.safetensors",
+      "folder": "loras",
+      "trigger": "Purple retro anime style",
+      "strength_default": 1.0,
+      "size_bytes": 469291992,
+      "source": { "provider": "huggingface", "repo": "Comfy-Org/Krea-2", "path": "loras/krea2_retroanime.safetensors" }
+    },
+    {
+      "id": "krea2-darkbrush",
+      "label": "Dark Brush",
+      "filename": "krea2_darkbrush.safetensors",
+      "folder": "loras",
+      "trigger": "monochrome ink wash style",
+      "strength_default": 1.0,
+      "size_bytes": 469291992,
+      "source": { "provider": "huggingface", "repo": "Comfy-Org/Krea-2", "path": "loras/krea2_darkbrush.safetensors" }
+    },
+    {
+      "id": "krea2-sunsetblur",
+      "label": "Sunset Blur",
+      "filename": "krea2_sunsetblur.safetensors",
+      "folder": "loras",
+      "trigger": "ethereal motion blur style",
+      "strength_default": 1.0,
+      "size_bytes": 469291992,
+      "source": { "provider": "huggingface", "repo": "Comfy-Org/Krea-2", "path": "loras/krea2_sunsetblur.safetensors" }
+    },
+    {
+      "id": "krea2-neondrip",
+      "label": "Neon Drip",
+      "filename": "krea2_neondrip.safetensors",
+      "folder": "loras",
+      "trigger": "Textured abstract style",
+      "strength_default": 1.0,
+      "size_bytes": 469291992,
+      "source": { "provider": "huggingface", "repo": "Comfy-Org/Krea-2", "path": "loras/krea2_neondrip.safetensors" }
+    },
+    {
+      "id": "krea2-vintagetarot",
+      "label": "Vintage Tarot",
+      "filename": "krea2_vintagetarot.safetensors",
+      "folder": "loras",
+      "trigger": "vintage tarot style",
+      "strength_default": 1.0,
+      "size_bytes": 469291992,
+      "source": { "provider": "huggingface", "repo": "Comfy-Org/Krea-2", "path": "loras/krea2_vintagetarot.safetensors" }
+    },
+    {
+      "id": "krea2-dotmatrix",
+      "label": "Dot Matrix",
+      "filename": "krea2_dotmatrix.safetensors",
+      "folder": "loras",
+      "trigger": "Monochrome stippling style",
+      "strength_default": 1.0,
+      "size_bytes": 469291992,
+      "source": { "provider": "huggingface", "repo": "Comfy-Org/Krea-2", "path": "loras/krea2_dotmatrix.safetensors" }
+    },
+    {
+      "id": "krea2-softwatercolor",
+      "label": "Soft Watercolor",
+      "filename": "krea2_softwatercolor.safetensors",
+      "folder": "loras",
+      "trigger": "Art Deco watercolor style",
+      "strength_default": 1.0,
+      "size_bytes": 469291992,
+      "source": { "provider": "huggingface", "repo": "Comfy-Org/Krea-2", "path": "loras/krea2_softwatercolor.safetensors" }
+    },
+    {
+      "id": "krea2-kidsdrawing",
+      "label": "Kids Drawing",
+      "filename": "krea2_kidsdrawing.safetensors",
+      "folder": "loras",
+      "trigger": "naive expressive sketch style",
+      "strength_default": 1.0,
+      "size_bytes": 469291992,
+      "source": { "provider": "huggingface", "repo": "Comfy-Org/Krea-2", "path": "loras/krea2_kidsdrawing.safetensors" }
+    },
+    {
+      "id": "krea2-rainywindow",
+      "label": "Rainy Window",
+      "filename": "krea2_rainywindow.safetensors",
+      "folder": "loras",
+      "trigger": "rainy window style",
+      "strength_default": 1.0,
+      "size_bytes": 469291992,
+      "source": { "provider": "huggingface", "repo": "Comfy-Org/Krea-2", "path": "loras/krea2_rainywindow.safetensors" }
+    }
+  ]
+}

@@ -39,7 +39,7 @@ api.addEventListener("promptchain_recognition_done", () => {
 const KSAMPLER_TYPES = new Set([
   "KSampler", "KSamplerAdvanced",
   "PromptChain_RegionalDetailer", "SamplerCustomAdvanced", "UltimateSDUpscale", "UltimateSDUpscaleNoUpscale",
-  "PromptChain_IdeogramSampler",
+  "PromptChain_IdeogramSampler", "ClownsharKSampler_Beta",
 ]);
 const MODEL_WIDGET_NAMES = ["ckpt_name", "unet_name", "model_name"];
 

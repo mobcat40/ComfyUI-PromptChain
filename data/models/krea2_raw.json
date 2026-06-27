@@ -96,6 +96,19 @@
         "path": "vae/qwen_image_vae.safetensors"
       },
       "sha256": null
+    },
+    {
+      "label": "Filter-Bypass Projector-Scale LoRA",
+      "folder": "loras",
+      "filename": "krea2_filter_bypass_projector_scale.safetensors",
+      "size_bytes": 268,
+      "optional": true,
+      "source": {
+        "provider": "huggingface",
+        "repo": "Beinsezii/Krea-2-Raw-Projector-Scale-LoRA-Diffusers",
+        "path": "pytorch_lora_weights.safetensors"
+      },
+      "sha256": null
     }
   ],
   "nodes": {

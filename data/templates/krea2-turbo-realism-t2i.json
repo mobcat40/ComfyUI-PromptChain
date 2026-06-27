@@ -1,0 +1,129 @@
+{
+  "name": "Text-to-Image (Realism)",
+  "category": "Generation",
+  "order": 2,
+  "scope": {
+    "type": "family",
+    "architecture": "krea2",
+    "family": "krea2_turbo"
+  },
+  "created_at": 1782328900,
+  "id": "d8f3a1c2-6e4b-4f9a-b1c7-3a8e5d2f9b14",
+  "nodes": [
+    {
+      "type": "CLIPTextEncode",
+      "offset": [900, 0],
+      "size": [225, 116],
+      "widgets_values": [""],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      }
+    },
+    {
+      "type": "CLIPTextEncode",
+      "offset": [900, 180],
+      "size": [225, 116],
+      "widgets_values": [""],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      }
+    },
+    {
+      "type": "ClownsharKSampler_Beta",
+      "offset": [1700, 160],
+      "size": [373.90625, 756],
+      "widgets_values": [0.5, "exponential/ddim", "beta57", 8, -1, 1, 1, 1033759726676101, "randomize", "standard", false],
+      "properties": {
+        "Node name for S&R": "ClownsharKSampler_Beta",
+        "aux_id": "tashiscool/RES4LYF"
+      }
+    },
+    {
+      "type": "VAEDecode",
+      "offset": [2120, 20],
+      "size": [225, 72],
+      "widgets_values": [],
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      }
+    },
+    {
+      "type": "SaveImage",
+      "offset": [2120, 140],
+      "size": [276.984375, 322.984375],
+      "widgets_values": ["Krea2-Realism/%date:yyyy-MM-dd_hhmmss%"],
+      "properties": {}
+    },
+    {
+      "type": "CLIPLoader",
+      "offset": [540, 340],
+      "size": [346.78125, 117.328125],
+      "widgets_values": ["Huihui-Qwen3-VL-4B-Instruct-abliterated-fp8_scaled.safetensors", "krea2", "default"],
+      "properties": {
+        "Node name for S&R": "CLIPLoader"
+      }
+    },
+    {
+      "type": "UNETLoader",
+      "offset": [1240, -40],
+      "size": [371.65625, 82.65625],
+      "widgets_values": ["krea2_turbo_bf16.safetensors", "default"],
+      "properties": {
+        "Node name for S&R": "UNETLoader"
+      }
+    },
+    {
+      "type": "EmptySD3LatentImage",
+      "offset": [1240, 420],
+      "size": [324, 144],
+      "widgets_values": [1152, 2048, 1],
+      "properties": {
+        "Node name for S&R": "EmptySD3LatentImage"
+      }
+    },
+    {
+      "type": "VAELoader",
+      "offset": [1240, 600],
+      "size": [366.40625, 82.65625],
+      "widgets_values": ["wan_2.1_vae.safetensors"],
+      "properties": {
+        "Node name for S&R": "VAELoader"
+      }
+    },
+    {
+      "type": "LoraLoaderModelOnly",
+      "offset": [1240, 90],
+      "size": [371.65625, 82],
+      "widgets_values": ["krea2_turbo_projector_scale.safetensors", 0.5],
+      "properties": {
+        "Node name for S&R": "LoraLoaderModelOnly"
+      }
+    },
+    {
+      "type": "LoraLoaderModelOnly",
+      "offset": [1240, 240],
+      "size": [371.65625, 82],
+      "widgets_values": ["Krea2-realism-V1.safetensors", 0.6],
+      "properties": {
+        "Node name for S&R": "LoraLoaderModelOnly"
+      }
+    }
+  ],
+  "connections": [
+    {"from_node_idx": 0, "from_slot": 0, "to_node_idx": 2, "to_slot": 1},
+    {"from_node_idx": 1, "from_slot": 0, "to_node_idx": 2, "to_slot": 2},
+    {"from_node_idx": 2, "from_slot": 0, "to_node_idx": 3, "to_slot": 0},
+    {"from_node_idx": 3, "from_slot": 0, "to_node_idx": 4, "to_slot": 0},
+    {"from_node_idx": 5, "from_slot": 0, "to_node_idx": 0, "to_slot": 0},
+    {"from_node_idx": 5, "from_slot": 0, "to_node_idx": 1, "to_slot": 0},
+    {"from_node_idx": 6, "from_slot": 0, "to_node_idx": 9, "to_slot": 0},
+    {"from_node_idx": 9, "from_slot": 0, "to_node_idx": 10, "to_slot": 0},
+    {"from_node_idx": 10, "from_slot": 0, "to_node_idx": 2, "to_slot": 0},
+    {"from_node_idx": 7, "from_slot": 0, "to_node_idx": 2, "to_slot": 3},
+    {"from_node_idx": 8, "from_slot": 0, "to_node_idx": 3, "to_slot": 1}
+  ],
+  "anchorConnections": [
+    {"from_slot": 1, "to_node_idx": 0, "to_slot": 1},
+    {"from_slot": 2, "to_node_idx": 1, "to_slot": 1}
+  ]
+}

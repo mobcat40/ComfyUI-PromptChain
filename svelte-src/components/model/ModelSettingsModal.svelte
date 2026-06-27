@@ -23,6 +23,7 @@
     onSwitchVersion,
     onOpenPicker,
     onInjectNode,
+    onApplyStyleLora,
     onApplyTemplate,
     captureWorkflowGraph,
     readWidgetValue,
@@ -423,6 +424,10 @@
       onSave={handleSave}
       {onReopen}
       {onInjectNode}
+      {pcNode}
+      architecture={detectedArch}
+      family={currentFamily}
+      {onApplyStyleLora}
       {onClose} />
   </div>
 

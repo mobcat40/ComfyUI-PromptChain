@@ -3,6 +3,7 @@
   // resolution presets, range mode, save/apply/add/edit footer.
 
   import "./model-panel-shared.css";
+  import { api } from "/scripts/api.js";
   import SettingsSlider from "./SettingsSlider.svelte";
   import RangeSlider from "./RangeSlider.svelte";
   import MultiSelectCombo from "./MultiSelectCombo.svelte";
@@ -20,6 +21,10 @@
     onSave,
     onReopen,
     onInjectNode,
+    pcNode = null,
+    architecture = "",
+    family = "",
+    onApplyStyleLora = () => {},
     onClose,
   } = $props();
 
@@ -250,6 +255,105 @@
   // Injection menu
   let addMenuOpen = $state(false);
   let addSubmenu = $state(null);   // the group (e.g. ControlNet) drilled into
+
+  // ── Krea 2 style LoRA section (always present on Krea 2 Turbo) ──────
+  // A single swappable model-only LoRA + its trigger word, served from the
+  // scope-filtered lora catalog. Selecting downloads-if-missing then swaps the
+  // node + prompt trigger via onApplyStyleLora.
+  const showStyleSection = $derived(architecture === "krea2" && family === "krea2_turbo");
+  let styleCatalog = $state([]);
+  let styleInstalled = $state({});   // filename → exists
+  let styleSelected = $state(pcNode?.properties?.pcrStyleLora || "");
+  let styleStrength = $state(1.0);
+  let styleBusy = $state(false);
+  let styleStatus = $state("");
+
+  $effect(() => {
+    if (!showStyleSection) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/promptchain/loras/catalog?architecture=${encodeURIComponent(architecture)}&family=${encodeURIComponent(family)}`);
+        const data = await res.json();
+        if (cancelled) return;
+        styleCatalog = data.loras || [];
+        const cur = styleCatalog.find(l => l.id === styleSelected);
+        if (cur) styleStrength = cur.strength_default ?? 1.0;
+        await refreshStyleInstalled();
+      } catch (e) { console.warn("[PromptChain] style catalog load failed:", e); }
+    })();
+    return () => { cancelled = true; };
+  });
+
+  async function refreshStyleInstalled() {
+    if (!styleCatalog.length) return;
+    try {
+      const res = await fetch("/promptchain/models/check-files", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ files: styleCatalog.map(l => ({ filename: l.filename, folder: l.folder || "loras", size_bytes: l.size_bytes || 0 })) }),
+      });
+      const data = await res.json();
+      const map = {};
+      for (const r of data.results || []) map[r.filename] = r.exists;
+      styleInstalled = map;
+    } catch (e) { console.warn("[PromptChain] style install check failed:", e); }
+  }
+
+  // Download a missing style via the shared civitai route; resolves on the WS
+  // "done" event for this file (event-driven, no polling).
+  function downloadStyle(lora) {
+    return new Promise((resolve) => {
+      const s = lora.source || {};
+      const url = s.provider === "huggingface"
+        ? `https://huggingface.co/${s.repo}/resolve/main/${s.path}`
+        : (s.download_url || s.url || "");
+      if (!url) { resolve(false); return; }
+      const cleanup = () => {
+        api.removeEventListener("promptchain_download_progress", onProgress);
+        api.removeEventListener("promptchain_download_done", onDone);
+      };
+      function onProgress({ detail }) {
+        if (detail.filename !== lora.filename) return;
+        styleStatus = `Downloading ${lora.label}: ${detail.progress}%`;
+      }
+      function onDone({ detail }) {
+        if (detail.filename !== lora.filename) return;
+        cleanup();
+        resolve(detail.status === "completed");
+      }
+      api.addEventListener("promptchain_download_progress", onProgress);
+      api.addEventListener("promptchain_download_done", onDone);
+      fetch("/promptchain/civitai/download", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, filename: lora.filename, folder: lora.folder || "loras" }),
+      }).then(r => r.json()).then(d => {
+        if (d.error) { cleanup(); styleStatus = d.error; resolve(false); }
+      }).catch(err => { cleanup(); styleStatus = err.message; resolve(false); });
+    });
+  }
+
+  async function onStyleChange(id) {
+    styleSelected = id;
+    if (!id) { onApplyStyleLora(null, styleStrength); styleStatus = ""; return; }
+    const lora = styleCatalog.find(l => l.id === id);
+    if (!lora) return;
+    styleStrength = lora.strength_default ?? styleStrength ?? 1.0;
+    if (!styleInstalled[lora.filename]) {
+      styleBusy = true;
+      const ok = await downloadStyle(lora);
+      styleBusy = false;
+      if (!ok) { styleStatus = styleStatus || "Download failed"; styleSelected = pcNode?.properties?.pcrStyleLora || ""; return; }
+      styleInstalled = { ...styleInstalled, [lora.filename]: true };
+      styleStatus = "";
+    }
+    onApplyStyleLora(lora, styleStrength);
+  }
+
+  function onStyleStrength(v) {
+    styleStrength = v;
+    const lora = styleCatalog.find(l => l.id === styleSelected);
+    if (lora && styleInstalled[lora.filename]) onApplyStyleLora(lora, v);
+  }
   let editMenuOpen = $state(false);
   let injectable = $derived(injectableNodes());
 
@@ -517,6 +621,37 @@
       {/each}
     </div>
   {/each}
+
+  {#if showStyleSection}
+    <div class="pcr-model-panel-section">
+      <div class="pcr-model-panel-section-title">Style</div>
+      <div class="pcr-model-panel-row">
+        <span class="pcr-model-panel-label">LoRA</span>
+        <div class="pcr-model-panel-combo-wrap">
+          <select class="pcr-model-panel-select"
+            disabled={styleBusy}
+            onchange={(e) => onStyleChange(e.target.value)}>
+            <option value="" selected={!styleSelected}>None</option>
+            {#each styleCatalog as l}
+              <option value={l.id} selected={l.id === styleSelected}>
+                {l.label}{styleInstalled[l.filename] ? "" : " ⬇"}
+              </option>
+            {/each}
+          </select>
+        </div>
+      </div>
+      {#if styleSelected}
+        <div class="pcr-model-panel-row">
+          <span class="pcr-model-panel-label">strength</span>
+          <SettingsSlider min={0} max={1.5} step={0.05} value={styleStrength}
+            onChange={(v) => onStyleStrength(v)} />
+        </div>
+      {/if}
+      {#if styleStatus}
+        <div class="pcr-model-panel-row"><span class="pcr-style-status">{styleStatus}</span></div>
+      {/if}
+    </div>
+  {/if}
 </div>
 
 {#if saveError}
@@ -640,6 +775,7 @@
     letter-spacing: 0;
   }
   .pcr-section-expand-toggle:hover { color: #999; }
+  .pcr-style-status { font-size: 11px; color: #5dcaff; }
 
   /* widget rows */
   .pcr-model-panel-row {

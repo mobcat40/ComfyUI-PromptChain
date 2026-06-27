@@ -8,6 +8,7 @@ data/*
 !data/prompts/
 !data/models/
 !data/templates/
+!data/loras/
 !data/tag-builder/
 data/models/_hash_index.json
 cache/

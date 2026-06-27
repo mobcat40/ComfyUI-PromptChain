@@ -25,6 +25,7 @@
     onOpenInpaint = null, // ({compositeBlob, maskCanvas}) => void — opens the full Inpaint modal
     onOpenUpscale = null, // ({cropBlob, rect}) => void — opens the Upscale modal on the region crop
     onOpenRepose = null,  // ({compositeBlob}) => void — opens the Re-pose modal on the whole composite
+    onOpenI2i = null,     // ({compositeBlob, width, height}) => Promise<void> — opens the i2i modal on the /16-snapped composite
     figureRegions = [],   // [{name, text, maskUrl}] — the pose scene's region entities, for one-click figure selection
     editDocHash = "",     // content hash of the image being edited — restores its saved layer stack ("don't-flatten" persistence)
     suspended = false,    // an elevated modal (Inpaint/Upscale handoff) is open above — release the keyboard
@@ -46,7 +47,7 @@
   let savingEdits = $state(false); // "Save edits" → opened image's sidecar, in flight
   let editsSaved = $state(false);  // "✓ Edits saved" chip; cleared by the next edit
   let restoring = $state(false); // loading a saved layer stack on open
-  let handoffBusy = $state(null); // "inpaint" | "upscale" | "repose" while the handoff modal prepares (uploads/graph build)
+  let handoffBusy = $state(null); // "inpaint" | "upscale" | "repose" | "i2i" while the handoff modal prepares (uploads/graph build)
 
   // Re-pose: hand the whole flattened composite to the Re-pose modal (pose a 3D
   // figure → background re-render into the new pose). Whole-image, not a region.
@@ -57,6 +58,29 @@
     handoffBusy = "repose";
     try { await onOpenRepose({ compositeBlob }); }
     catch (e) { errorMsg = `Couldn't open Re-pose: ${e?.message || e}`; }
+    finally { handoffBusy = null; }
+  }
+
+  // i2i: re-diffuse the whole flattened composite. The render dims are snapped
+  // DOWN to a multiple of 16 with a centered crop — that's exactly what the VAE
+  // encode would do server-side (it center-crops to /8, and DiT engines patchify
+  // ×2 = /16), but doing it here means the result comes back at known dims and
+  // composites over the original without the silent 1–3px shift a raw odd size
+  // would cause. addI2iLayerFromResult scales the result to fill the document.
+  async function openI2iHandoff() {
+    if (!onOpenI2i) return;
+    errorMsg = "";
+    flushActive();
+    const encW = Math.max(16, Math.floor(width / 16) * 16);
+    const encH = Math.max(16, Math.floor(height / 16) * 16);
+    const ox = (width - encW) >> 1, oy = (height - encH) >> 1;
+    const c = document.createElement("canvas");
+    c.width = encW; c.height = encH;
+    drawFlattened(c.getContext("2d"), ox, oy, encW, encH, 0, 0, encW, encH);
+    const compositeBlob = await new Promise((r) => c.toBlob(r, "image/png"));
+    handoffBusy = "i2i";
+    try { await onOpenI2i({ compositeBlob, width: encW, height: encH }); }
+    catch (e) { errorMsg = `Couldn't open i2i: ${e?.message || e}`; }
     finally { handoffBusy = null; }
   }
 
@@ -1328,6 +1352,17 @@
     c.width = width; c.height = height;
     c.getContext("2d").drawImage(img, 0, 0, width, height);
     insertResultLayer(c, finalMask || inpaintMaskUsed, "Inpaint");
+  }
+  // i2i hands back the full-frame re-diffusion — it covers the whole document,
+  // so it lands as an UNCLIPPED new layer scaled to fill (the result is the
+  // /16-snapped render, ≤15px smaller per axis, so the fill is sub-pixel).
+  // Exported for the viewer to call.
+  export async function addI2iLayerFromResult(url) {
+    const img = await loadImageEl(url);
+    const c = document.createElement("canvas");
+    c.width = width; c.height = height;
+    c.getContext("2d").drawImage(img, 0, 0, width, height);
+    insertResultLayer(c, null, "i2i");
   }
 
   // ── Region → Upscale ──
@@ -2738,6 +2773,7 @@
   let strokeCov = null;       // Float32Array width×height, current stroke coverage
   let sourceData = null;      // ImageData of the untouched source image
   let preStroke = null;       // paint-layer ImageData at stroke start
+  let selStrokeData = null;   // active selection's alpha, snapshotted at stroke start (clips the brush to the selection SHAPE)
   let batchBox = null;        // dirty region of the current pointer batch
   let strokeBox = null;       // dirty region of the WHOLE stroke (heal resolves it at release)
   let falloffLUT = { key: "", table: null };
@@ -2934,6 +2970,14 @@
     // preStroke = the ACTIVE layer's current pixels (the live canvas), captured
     // fresh so a layer switch can't leave it pointing at another layer's state.
     preStroke = paintCanvas.getContext("2d").getImageData(0, 0, width, height);
+    // Snapshot the selection SHAPE (lasso curve / marquee / object-select) once
+    // per stroke so the brush clips to the true mask, not its bbox. null when
+    // nothing is selected → paint freely. renderStrokeBatch scales coverage by
+    // this alpha, and restores the pre-stroke pixel verbatim where cov ≤ 0, so
+    // neither brush nor eraser touch anything outside the selection.
+    selStrokeData = (selActive && selMaskCanvas)
+      ? selMaskCanvas.getContext("2d").getImageData(0, 0, width, height).data
+      : null;
     batchBox = null;
     strokeBox = null;
   }
@@ -3006,7 +3050,8 @@
       const row = (y0 + y) * width + x0;
       for (let x = 0; x < bw; x++) {
         const gi = row + x;
-        const cov = Math.min(strokeCov[gi], ceil);
+        let cov = Math.min(strokeCov[gi], ceil);
+        if (selStrokeData) cov *= selStrokeData[gi * 4 + 3] / 255; // clip to the selection shape (feather-aware)
         const i = (y * bw + x) * 4;
         const j = gi * 4;
         if (cov <= 0) {
@@ -4155,7 +4200,7 @@
         <div class="pcr-ed-restoring">
           <div class="pcr-ed-restoring-card">
             <span class="pcr-ed-spinner"></span>
-            <span>{restoring ? "Restoring saved layers…" : handoffBusy === "upscale" ? "Preparing upscale…" : handoffBusy === "repose" ? "Preparing Re-pose…" : "Preparing inpaint…"}</span>
+            <span>{restoring ? "Restoring saved layers…" : handoffBusy === "upscale" ? "Preparing upscale…" : handoffBusy === "repose" ? "Preparing Re-pose…" : handoffBusy === "i2i" ? "Preparing i2i…" : "Preparing inpaint…"}</span>
           </div>
         </div>
       {/if}
@@ -4600,9 +4645,12 @@
             </div>
           </div>
 
-          {#if onOpenInpaint || onOpenUpscale || onOpenRepose}
+          {#if onOpenInpaint || onOpenUpscale || onOpenRepose || onOpenI2i}
             <div class="pcr-ed-panel">
               <span class="pcr-ed-panel-title">Render {selActive ? "selection" : "layer"}</span>
+              <!-- 2×2 grid (flex-wrap, each button ~50%): Inpaint · i2i Blend /
+                   Upscale · Re-pose. Absent callbacks drop their button and the
+                   rest reflow. -->
               <div class="pcr-ed-render-row">
                 {#if onOpenInpaint}
                   <button class="pcr-ed-ip-render" disabled={!!handoffBusy} onclick={openInpaintHandoff}
@@ -4610,19 +4658,21 @@
                       ? "Inpaint the selected region — it's pre-masked; the result returns as a new layer."
                       : "Inpaint — an alpha-bounded layer pre-masks its silhouette, else paint the mask in the Inpaint editor; the result returns as a new layer."}>✦ Inpaint</button>
                 {/if}
+                {#if onOpenI2i}
+                  <button class="pcr-ed-ip-render" disabled={!!handoffBusy} onclick={openI2iHandoff}
+                    title="i2i Blend — re-diffuse the whole image at the denoise you pick (pick an engine, type a prompt). The result returns as a new layer.">✦ i2i Blend</button>
+                {/if}
                 {#if onOpenUpscale}
                   <button class="pcr-ed-ip-render" disabled={!!handoffBusy} onclick={openUpscaleHandoff}
                     title={selActive
                       ? "Upscale the selected region at the quality you pick."
                       : "Upscale the active layer's content at the quality you pick — grow the canvas to keep it 1:1, or squeeze it back in place."}>✦ Upscale</button>
                 {/if}
-              </div>
-              {#if onOpenRepose}
-                <div class="pcr-ed-render-row">
+                {#if onOpenRepose}
                   <button class="pcr-ed-ip-render" disabled={!!handoffBusy} onclick={openReposeHandoff}
                     title="Re-pose — pose a 3D figure and re-render this whole image into the new pose. Result is a new image in lineage.">✦ Re-pose</button>
-                </div>
-              {/if}
+                {/if}
+              </div>
             </div>
           {/if}
 
@@ -5076,8 +5126,9 @@
   }
   .pcr-ed-ip-prompt:focus { border-color: #c85909; }
   .pcr-ed-ip-row { display: flex; align-items: center; gap: 10px; margin: 4px 0; }
-  .pcr-ed-render-row { display: flex; gap: 8px; }
-  .pcr-ed-render-row .pcr-ed-ip-render { flex: 1; margin-top: 0; width: auto; white-space: nowrap; }
+  .pcr-ed-render-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  /* ~50% basis → two buttons per row (a lone trailing button grows to full). */
+  .pcr-ed-render-row .pcr-ed-ip-render { flex: 1 1 calc(50% - 4px); margin-top: 0; width: auto; white-space: nowrap; }
   .pcr-ed-ip-render {
     width: 100%; margin-top: 6px; padding: 7px 10px; font-size: 12.5px; color: #fff; cursor: pointer;
     background: #c85909; border: none; border-radius: 5px;

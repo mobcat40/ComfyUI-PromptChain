@@ -38,7 +38,7 @@
         116
       ],
       "widgets_values": [
-        ""
+        "blurry, low-resolution, grainy, pixelated, distorted, compression artifacts, watermark"
       ],
       "properties": {
         "Node name for S&R": "CLIPTextEncode"
@@ -57,10 +57,10 @@
       "widgets_values": [
         826502184750291,
         "randomize",
-        30,
+        25,
         3.5,
-        "er_sde",
-        "beta",
+        "euler",
+        "simple",
         1
       ],
       "properties": {
@@ -145,8 +145,8 @@
         144
       ],
       "widgets_values": [
-        1024,
-        1024,
+        1408,
+        1408,
         1
       ],
       "properties": {
@@ -183,8 +183,8 @@
       "widgets_values": [
         0.90625,
         0.5,
-        1024,
-        1024
+        1408,
+        1408
       ],
       "properties": {
         "Node name for S&R": "ModelSamplingFlux"

@@ -209,6 +209,23 @@
       "properties": {
         "Node name for S&R": "VAELoader"
       }
+    },
+    {
+      "type": "CLIPTextEncode",
+      "offset": [
+        820.0,
+        220.0
+      ],
+      "size": [
+        225,
+        116
+      ],
+      "widgets_values": [
+        ""
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      }
     }
   ],
   "connections": [
@@ -225,7 +242,7 @@
       "to_slot": 1
     },
     {
-      "from_node_idx": 0,
+      "from_node_idx": 11,
       "from_slot": 0,
       "to_node_idx": 1,
       "to_slot": 2
@@ -277,12 +294,23 @@
       "from_slot": 0,
       "to_node_idx": 9,
       "to_slot": 1
+    },
+    {
+      "from_node_idx": 4,
+      "from_slot": 0,
+      "to_node_idx": 11,
+      "to_slot": 0
     }
   ],
   "anchorConnections": [
     {
       "from_slot": 1,
       "to_node_idx": 0,
+      "to_slot": 1
+    },
+    {
+      "from_slot": 2,
+      "to_node_idx": 11,
       "to_slot": 1
     }
   ]

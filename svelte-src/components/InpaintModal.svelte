@@ -80,6 +80,10 @@
   let engineKind = $derived(engineEntry
     ? (engineEntry.architecture === "qwen_edit" ? "qwen" : engineEntry.architecture === "flux" ? "flux1" : engineEntry.architecture === "krea2" ? "krea2" : "sdxl")
     : "source");
+  // Realism mode: a krea2_turbo-only recipe (abliterated encoder + realism/bypass
+  // LoRAs). Inpaint keeps qwen_image_vae (seam-safe) and MaskedDetail's sampler.
+  let realism = $state(false);
+  let realismAvailable = $derived(engineKind === "krea2" && /turbo/i.test(engineEntry?.filename || ""));
   let engineGroups = $derived({
     sdxl: (caps?.engineModels || []).filter((m) => m.architecture === "sdxl"),
     flux1: (caps?.engineModels || []).filter((m) => m.architecture === "flux"),
@@ -792,6 +796,7 @@
         : engineKind === "qwen" ? "qwen-edit" : "source",
       engineModel: engineEntry ? { hash: engineEntry.hash, filename: engineEntry.filename } : undefined,
       engineGen: engineEntry?.gen || undefined,
+      realism: realismAvailable ? realism : undefined,
       // The qwen builder crops around the mask client-side — the bbox is
       // known here (the painted canvas), not on the server.
       maskBbox: engineKind === "qwen" ? maskBboxFromCanvas() : undefined,
@@ -1051,6 +1056,12 @@
               <div class="pcr-ip-hint">re-renders the painted region with this Krea 2 model at the denoise below — describe the content, sharp detail and clean structure</div>
             {:else if engineKind === "qwen"}
               <div class="pcr-ip-hint">follows your instruction inside the mask only — unmasked pixels stay untouched; the region renders at full model resolution</div>
+            {/if}
+            {#if realismAvailable}
+              <label class="pcr-ip-hint" style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-top:6px;">
+                <input type="checkbox" bind:checked={realism} />
+                Realism — abliterated encoder + realism/bypass LoRAs (NSFW-capable)
+              </label>
             {/if}
             </div>
           {/if}

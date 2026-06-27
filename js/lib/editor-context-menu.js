@@ -37,7 +37,7 @@ function closeMenu() {
 
 // ── graph traversal ──────────────────────────────────────────────
 
-const KSAMPLER_TYPES = new Set(["KSampler", "KSamplerAdvanced", "PromptChain_RegionalDetailer", "SamplerCustomAdvanced", "UltimateSDUpscale", "UltimateSDUpscaleNoUpscale", "PromptChain_IdeogramSampler"]);
+const KSAMPLER_TYPES = new Set(["KSampler", "KSamplerAdvanced", "PromptChain_RegionalDetailer", "SamplerCustomAdvanced", "UltimateSDUpscale", "UltimateSDUpscaleNoUpscale", "PromptChain_IdeogramSampler", "ClownsharKSampler_Beta"]);
 const LOAD_IMAGE_TYPES = new Set(["LoadImage", "LoadImageOutput"]);
 function _findDownstream(startNode, targetTypes, graph) {
   const visited = new Set();

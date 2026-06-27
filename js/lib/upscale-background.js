@@ -321,7 +321,14 @@ export function enlargeImageInBackground(inputRef, targetW, targetH, engine = "u
   const workflowId = globalThis.crypto?.randomUUID ? crypto.randomUUID() : `${Date.now().toString(16)}-bg`;
   return new Promise((resolve, reject) => {
     let promptId = null;
+    let settled = false;
     let lastImage = null;
+    // A cached enlarge executes in ~0s, so its execution_success can reach the
+    // listener BEFORE queuePrompt's response resolves our prompt_id. Matching a
+    // real event against a still-null promptId silently drops it and the promise
+    // hangs forever — which strands the Edit "Add to Edit" handback awaiting it.
+    // Buffer every event until the id is known, then replay against it.
+    const pending = [];
     const cleanup = () => {
       api.removeEventListener("executed", onExecuted);
       api.removeEventListener("execution_success", onSuccess);
@@ -329,21 +336,26 @@ export function enlargeImageInBackground(inputRef, targetW, targetH, engine = "u
       api.removeEventListener("execution_interrupted", onError);
       if (promptId) externallyTrackedPrompts.delete(promptId);
     };
-    const onExecuted = ({ detail }) => {
+    const settle = (fn, arg) => { if (settled) return; settled = true; cleanup(); fn(arg); };
+    const takeExecuted = (detail) => {
       if (detail?.prompt_id !== promptId || !detail?.output?.images?.length) return;
       lastImage = detail.output.images[detail.output.images.length - 1];
     };
-    const onSuccess = ({ detail }) => {
-      if (detail?.prompt_id !== promptId) return;
-      cleanup();
-      if (lastImage) resolve(lastImage);
-      else reject(new Error("background enlarge produced no image"));
+    const takeSuccess = (detail) => {
+      if (detail?.prompt_id !== promptId || settled) return;
+      if (lastImage) { settle(resolve, lastImage); return; }
+      // A fully-cached run can emit execution_success without re-emitting its
+      // executed (no image over the wire) — recover the output from history.
+      recoverEnlargeFromHistory(promptId).then((img) =>
+        img ? settle(resolve, img) : settle(reject, new Error("background enlarge produced no image")));
     };
-    const onError = ({ detail }) => {
+    const takeError = (detail) => {
       if (detail?.prompt_id !== promptId) return;
-      cleanup();
-      reject(new Error(detail?.exception_message || "background enlarge failed"));
+      settle(reject, new Error(detail?.exception_message || "background enlarge failed"));
     };
+    const onExecuted = ({ detail }) => promptId ? takeExecuted(detail) : pending.push(["executed", detail]);
+    const onSuccess = ({ detail }) => promptId ? takeSuccess(detail) : pending.push(["success", detail]);
+    const onError = ({ detail }) => promptId ? takeError(detail) : pending.push(["error", detail]);
     api.addEventListener("executed", onExecuted);
     api.addEventListener("execution_success", onSuccess);
     api.addEventListener("execution_error", onError);
@@ -354,14 +366,38 @@ export function enlargeImageInBackground(inputRef, targetW, targetH, engine = "u
         promptId = res?.prompt_id || null;
         if (promptId) externallyTrackedPrompts.add(promptId);
         disarmExternalQueue();
-        if (!promptId) { cleanup(); reject(new Error("queue returned no prompt id")); }
+        if (!promptId) { settle(reject, new Error("queue returned no prompt id")); return; }
+        // Replay buffered events now the id is known — executed first so lastImage
+        // is set before any buffered success reads it.
+        for (const [kind, detail] of pending) if (kind === "executed") takeExecuted(detail);
+        for (const [kind, detail] of pending) {
+          if (kind === "success") takeSuccess(detail);
+          else if (kind === "error") takeError(detail);
+        }
+        pending.length = 0;
       })
       .catch((e) => {
         disarmExternalQueue();
-        cleanup();
-        reject(new Error(e?.response?.error?.message || e?.message || "queue rejected the enlarge prompt"));
+        settle(reject, new Error(e?.response?.error?.message || e?.message || "queue rejected the enlarge prompt"));
       });
   });
+}
+
+// Last output image of a finished prompt, read straight from history — the net
+// for a cached enlarge whose execution_success carries no image.
+async function recoverEnlargeFromHistory(promptId) {
+  try {
+    const res = await api.fetchApi(`/history/${promptId}`);
+    const outputs = (await res.json())?.[promptId]?.outputs || {};
+    let last = null;
+    for (const nodeId of Object.keys(outputs)) {
+      const imgs = outputs[nodeId]?.images;
+      if (imgs?.length) last = imgs[imgs.length - 1];
+    }
+    return last;
+  } catch {
+    return null;
+  }
 }
 
 // ── enlarged-base cache (NoUpscale tile engines) ───────────────────────────

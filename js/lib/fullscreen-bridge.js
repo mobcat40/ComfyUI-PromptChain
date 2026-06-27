@@ -55,7 +55,7 @@ let focusedGroup = null;
 // PromptChain feeding them. Mirrored from main.js — the canonical set.
 const KSAMPLER_TYPES = new Set([
   "KSampler", "KSamplerAdvanced", "PromptChain_RegionalDetailer", "SamplerCustomAdvanced", "UltimateSDUpscale", "UltimateSDUpscaleNoUpscale",
-  "PromptChain_IdeogramSampler",
+  "PromptChain_IdeogramSampler", "ClownsharKSampler_Beta",
 ]);
 
 // Workflow-level fullscreen state stash. The preview panels are

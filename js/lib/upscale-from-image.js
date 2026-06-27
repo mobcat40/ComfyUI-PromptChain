@@ -1869,8 +1869,13 @@ function buildKrea2TileStage(graph, LG, place, opts) {
   if (unetFile && Array.isArray(unetOpts) && !unetOpts.includes(unetFile)) unetOpts.push(unetFile);
   if (!unetFile) unetFile = unetOpts.find((o) => /krea2/i.test(o));
   const clip = LG.createNode("CLIPLoader");
-  const clipFile = (clip?.widgets?.find((x) => x.name === "clip_name")?.options?.values || [])
-    .find((o) => /qwen3vl.*4b|qwen3.?vl.*4b/i.test(o));
+  // Realism mode (krea2_turbo): abliterated Qwen3-VL encoder. The VAE stays
+  // qwen_image_vae below — a tile decoded through wan_2.1 would seam against the
+  // qwen-decoded surround (see the VAE note).
+  const clipNames = clip?.widgets?.find((x) => x.name === "clip_name")?.options?.values || [];
+  const clipFile = opts.realism
+    ? clipNames.find((o) => /huihui.*qwen3.?vl.*4b.*abliterated|qwen3.?vl.*4b.*abliterated/i.test(o))
+    : clipNames.find((o) => /qwen3vl.*4b|qwen3.?vl.*4b/i.test(o));
   const vae = LG.createNode("VAELoader");
   // Use Krea 2's native VAE (qwen_image_vae) for the tile encode AND decode. A
   // re-detailed section is composited back into pixels that were generated and
@@ -1882,10 +1887,14 @@ function buildKrea2TileStage(graph, LG, place, opts) {
   const vaeOpts = vae?.widgets?.find((x) => x.name === "vae_name")?.options?.values || [];
   const vaeFile = vaeOpts.find((o) => /qwen.*image.*vae/i.test(o))
     || vaeOpts.find((o) => /wan.*2[._]?1.*vae/i.test(o) && !/upscale|2x/i.test(o));
+  const loraNames = (opts.realism && LG.createNode("LoraLoaderModelOnly")?.widgets?.find((x) => x.name === "lora_name")?.options?.values) || [];
+  const projLora = opts.realism && loraNames.find((o) => /krea2_turbo_projector_scale/i.test(o));
+  const realLora = opts.realism && loraNames.find((o) => /krea2-realism/i.test(o));
   const posEnc = LG.createNode("CLIPTextEncode");
   const negEnc = LG.createNode("CLIPTextEncode");
   const usdu = LG.createNode("UltimateSDUpscaleNoUpscale");
   if (!(unet && unetFile && clip && clipFile && vae && vaeFile && posEnc && negEnc && usdu)) return null;
+  if (opts.realism && (!projLora || !realLora)) { console.warn("[PromptChain][upscale] Realism mode needs Krea2-realism-V1 + krea2_turbo_projector_scale LoRAs installed"); return null; }
   place(unet, 0, 0);
   place(clip, 0, 180);
   place(vae, 0, 360);
@@ -1902,7 +1911,23 @@ function buildKrea2TileStage(graph, LG, place, opts) {
   clip.connect(0, posEnc, inputIdx(posEnc, "clip", 0));
   clip.connect(0, negEnc, inputIdx(negEnc, "clip", 0));
   opts.imageNode.connect(opts.imageSlot || 0, usdu, inputIdx(usdu, "upscaled_image", 0));
-  unet.connect(0, usdu, inputIdx(usdu, "model", 1));
+  let modelNode = unet;
+  const realismLoras = [];
+  if (opts.realism && projLora && realLora) {
+    const lora1 = LG.createNode("LoraLoaderModelOnly");
+    const lora2 = LG.createNode("LoraLoaderModelOnly");
+    place(lora1, 0, 540);
+    place(lora2, 300, 540);
+    setNamedWidget(lora1, "lora_name", projLora);
+    setNamedWidget(lora1, "strength_model", 0.5);
+    setNamedWidget(lora2, "lora_name", realLora);
+    setNamedWidget(lora2, "strength_model", 0.6);
+    modelNode.connect(0, lora1, inputIdx(lora1, "model", 0));
+    lora1.connect(0, lora2, inputIdx(lora2, "model", 0));
+    modelNode = lora2;
+    realismLoras.push(lora1.id, lora2.id);
+  }
+  modelNode.connect(0, usdu, inputIdx(usdu, "model", 1));
   posEnc.connect(0, usdu, inputIdx(usdu, "positive", 2));
   negEnc.connect(0, usdu, inputIdx(usdu, "negative", 3));
   vae.connect(0, usdu, inputIdx(usdu, "vae", 4));
@@ -1921,7 +1946,7 @@ function buildKrea2TileStage(graph, LG, place, opts) {
   if (typeof opts.seamFixDenoise === "number") setNamedWidget(usdu, "seam_fix_denoise", opts.seamFixDenoise);
   setNamedWidget(usdu, "force_uniform_tiles", true);
   setNamedWidget(usdu, "tiled_decode", false);
-  return { usdu, sideInputIds: [unet.id, clip.id, vae.id, posEnc.id, negEnc.id] };
+  return { usdu, sideInputIds: [unet.id, clip.id, vae.id, posEnc.id, negEnc.id, ...realismLoras] };
 }
 
 // The modal's tuning knobs in tile-stage shape — shared by every tile engine.
@@ -2096,6 +2121,7 @@ function buildKrea2EngineGraph(data, options = {}) {
       imageNode: fit,
       unetName: options.engineModel?.filename || null,
       positiveText: (options.prompt || "").trim() || SDXL_TILE_NEUTRAL_POSITIVE,
+      realism: !!options.realism,
       ...tileStageOpts(options),
     }));
 }

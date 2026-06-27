@@ -49,6 +49,7 @@ from .core import tag_api  # noqa: F401
 from .core import wildcard_api  # noqa: F401
 from .core import history_api  # noqa: F401
 from .core import model_api  # noqa: F401
+from .core import lora_catalog  # noqa: F401
 from .core import civitai_api  # noqa: F401
 from .core import system_api  # noqa: F401
 from .core import node_install_api  # noqa: F401

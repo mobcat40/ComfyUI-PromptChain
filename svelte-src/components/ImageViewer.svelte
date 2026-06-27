@@ -2,6 +2,7 @@
   import { onDestroy } from "svelte";
   import UpscaleOptionsModal from "./UpscaleOptionsModal.svelte";
   import InpaintModal from "./InpaintModal.svelte";
+  import I2IModal from "./I2IModal.svelte";
   import EditModal from "./EditModal.svelte";
   import RePoseModal from "./RePoseModal.svelte";
   import ExtendModal from "./ExtendModal.svelte";
@@ -25,6 +26,8 @@
     onUpscaleEnlarge = null,
     onInpaintPrepare = null,
     onInpaintRun = null,
+    onI2iPrepare = null,     // (entry) => Promise<{data, caps}> — i2i caps (inpaint caps, no mask)
+    onI2iRun = null,         // (prepared, options) => tracker — background full-frame i2i
     onInpaintSave = null,
     onInpaintUploadReference = null,
     onInpaintInstallPack = null,
@@ -1517,6 +1520,11 @@
   let inpaintEditMask = $state(null); // the region mask handed from Edit
   let inpaintFromEdit = $state(false);
 
+  // Edit → i2i handoff state (full-frame re-diffusion, no mask).
+  let i2iModalOpen = $state(false);
+  let i2iPrepared = $state(null);
+  let i2iFromEdit = $state(false);
+
   async function openEdit(targetHash = displayedHash) {
     if (editPreparing || !onEditPrepare || !onEditSave) return;
     if (isVideoHash(targetHash)) return; // the editor can't open a video clip
@@ -1615,6 +1623,42 @@
       try { await editModalRef.addLayerFromResult(url, doneState.appliedMask || null); } catch (e) { console.error("[PromptChain] add inpaint layer failed", e); }
     }
     closeInpaintFromEdit();
+  }
+
+  // Edit → i2i handoff: open the i2i modal on the edited composite (already
+  // /16-snapped by EditModal.openI2iHandoff); its result returns to Edit as a
+  // new full-frame layer. Mirrors openInpaintFromEdit, minus the mask.
+  async function openI2iFromEdit({ compositeBlob, width: encW, height: encH }) {
+    if (!onI2iPrepare || !onI2iRun || !editEntry) return;
+    try {
+      const prepared = await onI2iPrepare(editEntry);
+      if (!prepared) return;
+      // Upload the composite as the render input (reuse the inpaint uploader —
+      // same content-addressed input/promptchain_inpaint scoping).
+      const name = onInpaintUploadReference
+        ? await onInpaintUploadReference(new File([compositeBlob], "edit-composite.png", { type: "image/png" }))
+        : null;
+      i2iFromEdit = true;
+      i2iPrepared = {
+        ...prepared,
+        data: { ...prepared.data, input_ref: name || prepared.data?.input_ref, width: encW, height: encH },
+        sourceUrl: URL.createObjectURL(compositeBlob),
+      };
+      i2iModalOpen = true;
+    } catch (e) {
+      console.error("[PromptChain] i2i-from-edit failed", e);
+    }
+  }
+  function closeI2iFromEdit() {
+    i2iModalOpen = false; i2iFromEdit = false; i2iPrepared = null;
+  }
+  async function handleI2iToEdit(doneState) {
+    const t = doneState?.temp;
+    if (t && editModalRef?.addI2iLayerFromResult) {
+      const url = apiURL(`/view?filename=${encodeURIComponent(t.filename)}&subfolder=${encodeURIComponent(t.subfolder || "")}&type=${t.type || "temp"}&rand=${Math.random()}`);
+      try { await editModalRef.addI2iLayerFromResult(url); } catch (e) { console.error("[PromptChain] add i2i layer failed", e); }
+    }
+    closeI2iFromEdit();
   }
 
   // Edit → Upscale handoff: the upscale pipeline runs on the region crop, and
@@ -2950,6 +2994,26 @@
   onCancel={() => { if (inpaintFromEdit) closeInpaintFromEdit(); else { inpaintModalOpen = false; inpaintPrepared = null; } }}
 />
 
+<I2IModal
+  open={i2iModalOpen}
+  imageKey={displayedHash || ""}
+  sourceUrl={i2iPrepared?.sourceUrl || ""}
+  width={i2iPrepared?.data?.width || 0}
+  height={i2iPrepared?.data?.height || 0}
+  filename={i2iPrepared?.data?.filename || ""}
+  caps={i2iPrepared?.caps}
+  prefillPrompt={i2iPrepared?.caps?.prefillPrompt
+    || (imageInfo?.prompt ? imageInfo.prompt + (imageInfo.negative ? `\n\nNegative Prompt:\n${imageInfo.negative}` : "") : "")}
+  referencePrompt={i2iPrepared?.caps?.referencePrompt
+    || (imageInfo?.prompt ? imageInfo.prompt + (imageInfo.negative ? `\n\nNegative Prompt:\n${imageInfo.negative}` : "") : "")}
+  {apiURL}
+  onRun={(options) => onI2iRun(i2iPrepared, options)}
+  mountPromptEditor={onMountPromptEditor}
+  onUseInEdit={handleI2iToEdit}
+  elevated={true}
+  onCancel={closeI2iFromEdit}
+/>
+
 <EditModal
   bind:this={editModalRef}
   open={editModalOpen}
@@ -2966,8 +3030,9 @@
   onOpenInpaint={onInpaintRegion ? openInpaintFromEdit : null}
   onOpenUpscale={onUpscalePrepare && onUpscaleBackground && onInpaintUploadReference ? openUpscaleFromEdit : null}
   onOpenRepose={onReposeCaps && onReposeRun && onMountPoser && onInpaintUploadReference ? openReposeFromEdit : null}
+  onOpenI2i={onI2iPrepare && onI2iRun && onInpaintUploadReference ? openI2iFromEdit : null}
   figureRegions={editFigureRegions}
-  suspended={(inpaintFromEdit && inpaintModalOpen) || (upscaleFromEdit && upscaleModalOpen) || reposeModalOpen}
+  suspended={(inpaintFromEdit && inpaintModalOpen) || (upscaleFromEdit && upscaleModalOpen) || reposeModalOpen || i2iModalOpen}
   onCancel={() => { editModalOpen = false; editPrepared = null; editEntry = null; }}
 />
 

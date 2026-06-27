@@ -70,6 +70,10 @@
       : engineEntry.architecture === "krea2" ? "krea2"
       : engineEntry.architecture === "flux" ? "flux1" : "sdxl")
     : (engineSel === "source" ? "source" : "plain"));
+  // Realism mode: a krea2_turbo-only recipe (abliterated encoder + realism/bypass
+  // LoRAs). Tile upscale keeps qwen_image_vae (seam-safe) and USDU's sampler.
+  let realism = $state(false);
+  let realismAvailable = $derived(engineKind === "krea2" && /turbo/i.test(engineEntry?.filename || ""));
   let sourceGraftable = $derived(engineKind === "source" && !!caps?.graftable);
   // Tile engines share the USDU recipe surface (denoise/climb/tile knobs);
   // qwen is the whole-frame re-render with its own reduced surface.
@@ -486,6 +490,7 @@
     if (tileEngine && climbStage !== "ultrasharp") base.climbStage = climbStage;
     if (engineKind !== "source" && climbModel) base.climbModel = climbModel;
     if (engineKind === "source" && caps?.architecture === "flux2") base.preserveDefocus = preserveDefocus;
+    if (realismAvailable) base.realism = realism;
     if (tileEngine || engineKind === "qwen") {
       // Engine graphs have no source conditioning to fall back on — always
       // send the current text (empty → the builder's per-arch constant).
@@ -830,6 +835,12 @@
                 <span class="pcr-up-cond-hint">re-renders the whole frame at ~2MP from your instruction — composition can shift slightly; the climb model below pushes to the target size</span>
               {:else if engineKind === "plain"}
                 <span class="pcr-up-cond-hint">deterministic enlargement with the climb model below — add a Restore step for degraded sources (webcam, jpeg, blur)</span>
+              {/if}
+              {#if realismAvailable}
+                <label class="pcr-up-cond-hint" style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-top:6px;">
+                  <input type="checkbox" bind:checked={realism} />
+                  Realism — abliterated encoder + realism/bypass LoRAs (NSFW-capable)
+                </label>
               {/if}
             </div>
             </div>
