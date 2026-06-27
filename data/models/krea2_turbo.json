@@ -1,0 +1,192 @@
+{
+  "display_name": "Krea 2 - Turbo",
+  "model_name": "Krea 2 Turbo",
+  "version": "Turbo",
+  "architecture": "krea2",
+  "family": "krea2_turbo",
+  "author": "Krea AI",
+  "description": "Krea 2 Turbo — a distilled 12B dense Diffusion Transformer for fast, high-quality, aesthetic-first text-to-image at native 2K. Uses a Qwen3-VL text encoder and the Qwen Image VAE. 8-step, cfg 1.0. nvfp4 variant is the fastest on Blackwell (RTX 50-series) native FP4.",
+  "license": "Krea 2 Community License Agreement v.1 (open weights; commercial use requires an Enterprise License once total annual revenue reaches $1M)",
+  "tags": [
+    "krea",
+    "krea2",
+    "dit",
+    "transformer",
+    "photorealistic",
+    "aesthetic",
+    "turbo",
+    "fast"
+  ],
+  "url": "https://huggingface.co/Comfy-Org/Krea-2",
+  "release_date": "2026-06-18",
+  "tag_sources": [],
+  "tag_format": "spaces",
+  "prompt_style": "natural",
+  "trigger": "",
+  "default_prompt_id": "krea2-default",
+  "negative": "",
+  "notes": "8 steps, cfg 1.0, euler+simple (the official Krea recipe — default; er_sde+simple is available for extra grain on photoreal skin), denoise 1.0. Distilled turbo — keep cfg at 1.0 (no real negative). Native 2K (supports 1K-2K). Reuses the Qwen Image VAE (qwen_image_vae.safetensors). Requires a ComfyUI build with the 'krea2' CLIP type (Krea 2 release, June 2026 or newer). RAW-trained Krea 2 LoRAs express on Turbo.",
+  "files": [
+    {
+      "label": "Diffusion Model",
+      "folder": "diffusion_models",
+      "variants": [
+        {
+          "precision": "fp8",
+          "filename": "krea2_turbo_fp8_scaled.safetensors",
+          "size_bytes": 13141730784,
+          "source": {
+            "provider": "huggingface",
+            "repo": "Comfy-Org/Krea-2",
+            "path": "diffusion_models/krea2_turbo_fp8_scaled.safetensors"
+          },
+          "quick_hash": null,
+          "sha256": null
+        },
+        {
+          "precision": "bf16",
+          "filename": "krea2_turbo_bf16.safetensors",
+          "size_bytes": 26283332608,
+          "source": {
+            "provider": "huggingface",
+            "repo": "Comfy-Org/Krea-2",
+            "path": "diffusion_models/krea2_turbo_bf16.safetensors"
+          },
+          "quick_hash": null,
+          "sha256": null
+        },
+        {
+          "precision": "mxfp8",
+          "filename": "krea2_turbo_mxfp8.safetensors",
+          "size_bytes": 13532318080,
+          "source": {
+            "provider": "huggingface",
+            "repo": "Comfy-Org/Krea-2",
+            "path": "diffusion_models/krea2_turbo_mxfp8.safetensors"
+          },
+          "quick_hash": null,
+          "sha256": null
+        },
+        {
+          "precision": "nvfp4",
+          "filename": "krea2_turbo_nvfp4.safetensors",
+          "size_bytes": 7673668288,
+          "source": {
+            "provider": "huggingface",
+            "repo": "Comfy-Org/Krea-2",
+            "path": "diffusion_models/krea2_turbo_nvfp4.safetensors"
+          },
+          "quick_hash": null,
+          "sha256": null
+        }
+      ]
+    },
+    {
+      "label": "Text Encoder",
+      "folder": "text_encoders",
+      "variants": [
+        {
+          "precision": "fp8",
+          "filename": "qwen3vl_4b_fp8_scaled.safetensors",
+          "size_bytes": 5242467968,
+          "source": {
+            "provider": "huggingface",
+            "repo": "Comfy-Org/Krea-2",
+            "path": "text_encoders/qwen3vl_4b_fp8_scaled.safetensors"
+          },
+          "sha256": null
+        },
+        {
+          "precision": "bf16",
+          "filename": "qwen3vl_4b_bf16.safetensors",
+          "size_bytes": 8875719384,
+          "source": {
+            "provider": "huggingface",
+            "repo": "Comfy-Org/Krea-2",
+            "path": "text_encoders/qwen3vl_4b_bf16.safetensors"
+          },
+          "sha256": null
+        }
+      ]
+    },
+    {
+      "label": "VAE",
+      "folder": "vae",
+      "filename": "qwen_image_vae.safetensors",
+      "size_bytes": 253806246,
+      "source": {
+        "provider": "huggingface",
+        "repo": "Comfy-Org/Krea-2",
+        "path": "vae/qwen_image_vae.safetensors"
+      },
+      "sha256": null
+    }
+  ],
+  "nodes": {
+    "KSampler": {
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "steps_range": [
+        6,
+        12
+      ],
+      "cfg_range": [
+        1.0,
+        1.5
+      ],
+      "sampler_name_options": [
+        "er_sde",
+        "euler",
+        "res_multistep",
+        "dpmpp_2m",
+        "euler_ancestral"
+      ],
+      "scheduler_options": [
+        "simple",
+        "beta",
+        "sgm_uniform",
+        "normal"
+      ]
+    },
+    "EmptySD3LatentImage": {
+      "width": 1024,
+      "height": 1536,
+      "_resolutions": [
+        {
+          "width": 1024,
+          "height": 1536
+        },
+        {
+          "width": 1536,
+          "height": 1024
+        },
+        {
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "width": 1152,
+          "height": 1536
+        },
+        {
+          "width": 1536,
+          "height": 1152
+        },
+        {
+          "width": 1408,
+          "height": 1408
+        },
+        {
+          "width": 1152,
+          "height": 2048
+        },
+        {
+          "width": 2048,
+          "height": 1152
+        }
+      ]
+    }
+  }
+}

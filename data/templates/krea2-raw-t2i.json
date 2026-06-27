@@ -1,0 +1,268 @@
+{
+  "name": "Text-to-Image (RAW base)",
+  "category": "Generation",
+  "order": 4,
+  "scope": {
+    "type": "family",
+    "architecture": "krea2",
+    "family": "krea2_raw"
+  },
+  "created_at": 1782328400,
+  "id": "c5a9e2f0-1b3d-4e6a-8c7f-9d2b4a6e1f08",
+  "nodes": [
+    {
+      "type": "CLIPTextEncode",
+      "offset": [
+        899.9999977111815,
+        0
+      ],
+      "size": [
+        225,
+        116
+      ],
+      "widgets_values": [
+        ""
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      }
+    },
+    {
+      "type": "CLIPTextEncode",
+      "offset": [
+        899.9999977111815,
+        180.0
+      ],
+      "size": [
+        225,
+        116
+      ],
+      "widgets_values": [
+        ""
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      }
+    },
+    {
+      "type": "KSampler",
+      "offset": [
+        1699.9999685974124,
+        160.0
+      ],
+      "size": [
+        330,
+        474
+      ],
+      "widgets_values": [
+        826502184750291,
+        "randomize",
+        52,
+        5.0,
+        "er_sde",
+        "beta",
+        1
+      ],
+      "properties": {
+        "Node name for S&R": "KSampler"
+      }
+    },
+    {
+      "type": "VAEDecode",
+      "offset": [
+        1750.0000429382326,
+        20.0
+      ],
+      "size": [
+        225,
+        72
+      ],
+      "widgets_values": [],
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      }
+    },
+    {
+      "type": "SaveImage",
+      "offset": [
+        2090.0000285339356,
+        -10.0
+      ],
+      "size": [
+        276.984375,
+        322.984375
+      ],
+      "widgets_values": [
+        "Krea2-RAW/%date:yyyy-MM-dd_hhmmss%"
+      ],
+      "properties": {}
+    },
+    {
+      "type": "CLIPLoader",
+      "offset": [
+        860.0000519714356,
+        340.0
+      ],
+      "size": [
+        346.78125,
+        117.328125
+      ],
+      "widgets_values": [
+        "qwen3vl_4b_fp8_scaled.safetensors",
+        "krea2",
+        "default"
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPLoader"
+      }
+    },
+    {
+      "type": "UNETLoader",
+      "offset": [
+        1239.9999069433584,
+        0
+      ],
+      "size": [
+        371.65625,
+        82.65625
+      ],
+      "widgets_values": [
+        "krea2_raw_fp8_scaled.safetensors",
+        "default"
+      ],
+      "properties": {
+        "Node name for S&R": "UNETLoader"
+      }
+    },
+    {
+      "type": "EmptySD3LatentImage",
+      "offset": [
+        1249.9999315600576,
+        200.0
+      ],
+      "size": [
+        324,
+        144
+      ],
+      "widgets_values": [
+        1024,
+        1024,
+        1
+      ],
+      "properties": {
+        "Node name for S&R": "EmptySD3LatentImage"
+      }
+    },
+    {
+      "type": "VAELoader",
+      "offset": [
+        1239.993419293212,
+        450.0
+      ],
+      "size": [
+        366.40625,
+        82.65625
+      ],
+      "widgets_values": [
+        "qwen_image_vae.safetensors"
+      ],
+      "properties": {
+        "Node name for S&R": "VAELoader"
+      }
+    },
+    {
+      "type": "ModelSamplingFlux",
+      "offset": [
+        1450.0,
+        90.0
+      ],
+      "size": [
+        300,
+        130
+      ],
+      "widgets_values": [
+        0.90625,
+        0.5,
+        1024,
+        1024
+      ],
+      "properties": {
+        "Node name for S&R": "ModelSamplingFlux"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "from_node_idx": 0,
+      "from_slot": 0,
+      "to_node_idx": 2,
+      "to_slot": 1
+    },
+    {
+      "from_node_idx": 1,
+      "from_slot": 0,
+      "to_node_idx": 2,
+      "to_slot": 2
+    },
+    {
+      "from_node_idx": 2,
+      "from_slot": 0,
+      "to_node_idx": 3,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 3,
+      "from_slot": 0,
+      "to_node_idx": 4,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 5,
+      "from_slot": 0,
+      "to_node_idx": 0,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 5,
+      "from_slot": 0,
+      "to_node_idx": 1,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 6,
+      "from_slot": 0,
+      "to_node_idx": 9,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 9,
+      "from_slot": 0,
+      "to_node_idx": 2,
+      "to_slot": 0
+    },
+    {
+      "from_node_idx": 7,
+      "from_slot": 0,
+      "to_node_idx": 2,
+      "to_slot": 3
+    },
+    {
+      "from_node_idx": 8,
+      "from_slot": 0,
+      "to_node_idx": 3,
+      "to_slot": 1
+    }
+  ],
+  "anchorConnections": [
+    {
+      "from_slot": 1,
+      "to_node_idx": 0,
+      "to_slot": 1
+    },
+    {
+      "from_slot": 2,
+      "to_node_idx": 1,
+      "to_slot": 1
+    }
+  ]
+}

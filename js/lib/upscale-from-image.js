@@ -21,6 +21,7 @@
 import { app } from "../../../scripts/app.js";
 import { api } from "../../../scripts/api.js";
 import { getLink } from "./slot-utils.js";
+import { offscreenIdBase } from "./offscreen-graph.js";
 import {
   injectUpscaler,
   buildRegionalUpscaleCond,
@@ -52,6 +53,36 @@ export function reportClientError(where, e, context = null) {
       }),
     }).catch(() => {});
   } catch { /* reporting must never break the flow it reports on */ }
+}
+
+// Diagnostic: log exactly what an upscale Apply submitted, into comfyui.log
+// (as "[upscale-run]") so a run's model/denoise/recipe is recoverable without
+// reverse-engineering the output PNG. apiPrompt is app.graphToPrompt().output.
+export function logUpscaleRun(apiPrompt, engine) {
+  try {
+    if (!apiPrompt || typeof apiPrompt !== "object") return;
+    const vals = Object.values(apiPrompt);
+    const find = (pred) => vals.find(pred) || null;
+    const unet = find((n) => n.class_type === "UNETLoader")?.inputs?.unet_name
+      || find((n) => n.class_type === "CheckpointLoaderSimple" || n.class_type === "CheckpointLoader")?.inputs?.ckpt_name
+      || null;
+    const us = find((n) => (n.class_type || "").includes("UltimateSDUpscale"))?.inputs
+      || find((n) => n.class_type === "KSampler" || n.class_type === "PromptChain_MaskedDetail")?.inputs
+      || {};
+    const climb = find((n) => n.class_type === "UpscaleModelLoader")?.inputs?.model_name || null;
+    const vae = find((n) => n.class_type === "VAELoader")?.inputs?.vae_name
+      || find((n) => n.class_type === "VAEUtils_CustomVAELoader")?.inputs?.vae_name || null;
+    const tile = us.tile_width != null ? `${us.tile_width}x${us.tile_height}` : null;
+    const summary = {
+      engine: engine || "?", model: unet, vae, climb,
+      denoise: us.denoise, cfg: us.cfg, steps: us.steps,
+      sampler: us.sampler_name, scheduler: us.scheduler,
+      tile, upscale_by: us.upscale_by, seam: us.seam_fix_mode, mode: us.mode_type,
+    };
+    reportClientError("upscale-run",
+      { message: `engine=${engine} model=${unet} vae=${vae} denoise=${us.denoise} cfg=${us.cfg} steps=${us.steps} sampler=${us.sampler_name}/${us.scheduler} tile=${tile} upscale_by=${us.upscale_by} seam=${us.seam_fix_mode} climb=${climb}` },
+      summary);
+  } catch { /* never break the run */ }
 }
 
 function freshWorkflowId() {
@@ -144,10 +175,13 @@ export function analyzeUpscaleCaps(data) {
   // renders when the SeedVR2 pack is actually installed.
   const seedvr2Available = !!window.LiteGraph?.registered_node_types?.["SeedVR2VideoUpscaler"];
 
+  // High-Detail krea2 renders decode through VAEUtils_VAEDecodeTiled (spacepxl),
+  // not the stock VAEDecode — still a graftable sampler->decode pipeline, so
+  // accept the tiled decoders too or those renders fall to plain ESRGAN only.
   const graftable = has("UltimateSDUpscale") || (
     has("PromptChain_PromptChain")
     && (has("KSampler") || has("KSamplerAdvanced") || has("SamplerCustomAdvanced"))
-    && has("VAEDecode")
+    && (has("VAEDecode") || has("VAEUtils_VAEDecodeTiled") || has("VAEDecodeTiled"))
   );
   if (!graftable) {
     return {
@@ -290,7 +324,13 @@ export function engineAssetSupport() {
     && comboProbe("UNETLoader", "unet_name").some((o) => /z.?image/i.test(o))
     && comboProbe("CLIPLoader", "clip_name").some((o) => /qwen.*3[._]4b|lumina2/i.test(o))
     && comboProbe("VAELoader", "vae_name").some((o) => /(^|[\\/])ae\.(safetensors|sft)$/i.test(o));
-  return { sdxl, qwen, flux1, zimage };
+  // Krea 2 (DiT, mirrors zimage but no ModelSamplingAuraFlow — shift is baked
+  // into the model class): krea2 UNET + qwen3vl_4b text encoder + qwen_image_vae.
+  const krea2 = !!reg["UltimateSDUpscaleNoUpscale"] && esrgan
+    && comboProbe("UNETLoader", "unet_name").some((o) => /krea2/i.test(o))
+    && comboProbe("CLIPLoader", "clip_name").some((o) => /qwen3vl.*4b|qwen3.?vl.*4b/i.test(o))
+    && comboProbe("VAELoader", "vae_name").some((o) => /qwen.*image.*vae/i.test(o));
+  return { sdxl, qwen, flux1, zimage, krea2 };
 }
 
 // The modal's defaults for a picked engine model. SDXL: the CN-locked tile
@@ -356,6 +396,50 @@ function engineModelDefaults(architecture, config) {
       },
     };
   }
+  if (architecture === "krea2") {
+    // Krea 2 Turbo is step-distilled (cfg 1.0, 8 steps), cfg native (no
+    // FluxGuidance/ModelSampling). TILE denoise stays LOW: a tile routine needs
+    // each tile anchored to the source or adjacent tiles regenerate different
+    // content and won't stitch (visible seams). The catch — at low denoise the
+    // distilled few-step field under-resolves the tile (some residual voronoi/
+    // blotch on smooth skin; NOT a VAE artifact, persists through a clean
+    // wan_2.1_vae decode). Turbo can't fully win either way in a tile pass; the
+    // non-distilled RAW krea2 is the proper clean+coherent tile upscaler.
+    // Turbo defaults to euler+simple (the official Krea recipe; suits the smooth
+    // matte-PVC figurine finish). RAW keeps er_sde (grain-preserving for photoreal).
+    const usdu = nodes.UltimateSDUpscale || {};
+    // RAW = the undistilled base checkpoint. Non-distilled, so it resolves a LOW
+    // denoise tile cleanly (no blotch) while staying anchored to the source (no
+    // seams) — the proper clean+coherent tiled upscaler. It runs a REAL cfg +
+    // full steps; Turbo stays the soft-but-coherent 0.45 / cfg 1.0 / 8-step
+    // compromise. (Same wan_2.1_vae decode + qwen3vl CLIP either way.)
+    const fn = config?.filename || "";
+    const raw = /raw/i.test(fn) && !/turbo/i.test(fn);
+    return {
+      denoise: raw ? 0.35 : 0.45,
+      // No tile ControlNet exists for Krea 2 (standalone DiT, not Flux), so each tile
+      // is anchored only by the img2img floor — push denoise too far and a tile that
+      // contains the whole subject regenerates it (doubling). Cap to the CN-less safe
+      // band; Turbo can't go much below 0.45 without blotching, so 0.45/0.5 is its
+      // narrow usable window. (Stronger re-detail without doubling needs smaller tiles.)
+      denoiseMax: raw ? 0.45 : 0.5,
+      sampler: raw ? "er_sde" : "euler",
+      scheduler: "simple",
+      advanced: {
+        steps: usdu.steps ?? (raw ? 30 : 8),
+        cfg: raw ? 3.5 : 1.0,
+        tile_width: usdu.tile_width ?? 1024,
+        tile_height: usdu.tile_height ?? 1024,
+        mask_blur: 32,
+        tile_padding: 64,
+        mode_type: "Chess", // checkerboard order — neighbours redraw before a tile's seam (cleaner than Linear)
+        seam_fix_mode: raw ? "Half Tile" : "None",
+        // RAW's Half-Tile seam pass must NOT full-repaint (the node default is 1.0, which
+        // makes seam bands hallucinate content that won't match the lightly-detailed tiles).
+        seam_fix_denoise: raw ? 0.3 : undefined,
+      },
+    };
+  }
   const usdu = nodes.UltimateSDUpscale || {};
   return {
     denoise: 0.15,
@@ -395,7 +479,7 @@ export async function fetchEngineModels() {
     if (!listRes.ok) return [];
     const models = ((await listRes.json())?.models || [])
       .filter((m) => m.architecture === "sdxl" || m.architecture === "qwen_edit"
-        || m.architecture === "zimage"
+        || m.architecture === "zimage" || m.architecture === "krea2"
         // flux = the whole FLUX.1 family; edit/control/util variants don't
         // belong in a faithful tile pass (kontext re-renders, schnell is
         // step-distilled, fill/canny/depth/redux are tool models).
@@ -481,6 +565,7 @@ function recommendedSamplerFor(architecture) {
   const arch = architecture || "";
   if (arch === "flux" || arch === "flux2") return { sampler: "euler", scheduler: "simple" };
   if (arch === "zimage") return { sampler: "res_multistep", scheduler: "beta" };
+  if (arch === "krea2") return { sampler: "euler", scheduler: "simple" };
   return { sampler: "dpmpp_2m_sde", scheduler: "karras" };
 }
 
@@ -533,6 +618,10 @@ function usduBuildDefaults(architecture, saved) {
   const arch = architecture || "";
   if (arch === "flux" || arch === "flux2") d.cfg = 1.0;
   else if (arch === "zimage") d.cfg = 1.3;
+  // Krea 2 carries cfg natively at 1.0 (no FluxGuidance); euler/simple/0.45
+  // denoise are applied in buildKrea2TileStage's defaults, not here (this dict
+  // only holds USDU shape knobs).
+  else if (arch === "krea2") d.cfg = 1.0;
   for (const key of Object.keys(d)) {
     if (saved && saved[key] !== undefined) d[key] = saved[key];
   }
@@ -570,13 +659,16 @@ export async function prepareUpscale(entry) {
     const recommended = recommendedSamplerFor(architecture);
     // The modal's prompt editor scopes templates/autocomplete to this when
     // the source engine is selected (a picked engine model overrides it).
-    caps.sourceModelInfo = hash ? { hash, architecture } : null;
-    // Z-Image Turbo is step-distilled: at low denoise ComfyUI truncates the sigma
-    // schedule to its low-σ tail, which the few-step field can't resolve -> blotchy
-    // skin. 0.7 lands back in its trained high-σ regime (clean, heavier repaint).
-    // Base is non-distilled and resolves a low-denoise tail fine.
+    caps.sourceModelInfo = hash ? { hash, architecture, family } : null;
+    // Krea 2 Turbo source-graft is a TILE pass: denoise stays LOW so each tile
+    // anchors to the source and they stitch (high denoise = each tile a full
+    // re-render = seams). The distillation means low-denoise tiles still carry
+    // some residual blotch on smooth skin — that's a Turbo limitation a tile
+    // routine can't escape; the non-distilled RAW model is the real clean+
+    // coherent upscaler.
     caps.defaultDenoise = typeof settings.denoise === "number" ? settings.denoise
-    : (architecture === "zimage" ? (family === "zimage_base" ? 0.15 : 0.7) : 0.3);
+    : (architecture === "zimage" ? (family === "zimage_base" ? 0.15 : 0.7)
+       : architecture === "krea2" ? 0.45 : 0.3);
     // Recommendation chain: a USDU-specific saved value > the MODEL's own
     // recommended gen sampler (its config's KSampler section) > generic arch
     // default. The model knows itself better than our tiling default does.
@@ -586,9 +678,14 @@ export async function prepareUpscale(entry) {
     caps.samplerAlternates = ksampler.sampler_name_options || [];
     caps.schedulerAlternates = ksampler.scheduler_options || [];
     // …but the SELECTED default is what the image was generated with, so a
-    // deliberate deviation carries through to the upscale.
+    // deliberate deviation carries through to the upscale — EXCEPT Krea 2, whose
+    // re-detail recipe is its own (euler is the house default). Inheriting a
+    // stale gen sampler from an older er_sde render would silently override that
+    // default; same deliberate skip as the flux2 refine below.
     const inherited = workflowSamplerChoice(data.workflow, combos.samplers, combos.schedulers);
-    caps.defaultSampler = inherited?.sampler || caps.recommendedSampler;
+    caps.defaultSampler = architecture === "krea2"
+      ? caps.recommendedSampler
+      : (inherited?.sampler || caps.recommendedSampler);
     caps.defaultScheduler = inherited?.scheduler || caps.recommendedScheduler;
     caps.advancedDefaults = usduBuildDefaults(architecture, settings);
     caps.architecture = architecture;
@@ -620,7 +717,8 @@ export async function prepareUpscale(entry) {
     (m.architecture === "sdxl" && support.sdxl)
     || (m.architecture === "qwen_edit" && support.qwen)
     || (m.architecture === "flux" && support.flux1)
-    || (m.architecture === "zimage" && support.zimage));
+    || (m.architecture === "zimage" && support.zimage)
+    || (m.architecture === "krea2" && support.krea2));
   caps.enginePromptDefaults = { qwen: QWEN_ENHANCE_INSTRUCTION, sdxlFallback: SDXL_TILE_NEUTRAL_POSITIVE };
   // Climb-model picker: the whole installed ESRGAN-family list, with the
   // empirically-settled v1 pick as the recommendation. Degradation-trained
@@ -629,8 +727,15 @@ export async function prepareUpscale(entry) {
   caps.recommendedUpscaleModel = defaultUpscaleModelPick(caps.upscaleModelOptions);
   // Restore recommendation, by SOURCE: a jpeg or small input likely carries
   // degradation a plain GAN climb would smear (the 736px webcam eye-smear);
-  // clean renders gain nothing from the restore round-trip.
-  caps.recommendedRestore = caps.seedvr2Available
+  // clean renders gain nothing from the restore round-trip. A GENERATED render
+  // (embedded sampler) is clean by construction — a small/square one (1024²) is
+  // NOT degraded, so don't let the size rule false-trigger SeedVR2 on it; only
+  // raw imported photos (no generation workflow) get the restore recommendation.
+  // Matches the prior A/B: UltraSharp beats SeedVR2 on clean renders.
+  const srcNodes = data.workflow?.nodes || [];
+  const isRender = srcNodes.some((n) => n.type === "KSampler" || n.type === "KSamplerAdvanced"
+    || n.type === "SamplerCustom" || n.type === "SamplerCustomAdvanced");
+  caps.recommendedRestore = caps.seedvr2Available && !isRender
     && (/\.jpe?g$/i.test(data.filename || "") || Math.max(data.width || 0, data.height || 0) < 1100)
     ? "seedvr2" : "none";
   // DIAGNOSTIC: why the engine picker may show only "Model climb only". If
@@ -1108,10 +1213,11 @@ function setNamedWidget(node, name, value) {
 
 // SeedVR2 floor: restore at trained scale, then the classic ESRGAN climb to
 // the same 4× target the UltraSharp floor produces, lanczos-fit to exact dims.
-function buildSeedvr2FloorGraph(data, savePrefix = "", previewOnly = false, climbModel = null) {
+function buildSeedvr2FloorGraph(data, savePrefix = "", previewOnly = false, climbModel = null, scale = 0) {
   const LG = window.LiteGraph;
   const workflowId = freshWorkflowId();
   const graph = new LG.LGraph(structuredClone({ ...EMPTY_WORKFLOW, id: workflowId }));
+  graph.last_node_id = offscreenIdBase(); // render-node ids must stay off the live canvas — see offscreen-graph.js
   const load = LG.createNode("LoadImage");
   const dit = LG.createNode("SeedVR2LoadDiTModel");
   const vae = LG.createNode("SeedVR2LoadVAEModel");
@@ -1119,8 +1225,9 @@ function buildSeedvr2FloorGraph(data, savePrefix = "", previewOnly = false, clim
   const save = LG.createNode(previewOnly ? "PreviewImage" : "SaveImage");
   if (!load || !dit || !vae || !up || !save) return null;
 
-  const targetW = (data.width || 0) * 4;
-  const targetH = (data.height || 0) * 4;
+  const eff = scale > 0 ? scale : 4; // honor the Scale slider; default to 4x when none given
+  const targetW = (data.width || 0) * eff;
+  const targetH = (data.height || 0) * eff;
   const targetShort = Math.min(targetW, targetH);
   const stageShort = targetShort > 0
     ? Math.min(SEEDVR2_STAGE_MAX_SHORT_EDGE, targetShort)
@@ -1447,7 +1554,11 @@ function buildFlux2RefineGraph(graph, workflowId, data, options, config) {
     const prefix = (options.savePrefix || "").trim() || "upscale/upscale";
     if (prefixW) { prefixW.value = prefix; prefixW.callback?.(prefix); }
   }
-  if (typeof options.prompt === "string" && options.prompt.trim()) {
+  // A cleared prompt (empty string) is an explicit choice — override with it so
+  // the upscale drops the source render's character conditioning instead of
+  // silently re-detailing every tile with it (the "Ryu's face on a cropped arm"
+  // bug). Only skip when the modal passed no prompt at all (undefined).
+  if (typeof options.prompt === "string") {
     overrideGraphPrompt(graph, options.prompt);
   }
   return { graph, workflowId };
@@ -1457,14 +1568,15 @@ function buildFlux2RefineGraph(graph, workflowId, data, options, config) {
 // images with no usable metadata (external files, non-PromptChain workflows).
 // engine "seedvr2" puts a restoration stage in front; it falls back to the
 // plain pair if the cluster can't build (pack uninstalled mid-session).
-function buildEsrganFloorGraph(data, savePrefix = "", previewOnly = false, engine = "ultrasharp", climbModel = null) {
+function buildEsrganFloorGraph(data, savePrefix = "", previewOnly = false, engine = "ultrasharp", climbModel = null, scale = 0) {
   if (engine === "seedvr2") {
-    const built = buildSeedvr2FloorGraph(data, savePrefix, previewOnly, climbModel);
+    const built = buildSeedvr2FloorGraph(data, savePrefix, previewOnly, climbModel, scale);
     if (built) return built;
   }
   const LG = window.LiteGraph;
   const workflowId = freshWorkflowId();
   const graph = new LG.LGraph(structuredClone({ ...EMPTY_WORKFLOW, id: workflowId }));
+  graph.last_node_id = offscreenIdBase(); // render-node ids must stay off the live canvas — see offscreen-graph.js
   const load = LG.createNode("LoadImage");
   const loader = LG.createNode("UpscaleModelLoader");
   const apply = LG.createNode("ImageUpscaleWithModel");
@@ -1480,15 +1592,34 @@ function buildEsrganFloorGraph(data, savePrefix = "", previewOnly = false, engin
   load.pos = [80, 200];
   loader.pos = [80, 540];
   apply.pos = [500, 240];
-  save.pos = [780, 240];
-  graph.add(load); graph.add(loader); graph.add(apply); graph.add(save);
+  graph.add(load); graph.add(loader); graph.add(apply);
   setImageWidget(load, data.input_ref);
   pickUpscaleModel(loader, climbModel);
-  const prefix = save.widgets?.find((w) => w.name === "filename_prefix");
-  if (prefix) { prefix.value = savePrefix || "upscale/upscale"; prefix.callback?.(prefix.value); }
   load.connect(0, apply, inputIdx(apply, "image", 1));
   loader.connect(0, apply, inputIdx(apply, "upscale_model", 0));
-  apply.connect(0, save, 0);
+
+  // The model upscales by its own fixed factor (e.g. 4x); a lanczos fit lets the
+  // Scale slider actually target a size (ESRGAN climbs to its factor, then fits
+  // up/down to source*scale). No scale given → keep the raw model-factor output.
+  let out = apply;
+  const w = data.width || 0, h = data.height || 0;
+  if (scale > 0 && w && h) {
+    const fit = LG.createNode("ImageScale");
+    if (fit) {
+      fit.pos = [780, 240];
+      graph.add(fit);
+      setNamedWidget(fit, "upscale_method", "lanczos");
+      setNamedWidget(fit, "width", Math.round(w * scale));
+      setNamedWidget(fit, "height", Math.round(h * scale));
+      apply.connect(0, fit, inputIdx(fit, "image", 0));
+      out = fit;
+    }
+  }
+  save.pos = [out.pos[0] + 280, 240];
+  graph.add(save);
+  const prefix = save.widgets?.find((w) => w.name === "filename_prefix");
+  if (prefix) { prefix.value = savePrefix || "upscale/upscale"; prefix.callback?.(prefix.value); }
+  out.connect(0, save, 0);
   return { graph, workflowId };
 }
 
@@ -1595,7 +1726,9 @@ function buildFlux1TileStage(graph, LG, place, opts) {
   let unetFile = opts.unetName || null;
   if (unetFile && Array.isArray(unetOpts) && !unetOpts.includes(unetFile)) unetOpts.push(unetFile);
   if (!unetFile) {
-    unetFile = unetOpts.find((o) => /krea/i.test(o))
+    // /krea(?!2)/ matches the FLUX.1 "flux1-krea-dev" UNET but must NOT grab
+    // the separate "krea2_turbo_*" DiT (its own engine, different VAE/CLIP).
+    unetFile = unetOpts.find((o) => /krea(?!2)/i.test(o))
       || unetOpts.find((o) => /flux1/i.test(o) && !/kontext|schnell|fill|canny|depth|redux/i.test(o));
   }
   const clip = LG.createNode("DualCLIPLoader");
@@ -1721,6 +1854,76 @@ function buildZImageTileStage(graph, LG, place, opts) {
   return { usdu, sideInputIds: [unet.id, clip.id, vae.id, aura.id, posEnc.id, negEnc.id] };
 }
 
+// Krea 2 tile cluster (DiT, closest to Z-Image): UNET feeds the USDU model
+// DIRECTLY — Krea 2's schedule shift is baked into the model class, so there's
+// NO ModelSamplingAuraFlow. CLIP (qwen3vl_4b, type "krea2") drives a neutral
+// positive + empty negative; krea2 carries cfg natively (cfg 1.0), so NO
+// FluxGuidance and NO tile ControlNet. Turbo-distilled: euler/simple/8 steps.
+function buildKrea2TileStage(graph, LG, place, opts) {
+  const reg = LG.registered_node_types || {};
+  if (!reg["UltimateSDUpscaleNoUpscale"]) return null;
+  const unet = LG.createNode("UNETLoader");
+  const unetW = unet?.widgets?.find((x) => x.name === "unet_name");
+  const unetOpts = unetW?.options?.values || [];
+  let unetFile = opts.unetName || null;
+  if (unetFile && Array.isArray(unetOpts) && !unetOpts.includes(unetFile)) unetOpts.push(unetFile);
+  if (!unetFile) unetFile = unetOpts.find((o) => /krea2/i.test(o));
+  const clip = LG.createNode("CLIPLoader");
+  const clipFile = (clip?.widgets?.find((x) => x.name === "clip_name")?.options?.values || [])
+    .find((o) => /qwen3vl.*4b|qwen3.?vl.*4b/i.test(o));
+  const vae = LG.createNode("VAELoader");
+  // Use Krea 2's native VAE (qwen_image_vae) for the tile encode AND decode. A
+  // re-detailed section is composited back into pixels that were generated and
+  // decoded with qwen_image_vae; decoding the section through any other VAE
+  // (e.g. wan_2.1_vae) shifts its colour/texture rendition and leaves an
+  // unblendable seam — and encoding through it lands the tile in a latent the
+  // Krea 2 UNET reads slightly wrong. A ground-truth plain i2i on the same crop
+  // is clean with this VAE. Fall back to a Wan 2.1 VAE only if it isn't present.
+  const vaeOpts = vae?.widgets?.find((x) => x.name === "vae_name")?.options?.values || [];
+  const vaeFile = vaeOpts.find((o) => /qwen.*image.*vae/i.test(o))
+    || vaeOpts.find((o) => /wan.*2[._]?1.*vae/i.test(o) && !/upscale|2x/i.test(o));
+  const posEnc = LG.createNode("CLIPTextEncode");
+  const negEnc = LG.createNode("CLIPTextEncode");
+  const usdu = LG.createNode("UltimateSDUpscaleNoUpscale");
+  if (!(unet && unetFile && clip && clipFile && vae && vaeFile && posEnc && negEnc && usdu)) return null;
+  place(unet, 0, 0);
+  place(clip, 0, 180);
+  place(vae, 0, 360);
+  place(posEnc, 300, -80);
+  place(negEnc, 300, 100);
+  place(usdu, 860, 280);
+  setNamedWidget(unet, "unet_name", unetFile);
+  setNamedWidget(unet, "weight_dtype", "default");
+  setNamedWidget(clip, "clip_name", clipFile);
+  setNamedWidget(clip, "type", "krea2");
+  setNamedWidget(vae, "vae_name", vaeFile);
+  setNamedWidget(posEnc, "text", opts.positiveText || SDXL_TILE_NEUTRAL_POSITIVE);
+  setNamedWidget(negEnc, "text", "");
+  clip.connect(0, posEnc, inputIdx(posEnc, "clip", 0));
+  clip.connect(0, negEnc, inputIdx(negEnc, "clip", 0));
+  opts.imageNode.connect(opts.imageSlot || 0, usdu, inputIdx(usdu, "upscaled_image", 0));
+  unet.connect(0, usdu, inputIdx(usdu, "model", 1));
+  posEnc.connect(0, usdu, inputIdx(usdu, "positive", 2));
+  negEnc.connect(0, usdu, inputIdx(usdu, "negative", 3));
+  vae.connect(0, usdu, inputIdx(usdu, "vae", 4));
+  setNamedWidget(usdu, "seed", Math.floor(Math.random() * 2 ** 32));
+  setNamedWidget(usdu, "steps", opts.steps ?? 8);
+  setNamedWidget(usdu, "cfg", opts.cfg ?? 1.0);
+  setNamedWidget(usdu, "sampler_name", opts.sampler || "er_sde");
+  setNamedWidget(usdu, "scheduler", opts.scheduler || "simple");
+  setNamedWidget(usdu, "denoise", typeof opts.denoise === "number" ? opts.denoise : 0.45);
+  setNamedWidget(usdu, "tile_width", opts.tileWidth ?? 1024);
+  setNamedWidget(usdu, "tile_height", opts.tileHeight ?? 1024);
+  setNamedWidget(usdu, "mask_blur", opts.maskBlur ?? 32);
+  setNamedWidget(usdu, "tile_padding", opts.tilePadding ?? 64);
+  setNamedWidget(usdu, "seam_fix_mode", opts.seamFixMode || "None");
+  if (opts.modeType) setNamedWidget(usdu, "mode_type", opts.modeType);
+  if (typeof opts.seamFixDenoise === "number") setNamedWidget(usdu, "seam_fix_denoise", opts.seamFixDenoise);
+  setNamedWidget(usdu, "force_uniform_tiles", true);
+  setNamedWidget(usdu, "tiled_decode", false);
+  return { usdu, sideInputIds: [unet.id, clip.id, vae.id, posEnc.id, negEnc.id] };
+}
+
 // The modal's tuning knobs in tile-stage shape — shared by every tile engine.
 function tileStageOpts(options) {
   return {
@@ -1749,13 +1952,10 @@ function buildTiledEngineGraph(data, options = {}, buildStage) {
   const LG = window.LiteGraph;
   const workflowId = freshWorkflowId();
   const graph = new LG.LGraph(structuredClone({ ...EMPTY_WORKFLOW, id: workflowId }));
+  graph.last_node_id = offscreenIdBase(); // render-node ids must stay off the live canvas — see offscreen-graph.js
   const placeAt = (node, x, y) => { node.pos = [x, y]; graph.add(node); };
-  const load = LG.createNode("LoadImage");
   const save = LG.createNode(options.previewOnly ? "PreviewImage" : "SaveImage");
-  if (!load || !save) return null;
-  if (data.filename) load.title = data.filename;
-  placeAt(load, 80, 200);
-  setImageWidget(load, data.input_ref);
+  if (!save) return null;
 
   const w = data.width || 0;
   const h = data.height || 0;
@@ -1766,54 +1966,74 @@ function buildTiledEngineGraph(data, options = {}, buildStage) {
   const targetW = Math.round(w * chosenScale) || 2048;
   const targetH = Math.round(h * chosenScale) || 2048;
 
-  let imageSource = load;
-  let needsModelClimb = chosenScale > 1.02;
-  // Optional SeedVR2 restoration in front of the climb: degraded sources
-  // (webcam blur, jpeg) smear through a plain GAN climb — A/B'd on a 736px
-  // jpeg, the eye region smeared via UltraSharp but came back clean when
-  // SeedVR2 rebuilt structure at its trained scale first. The tile CN then
-  // pins restored structure instead of pinning the smear.
-  if (options.climbStage === "seedvr2" && LG.registered_node_types?.["SeedVR2VideoUpscaler"]) {
-    const dit = LG.createNode("SeedVR2LoadDiTModel");
-    const seedvrVae = LG.createNode("SeedVR2LoadVAEModel");
-    const restore = LG.createNode("SeedVR2VideoUpscaler");
-    if (dit && seedvrVae && restore) {
-      placeAt(dit, 80, 460);
-      placeAt(seedvrVae, 80, 660);
-      placeAt(restore, 400, 200);
-      const ditModels = dit.widgets?.find((x) => x.name === "model")?.options?.values || [];
-      if (ditModels.length) setNamedWidget(dit, "model", pickSeedvr2DitModel(ditModels));
-      const targetShort = Math.min(targetW, targetH);
-      const stageShort = Math.min(SEEDVR2_STAGE_MAX_SHORT_EDGE, targetShort);
-      setNamedWidget(restore, "resolution", stageShort);
-      setNamedWidget(restore, "batch_size", 1);
-      setNamedWidget(restore, "input_noise_scale", SEEDVR2_INPUT_NOISE);
-      load.connect(0, restore, inputIdx(restore, "image", 0));
-      dit.connect(0, restore, inputIdx(restore, "dit", 1));
-      seedvrVae.connect(0, restore, inputIdx(restore, "vae", 2));
-      imageSource = restore;
-      needsModelClimb = targetShort > stageShort;
+  // `fit` is the image (already at final/target dims) the engine stage tiles.
+  // Normally we climb the source here (optional SeedVR2 restore → UltraSharp →
+  // exact-fit lanczos). On a cache hit the enlarge already ran in a prior
+  // pre-pass, so load that saved base directly and skip the whole climb.
+  let fit;
+  if (options.preEnlargedRef) {
+    fit = LG.createNode("LoadImage");
+    if (!fit) return null;
+    fit.title = "enlarged base (cached)";
+    placeAt(fit, 740, 200);
+    setImageWidget(fit, options.preEnlargedRef);
+  } else {
+    const load = LG.createNode("LoadImage");
+    if (!load) return null;
+    if (data.filename) load.title = data.filename;
+    placeAt(load, 80, 200);
+    setImageWidget(load, data.input_ref);
+
+    let imageSource = load;
+    let needsModelClimb = chosenScale > 1.02;
+    // Optional SeedVR2 restoration in front of the climb: degraded sources
+    // (webcam blur, jpeg) smear through a plain GAN climb — A/B'd on a 736px
+    // jpeg, the eye region smeared via UltraSharp but came back clean when
+    // SeedVR2 rebuilt structure at its trained scale first. The tile CN then
+    // pins restored structure instead of pinning the smear.
+    if (options.climbStage === "seedvr2" && LG.registered_node_types?.["SeedVR2VideoUpscaler"]) {
+      const dit = LG.createNode("SeedVR2LoadDiTModel");
+      const seedvrVae = LG.createNode("SeedVR2LoadVAEModel");
+      const restore = LG.createNode("SeedVR2VideoUpscaler");
+      if (dit && seedvrVae && restore) {
+        placeAt(dit, 80, 460);
+        placeAt(seedvrVae, 80, 660);
+        placeAt(restore, 400, 200);
+        const ditModels = dit.widgets?.find((x) => x.name === "model")?.options?.values || [];
+        if (ditModels.length) setNamedWidget(dit, "model", pickSeedvr2DitModel(ditModels));
+        const targetShort = Math.min(targetW, targetH);
+        const stageShort = Math.min(SEEDVR2_STAGE_MAX_SHORT_EDGE, targetShort);
+        setNamedWidget(restore, "resolution", stageShort);
+        setNamedWidget(restore, "batch_size", 1);
+        setNamedWidget(restore, "input_noise_scale", SEEDVR2_INPUT_NOISE);
+        setNamedWidget(restore, "seed", 42); // match buildEnlargePrompt so the cached base == this fused base
+        load.connect(0, restore, inputIdx(restore, "image", 0));
+        dit.connect(0, restore, inputIdx(restore, "dit", 1));
+        seedvrVae.connect(0, restore, inputIdx(restore, "vae", 2));
+        imageSource = restore;
+        needsModelClimb = targetShort > stageShort;
+      }
     }
+    if (needsModelClimb) {
+      const upLoader = LG.createNode("UpscaleModelLoader");
+      const upApply = LG.createNode("ImageUpscaleWithModel");
+      if (!upLoader || !upApply) return null;
+      placeAt(upLoader, 80, 880);
+      placeAt(upApply, 460, 460);
+      pickUpscaleModel(upLoader, options.climbModel);
+      imageSource.connect(0, upApply, inputIdx(upApply, "image", 1));
+      upLoader.connect(0, upApply, inputIdx(upApply, "upscale_model", 0));
+      imageSource = upApply;
+    }
+    // The tile pass runs AT final resolution — exact-fit first, then re-detail.
+    fit = LG.createNode("ImageScale");
+    if (!fit) return null;
+    placeAt(fit, 740, 200);
+    setNamedWidget(fit, "upscale_method", "lanczos");
+    setNamedWidget(fit, "width", targetW);
+    setNamedWidget(fit, "height", targetH);
+    imageSource.connect(0, fit, inputIdx(fit, "image", 0));
   }
-  if (needsModelClimb) {
-    const upLoader = LG.createNode("UpscaleModelLoader");
-    const upApply = LG.createNode("ImageUpscaleWithModel");
-    if (!upLoader || !upApply) return null;
-    placeAt(upLoader, 80, 880);
-    placeAt(upApply, 460, 460);
-    pickUpscaleModel(upLoader, options.climbModel);
-    imageSource.connect(0, upApply, inputIdx(upApply, "image", 1));
-    upLoader.connect(0, upApply, inputIdx(upApply, "upscale_model", 0));
-    imageSource = upApply;
-  }
-  // The tile pass runs AT final resolution — exact-fit first, then re-detail.
-  const fit = LG.createNode("ImageScale");
-  if (!fit) return null;
-  placeAt(fit, 740, 200);
-  setNamedWidget(fit, "upscale_method", "lanczos");
-  setNamedWidget(fit, "width", targetW);
-  setNamedWidget(fit, "height", targetH);
-  imageSource.connect(0, fit, inputIdx(fit, "image", 0));
 
   const stage = buildStage(graph, LG,
     (node, dx, dy) => placeAt(node, 1040 + dx, 480 + dy), fit);
@@ -1867,6 +2087,19 @@ function buildZImageEngineGraph(data, options = {}) {
     }));
 }
 
+// "Re-detail with Krea 2": picked Krea 2 Turbo UNET in the cfg-1/euler/simple
+// 8-step regime, model wired straight to the USDU (no ModelSampling, no
+// FluxGuidance, no tile CN). 0.45 denoise re-details while holding structure.
+function buildKrea2EngineGraph(data, options = {}) {
+  return buildTiledEngineGraph(data, options, (graph, LG, place, fit) =>
+    buildKrea2TileStage(graph, LG, place, {
+      imageNode: fit,
+      unetName: options.engineModel?.filename || null,
+      positiveText: (options.prompt || "").trim() || SDXL_TILE_NEUTRAL_POSITIVE,
+      ...tileStageOpts(options),
+    }));
+}
+
 // Standalone Qwen-Image-Edit engine: instruction-driven whole-frame re-render
 // at ~2MP (the model's working size — bigger grows plastic skin, and the
 // stock encoder downsamples its conditioning copy regardless), then the
@@ -1879,6 +2112,7 @@ function buildQwenEditEngineGraph(data, options = {}) {
     || !reg["ModelSamplingAuraFlow"] || !reg["CFGNorm"]) return null;
   const workflowId = freshWorkflowId();
   const graph = new LG.LGraph(structuredClone({ ...EMPTY_WORKFLOW, id: workflowId }));
+  graph.last_node_id = offscreenIdBase(); // render-node ids must stay off the live canvas — see offscreen-graph.js
   const placeAt = (node, x, y) => { node.pos = [x, y]; graph.add(node); };
 
   const load = LG.createNode("LoadImage");
@@ -2022,14 +2256,17 @@ export async function buildUpscaleGraph(prepared, options = {}) {
     const engine = options.engine || "source";
     // Picker engines build standalone graphs — any source image works,
     // graftable or not.
-    if (engine === "sdxl-ckpt" || engine === "qwen-edit" || engine === "flux1-unet" || engine === "zimage-unet") {
+    if (engine === "sdxl-ckpt" || engine === "qwen-edit" || engine === "flux1-unet"
+      || engine === "zimage-unet" || engine === "krea2-unet") {
       const built = engine === "sdxl-ckpt"
         ? buildSdxlCkptEngineGraph(data, { ...options, savePrefix })
         : engine === "flux1-unet"
           ? buildFlux1EngineGraph(data, { ...options, savePrefix })
           : engine === "zimage-unet"
             ? buildZImageEngineGraph(data, { ...options, savePrefix })
-            : buildQwenEditEngineGraph(data, { ...options, savePrefix });
+            : engine === "krea2-unet"
+              ? buildKrea2EngineGraph(data, { ...options, savePrefix })
+              : buildQwenEditEngineGraph(data, { ...options, savePrefix });
       if (built) return built;
       toast("warn", "Couldn't build that upscale engine — using a plain model upscale instead.");
       return buildEsrganFloorGraph(data, savePrefix, options.previewOnly, "ultrasharp", options.climbModel);
@@ -2037,7 +2274,11 @@ export async function buildUpscaleGraph(prepared, options = {}) {
     // Plain engines are explicit main-engine choices now; non-graftable
     // images keep them as their only option.
     if (!caps.graftable || engine === "ultrasharp" || engine === "seedvr2") {
-      return buildEsrganFloorGraph(data, savePrefix, options.previewOnly, engine, options.climbModel);
+      const longest = Math.max(data.width || 0, data.height || 0);
+      const scale = typeof options.upscaleBy === "number" && options.upscaleBy >= 1
+        ? options.upscaleBy
+        : longest > 0 ? Math.min(8, Math.max(1, Math.round((4096 / longest) * 100) / 100)) : 2;
+      return buildEsrganFloorGraph(data, savePrefix, options.previewOnly, engine, options.climbModel, scale);
     }
 
     const mode = options.mode || caps.defaultMode || "prompt";
@@ -2069,12 +2310,32 @@ export async function buildUpscaleGraph(prepared, options = {}) {
         return buildEsrganFloorGraph(data, savePrefix, options.previewOnly, options.engine, options.climbModel);
       }
       if (!pcNode || !injectUpscaler(pcNode, config, { regional: mode === "regional", pinFlux2TileModel: true })) {
+        console.warn(`[PromptChain][upscale] source graft -> PLAIN fallback: pcNode=${pcNode?.id ?? "NONE"} arch=${config?.architecture || caps.architecture} graphTypes=[${graph._nodes.map((n) => n.comfyClass).join(",")}]`);
         toast("warn", "No attachment point in this image's workflow — using a plain model upscale instead.");
         return buildEsrganFloorGraph(data, savePrefix, options.previewOnly, options.engine, options.climbModel);
       }
       usNode = graph._nodes.find((n) => n.comfyClass === "UltimateSDUpscale");
     } else if (mode === "regional") {
       ensureRegionalConditioning(graph, LG, usNode);
+    }
+    // Krea 2 renders carry the Qwen-Image VAE, whose decoder bakes a periodic
+    // grid/scale artifact into every tile USDU re-decodes. The Wan 2.1 VAE
+    // shares the SAME frozen encoder (tiles encode to an identical Krea2-
+    // compatible latent) but its decoder has no grid artifact — repoint the
+    // grafted decode to it so the source-model upscale comes out clean, same as
+    // the standalone Krea2 tile engine. Excludes the 2x variant (12-ch/2x output
+    // would break tiling); only fires for a Krea 2 source on the Qwen VAE.
+    const isKrea2Source = caps.architecture === "krea2"
+      || graph._nodes.some((n) => n.comfyClass === "CLIPLoader"
+        && n.widgets?.find((w) => w.name === "type")?.value === "krea2");
+    if (isKrea2Source) {
+      for (const vl of graph._nodes.filter((n) => n.comfyClass === "VAELoader")) {
+        const vaeW = vl.widgets?.find((w) => w.name === "vae_name");
+        if (!vaeW || !/qwen.*image.*vae/i.test(vaeW.value || "")) continue;
+        const wan = (vaeW.options?.values || [])
+          .find((o) => /wan.*2[._]?1.*vae/i.test(o) && !/upscale|2x/i.test(o));
+        if (wan) { vaeW.value = wan; vaeW.callback?.(wan); }
+      }
     }
     if (mode === "regional" && usNode) {
       // The installed USDU port's crop_mask only remaps the FIRST crop region

@@ -508,6 +508,16 @@ function findUpstreamByType(startNode, targetTypes) {
   return null;
 }
 
+// A ModelSamplingFlux belongs to a Krea 2 RAW graph when its model line traces up
+// to a krea2_raw UNET. Keeps the resolution→shift mirror scoped to RAW (Turbo bakes
+// a fixed mu; Flux owns its own shift), so only RAW's shift node is slaved.
+function isKrea2RawShift(shiftNode) {
+  const unet = findUpstreamByType(shiftNode, new Set(["UNETLoader"]));
+  if (!unet) return false;
+  const name = readWidgetValue(unet, "unet_name");
+  return typeof name === "string" && /krea2_raw/i.test(name);
+}
+
 // The face-detail leg of a model-patch injectable (PuLID / Style Reference) is a
 // second Apply node feeding the RegionalDetailer's couple-free model line. It's
 // an implementation detail, not its own tunable — the settings panel shows one
@@ -668,6 +678,17 @@ export function detectSupportedNodes(pcNode) {
       detected.push({ node: latentNode, config: LATENT_NODES[cls], type: cls });
     }
 
+    // Krea 2 RAW's ModelSamplingFlux sets the resolution-dynamic flow-shift (mu),
+    // whose width/height MUST track the render size. Detected only so the resolution
+    // row can slave its width/height to the latent — mirrorOnly: no visible section
+    // and never written into editors, so it is never baked back into the saved
+    // config (the shift must stay dynamic). Gated to RAW (see isKrea2RawShift).
+    const shiftNode = findUpstreamByType(pivotNode, new Set(["ModelSamplingFlux"]));
+    if (shiftNode && !seenIds.has(shiftNode.id) && isKrea2RawShift(shiftNode)) {
+      seenIds.add(shiftNode.id);
+      detected.push({ node: shiftNode, config: { label: "Shift", widgets: {}, mirrorOnly: true }, type: "ModelSamplingFlux" });
+    }
+
     const pulidTypes = new Set(["ApplyPulidAdvanced", "ApplyPulid", "ApplyPulidFlux", "ApplyPuLIDFlux2"]);
     const pulidNode = findUpstreamByType(pivotNode, pulidTypes);
     if (pulidNode && !seenIds.has(pulidNode.id)) {
@@ -746,6 +767,15 @@ function applyArchSamplerDefaults(defaults, architecture, family) {
       // high-σ regime where tiles come out clean (heavier repaint is the trade).
       if ("denoise" in defaults) defaults.denoise = 0.7;
     }
+  } else if (arch === "krea2") {
+    // Krea 2 Turbo: distilled 8-step, guidance baked (cfg 1), euler/simple. Qwen-family
+    // is quant/prompt-sensitive, so a tile re-render wants a higher denoise floor than
+    // Z-Image-Base to avoid underbaking the few-step tail (GPU-tunable).
+    defaults.cfg = 1.0;
+    defaults.sampler_name = "euler";
+    defaults.scheduler = "simple";
+    if ("steps" in defaults) defaults.steps = 8;
+    if ("denoise" in defaults) defaults.denoise = 0.45;
   }
 }
 
@@ -1260,9 +1290,13 @@ export function injectUpscaler(pcNode, modelConfig, opts = {}) {
   // exists (regional or classic), else straight off the decode.
   const detailNode = downstream.find(n => n.comfyClass === "PromptChain_RegionalDetailer")
     || downstream.find(n => n.comfyClass === "FaceDetailer");
-  const vaeDecodeNode = downstream.find(n => n.comfyClass === "VAEDecode");
+  const vaeDecodeNode = downstream.find(n => n.comfyClass === "VAEDecode"
+    || n.comfyClass === "VAEUtils_VAEDecodeTiled" || n.comfyClass === "VAEDecodeTiled");
   const imageSource = detailNode || vaeDecodeNode;
-  if (!imageSource) return false;
+  if (!imageSource) {
+    console.warn(`[PromptChain][graft] FAIL: no decode/detail image source. downstream=[${downstream.map((n) => n.comfyClass).join(",")}]`);
+    return false;
+  }
 
   // Sampler anchor: classic KSampler graphs, or the Flux 2 split where
   // SamplerCustomAdvanced samples and a guider (CFGGuider on Klein base,
@@ -1357,6 +1391,24 @@ export function injectUpscaler(pcNode, modelConfig, opts = {}) {
     }
     splitModelNode = ms;
     splitVaeNode = findUpstreamByType(vaeDecodeNode, new Set(["VAELoader"]));
+    if (!splitVaeNode) {
+      // The source decodes through a custom/tiled VAE (e.g. the spacepxl
+      // VAEUtils decoder on High-Detail krea2 renders) whose 2x/12-ch output
+      // can't drive USDU's encode->sample->decode tiling. Graft a fresh stock
+      // VAELoader on the shared krea2/qwen latent — prefer the clean wan_2.1_vae
+      // (no grid artifact), else qwen_image_vae, else whatever is installed.
+      const freshVae = LG.createNode("VAELoader");
+      const vaeW = freshVae?.widgets?.find(w => w.name === "vae_name");
+      const vaeOpts = vaeW?.options?.values || [];
+      const pick = vaeOpts.find(o => /wan.*2[._]?1.*vae/i.test(o) && !/upscale|2x/i.test(o))
+        || vaeOpts.find(o => /qwen.*image.*vae/i.test(o)) || vaeOpts[0];
+      if (freshVae && vaeW && pick) {
+        vaeW.value = pick; vaeW.callback?.(pick);
+        freshVae.pos = [vaeDecodeNode.pos[0], vaeDecodeNode.pos[1] + 220];
+        graph.add(freshVae);
+        splitVaeNode = freshVae;
+      }
+    }
   }
 
   const loaderNode = LG.createNode("UpscaleModelLoader");
@@ -1847,7 +1899,7 @@ function injectRegional(pcNode, modelConfig) {
   // $blocks cohere into ONE scene). Other DiTs (Flux/SD3/…) have no ported couple yet, so
   // they fall back to ComfyUI-native masked conditioning here.
   const arch = modelConfig?.architecture || "";
-  const NATIVE_REGIONAL_ARCH = new Set(["flux", "flux2", "sd3", "hidream", "qwen_image", "qwen_edit"]);
+  const NATIVE_REGIONAL_ARCH = new Set(["flux", "flux2", "sd3", "hidream", "qwen_image", "qwen_edit", "krea2"]);
   if (NATIVE_REGIONAL_ARCH.has(arch)) {
     const rc = LG.createNode("PromptChain_RegionalConditioning");
     if (!rc) return false;
@@ -2870,6 +2922,17 @@ export async function showModelModal(pcNode, modelInfo, anchorEl, { tab = null }
             { label: "Pose", value: "FluxControlNet:pose" },
             { label: "Soft Edge", value: "FluxControlNet:softedge" },
             { label: "Gray", value: "FluxControlNet:gray" },
+          ],
+        });
+      }
+      // Krea 2 has no published ControlNet (and ComfyUI's krea2 model class exposes
+      // no control hook), but native cond-mask regional works — PromptChain_RegionalConditioning
+      // is model-agnostic. Offer Regional only.
+      if (arch === "krea2") {
+        items.push({
+          label: "ControlNet",
+          children: [
+            { label: "Regional", value: "ControlNet:regional" },
           ],
         });
       }

@@ -8,6 +8,7 @@ import { api } from "../../../scripts/api.js";
 import { getLink } from "./slot-utils.js";
 import {
   buildUpscaleGraph,
+  logUpscaleRun,
   pickSeedvr2DitModel,
   SEEDVR2_STAGE_MAX_SHORT_EDGE,
   SEEDVR2_INPUT_NOISE,
@@ -42,7 +43,7 @@ function createTracker() {
 // own job counting (ultimate-upscale.py): main pass rows*cols, plus the seam
 // pass per seam_fix_mode. Lets the modal show OVERALL progress — the ws
 // progress events are per-tile sampler bars that reset every tile.
-function computeTilePlan(graph, data) {
+function computeTilePlan(graph, data, options = {}) {
   const usNode = graph._nodes.find((n) => n.comfyClass === "UltimateSDUpscale" || n.comfyClass === "UltimateSDUpscaleNoUpscale");
   if (!usNode) return { steps: 0, totalTiles: 0 };
   const w = (name) => usNode.widgets?.find((x) => x.name === name)?.value;
@@ -52,13 +53,19 @@ function computeTilePlan(graph, data) {
   let outW = (data.width || 0) * scale;
   let outH = (data.height || 0) * scale;
   if (usNode.comfyClass === "UltimateSDUpscaleNoUpscale") {
-    // NoUpscale tiles whatever arrives on upscaled_image — the final dims
-    // live on the exact-fit ImageScale feeding it.
-    const input = usNode.inputs?.find((i) => i.name === "upscaled_image");
-    const link = input?.link != null ? getLink(graph, input.link) : null;
-    const origin = link && graph.getNodeById(link.origin_id);
-    outW = Number(origin?.widgets?.find((x) => x.name === "width")?.value) || (data.width || 0);
-    outH = Number(origin?.widgets?.find((x) => x.name === "height")?.value) || (data.height || 0);
+    if (options.preEnlargedW && options.preEnlargedH) {
+      // Cache hit: upscaled_image is a LoadImage of the cached base (no width/
+      // height widgets to read), so take the resolved target dims from the cache.
+      outW = options.preEnlargedW; outH = options.preEnlargedH;
+    } else {
+      // NoUpscale tiles whatever arrives on upscaled_image — the final dims
+      // live on the exact-fit ImageScale feeding it.
+      const input = usNode.inputs?.find((i) => i.name === "upscaled_image");
+      const link = input?.link != null ? getLink(graph, input.link) : null;
+      const origin = link && graph.getNodeById(link.origin_id);
+      outW = Number(origin?.widgets?.find((x) => x.name === "width")?.value) || (data.width || 0);
+      outH = Number(origin?.widgets?.find((x) => x.name === "height")?.value) || (data.height || 0);
+    }
   }
   const rows = Math.ceil(outH / tileH) || 1;
   const cols = Math.ceil(outW / tileW) || 1;
@@ -122,7 +129,7 @@ function collectRecordMeta(graph, data) {
   };
 }
 
-function watchExecution({ promptId, workflowId, meta, plan, startedAt, tracker, run }) {
+function watchExecution({ promptId, workflowId, meta, plan, startedAt, tracker, run, enlargedUrl }) {
   let lastImage = null;
   // Tile bookkeeping: each sampled tile runs its own progress bar (1..steps),
   // so a value reset = next tile. Bars with a different max are the model
@@ -213,6 +220,9 @@ function watchExecution({ promptId, workflowId, meta, plan, startedAt, tracker, 
       resultUrl: lastImage
         ? api.apiURL(`/view?filename=${encodeURIComponent(lastImage.filename)}&subfolder=${encodeURIComponent(lastImage.subfolder || "")}&type=${lastImage.type || "output"}&rand=${Math.random()}`)
         : null,
+      // The enlarged base the tiles re-detailed — the compare's "Before" (so you see
+      // the tile pass's contribution over the sharpened base, not vs the raw source).
+      enlargedUrl: enlargedUrl || null,
       elapsedSec,
     });
     toast("success", `Upscale finished in ${elapsedSec}s${lastImage ? `: ${lastImage.filename}` : ""}.`);
@@ -245,9 +255,13 @@ function comboValues(nodeType, widgetName) {
 // noise (clean renders carry no degradation for it to invert), and the ESRGAN
 // climb only happens when the target is still further out. Exported for the
 // headless build-only harness.
-export function buildEnlargePrompt(inputRef, targetW, targetH, engine = "ultrasharp") {
+export function buildEnlargePrompt(inputRef, targetW, targetH, engine = "ultrasharp", climbModel = null) {
   const models = comboValues("UpscaleModelLoader", "model_name");
-  const modelName = models.find((o) => /ultrasharp/i.test(o)) || models.find((o) => /^4x/i.test(o)) || models[0];
+  // Mirror upscale-from-image.js defaultUpscaleModelPick: exclude UltraSharpV2 (its
+  // micro-speckle becomes tile-CN cross-hatch) so the cached base matches the fused build.
+  const modelName = (climbModel && models.includes(climbModel) ? climbModel : null)
+    || models.find((o) => /ultrasharp(?!v2)/i.test(o)) || models.find((o) => /ultrasharp/i.test(o))
+    || models.find((o) => /^4x/i.test(o)) || models[0];
   if (!modelName) throw new Error("no upscale model installed");
 
   if (engine === "seedvr2") {
@@ -297,10 +311,10 @@ export function buildEnlargePrompt(inputRef, targetW, targetH, engine = "ultrash
 // to temp. Used by the Edit grow-canvas path to produce the new Background
 // while the region render diffuses, and for the under-layer pass. Plain JSON
 // prompt — no workflow tab involved.
-export function enlargeImageInBackground(inputRef, targetW, targetH, engine = "ultrasharp") {
+export function enlargeImageInBackground(inputRef, targetW, targetH, engine = "ultrasharp", climbModel = null) {
   let output;
   try {
-    output = buildEnlargePrompt(inputRef, targetW, targetH, engine);
+    output = buildEnlargePrompt(inputRef, targetW, targetH, engine, climbModel);
   } catch (e) {
     return Promise.reject(e);
   }
@@ -348,6 +362,61 @@ export function enlargeImageInBackground(inputRef, targetW, targetH, engine = "u
         reject(new Error(e?.response?.error?.message || e?.message || "queue rejected the enlarge prompt"));
       });
   });
+}
+
+// ── enlarged-base cache (NoUpscale tile engines) ───────────────────────────
+// The UltraSharp/SeedVR2 enlarge ("pre-process") is deterministic, so a retry
+// that only changes tile dials reuses the saved base instead of re-running it.
+// Keyed on the RESOLVED enlarge identity (input + engine + climb model + target
+// dims) — tile dials are excluded by construction. Only the four NoUpscale tile
+// engines are eligible; fused/diffusion engines (source/qwen/flux2/plain) build
+// the enlarge inseparably and stay on the normal fused path. The whole pre-pass
+// is best-effort: any failure falls through to the fused build (never breaks).
+const TILE_ENGINES = new Set(["sdxl-ckpt", "flux1-unet", "zimage-unet", "krea2-unet"]);
+const _enlargeCache = new Map(); // key -> input-dir ref ("subfolder/name.png")
+
+function resolveEnlargeTarget(options, data) {
+  const w = data.width || 0, h = data.height || 0;
+  const longest = Math.max(w, h);
+  const scale = typeof options.upscaleBy === "number" && options.upscaleBy >= 1
+    ? options.upscaleBy
+    : longest > 0 ? Math.min(8, Math.max(1, Math.round((4096 / longest) * 100) / 100)) : 2;
+  return { targetW: Math.round(w * scale) || 2048, targetH: Math.round(h * scale) || 2048, scale };
+}
+
+function enlargeCacheKey(options, data, targetW, targetH) {
+  const engine = options.climbStage === "seedvr2" ? "seedvr2" : "ultrasharp";
+  return [data.input_ref || "", engine, options.climbModel || "default", targetW, targetH].join("|");
+}
+
+// Short deterministic hash of the cache key → a stable cache filename, so re-MISSes
+// for the same enlarge identity OVERWRITE one file instead of piling new ones up.
+function hashKey(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+
+// A LoadImage reads only the input dir, so copy the freshly-enlarged temp image into
+// input/ (under a key-stable name) so the tile graph can load it on a cache hit.
+async function copyEnlargedToInput(img, nameBase) {
+  const url = api.apiURL(`/view?filename=${encodeURIComponent(img.filename)}&subfolder=${encodeURIComponent(img.subfolder || "")}&type=${img.type || "temp"}`);
+  const blob = await (await fetch(url)).blob();
+  const form = new FormData();
+  form.append("image", new File([blob], `upcache_${nameBase}.png`, { type: "image/png" }));
+  form.append("subfolder", "promptchain_upscale_cache");
+  form.append("overwrite", "true");
+  const res = await api.fetchApi("/upload/image", { method: "POST", body: form });
+  const j = await res.json();
+  return j.subfolder ? `${j.subfolder}/${j.name}` : j.name;
+}
+
+// /view URL for a cached enlarged base (input-dir ref) — the compare's "Before".
+function enlargedRefUrl(ref) {
+  const slash = ref.lastIndexOf("/");
+  const sub = slash >= 0 ? ref.slice(0, slash) : "";
+  const name = slash >= 0 ? ref.slice(slash + 1) : ref;
+  return api.apiURL(`/view?filename=${encodeURIComponent(name)}&subfolder=${encodeURIComponent(sub)}&type=input&rand=${Math.random()}`);
 }
 
 export function upscaleImageInBackground(prepared, options = {}) {
@@ -400,6 +469,38 @@ export function upscaleImageInBackground(prepared, options = {}) {
       return;
     }
 
+    // Enlarge cache (NoUpscale tile engines): pre-enlarge once, reuse on retry so
+    // only the tiles re-run. Wrapped so ANY failure falls through to the normal
+    // fused build — this can never break the upscale, only skip the optimization.
+    try {
+      // Skip <=1.02: there the fused build does a plain lanczos (no ESRGAN climb), so
+      // there's nothing expensive to cache AND a cached ESRGAN base would diverge from
+      // the fused output. Above 1.02 the cached base equals the fused climb (same
+      // climbModel, same lanczos fit), so the result is unchanged — just cached.
+      const { targetW, targetH, scale } = TILE_ENGINES.has(options.engine || "source") && !options.preEnlargedRef
+        ? resolveEnlargeTarget(options, prepared.data)
+        : { scale: 0 };
+      if (scale > 1.02) {
+        const key = enlargeCacheKey(options, prepared.data, targetW, targetH);
+        let baseRef = _enlargeCache.get(key);
+        if (baseRef) {
+          console.log(`[upscale-cache] HIT — reusing enlarged base, skipping pre-process (${targetW}x${targetH})`);
+        } else {
+          tracker.emit({ phase: "running", prep: true });
+          const enlEngine = options.climbStage === "seedvr2" ? "seedvr2" : "ultrasharp";
+          const temp = await enlargeImageInBackground(prepared.data.input_ref, targetW, targetH, enlEngine, options.climbModel);
+          if (run.cancelled) return;
+          baseRef = await copyEnlargedToInput(temp, hashKey(key));
+          _enlargeCache.set(key, baseRef);
+          console.log(`[upscale-cache] MISS — enlarged + cached base (${targetW}x${targetH})`);
+        }
+        options = { ...options, preEnlargedRef: baseRef, preEnlargedW: targetW, preEnlargedH: targetH };
+      }
+    } catch (e) {
+      console.warn("[PromptChain] enlarge cache pre-pass skipped — using fused build:", e);
+      options = { ...options, preEnlargedRef: null };
+    }
+
     tracker.emit({ phase: "building" });
     const built = await buildUpscaleGraph(prepared, options);
     if (!built) {
@@ -411,6 +512,7 @@ export function upscaleImageInBackground(prepared, options = {}) {
 
     tracker.emit({ phase: "queueing" });
     const serialized = await app.graphToPrompt(graph);
+    logUpscaleRun(serialized.output, options.engine);
     let promptId = null;
     // Arm the external-prompt window across the queue round-trip so the main
     // graph's execution_start gate recognizes this run even if its event beats
@@ -438,7 +540,7 @@ export function upscaleImageInBackground(prepared, options = {}) {
     run.promptId = promptId;
     const startedAt = Date.now();
     const meta = collectRecordMeta(graph, prepared.data);
-    const plan = computeTilePlan(graph, prepared.data);
+    const plan = computeTilePlan(graph, prepared.data, options);
 
     if (!promptId) {
       tracker.emit({ phase: "error", message: "queue returned no prompt id" });
@@ -457,7 +559,8 @@ export function upscaleImageInBackground(prepared, options = {}) {
       return;
     }
     tracker.emit({ phase: "running" });
-    watchExecution({ promptId, workflowId, meta, plan, startedAt, tracker, run });
+    const enlargedUrl = options.preEnlargedRef ? enlargedRefUrl(options.preEnlargedRef) : null;
+    watchExecution({ promptId, workflowId, meta, plan, startedAt, tracker, run, enlargedUrl });
   })().catch((e) => {
     console.error("[PromptChain] background upscale failed", e);
     tracker.emit({ phase: "error", message: e?.message || "unexpected failure" });

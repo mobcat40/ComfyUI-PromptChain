@@ -196,7 +196,16 @@
       .then((d) => { editDocLayers = d?.docs || {}; })
       .catch(() => {});
   }
-  $effect(() => { if (fetchApi) refreshEditDocs(); });
+  // A "Save edits" inside the editor writes the sidecar and dispatches this
+  // event; without the listener the viewer's own ▦ layers badge stayed stale
+  // until remount (only the gallery listened), so an in-place save looked like
+  // it did nothing.
+  $effect(() => {
+    if (fetchApi) refreshEditDocs();
+    const onEditDocsChanged = () => refreshEditDocs();
+    window.addEventListener("promptchain:edit-docs-changed", onEditDocsChanged);
+    return () => window.removeEventListener("promptchain:edit-docs-changed", onEditDocsChanged);
+  });
 
   // lineage state
   let lineageData = $state(null);
@@ -1173,7 +1182,10 @@
           showNewGenBanner(state.elapsedSec);
           viewUpscaleResult(state.resultHash);
         } else if (state.phase === "cancelled") {
-          cancelUpscale(); // back to the viewer exactly as it was
+          // Back to the setup form with settings intact — don't kill the whole
+          // modal on a cancelled run (matches inpaint/repose/extend/smooth). The
+          // explicit Close button still calls cancelUpscale for a full exit.
+          upscaleProgress = null;
         }
       });
       return;
@@ -2946,7 +2958,7 @@
   height={editPrepared?.data?.height || 0}
   filename={editPrepared?.data?.filename || ""}
   caps={editPrepared?.caps}
-  editDocHash={editPrepared ? (displayedHash || "") : ""}
+  editDocHash={editPrepared && /^[0-9a-f]{64}$/.test(displayedHash || "") ? displayedHash : ""}
   {fetchApi}
   {apiURL}
   onSave={(blob, prefix) => onEditSave(editPrepared, blob, prefix)}

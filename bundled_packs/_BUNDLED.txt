@@ -22,6 +22,8 @@ Source provenance (owner/repo @ commit — license):
   ComfyUI-SeedVR2_VideoUpscaler  numz/ComfyUI-SeedVR2_VideoUpscaler  @ 4490bd1f482e026674543386bb2a4d176da245b9  Apache-2.0
   ComfyUI_IPAdapter_plus         cubiq/ComfyUI_IPAdapter_plus        @ a0f451a5                                  GPL-3.0
   ComfyUI_UltimateSDUpscale      ssitu/ComfyUI_UltimateSDUpscale     @ d6b575a (patched)                         GPL-3.0
+  ComfyUI-ConditioningKrea2Rebalance  nova452/ComfyUI-ConditioningKrea2Rebalance  @ 9ab5315e6aa8              Apache-2.0
+  ComfyUI-VAE-Utils              spacepxl/ComfyUI-VAE-Utils          @ d69e7afaa9ed (assets/workflow imgs removed)  MIT
 
 UltimateSDUpscale local patches (in its __init__.py, both preserved on copy-out):
   1. The bundled Auto1111 repositories/ submodule is shipped pre-filled, so the

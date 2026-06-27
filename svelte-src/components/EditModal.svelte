@@ -316,8 +316,9 @@
   // clicks skip the re-flatten AND let the server reuse its encoder cache.
   let flatBlobCache = null; // { blob, key }
   function flatKey() {
-    // histIndex covers committed pixel edits; the rest covers uncommitted
-    // visibility/opacity/blend toggles (they never enter history)
+    // histIndex covers committed edits; the per-layer suffix also keys on
+    // visibility/opacity/blend/offset so the cache stays correct mid-drag,
+    // before an opacity release commits.
     return `${histIndex}|${activeIndex}|${layers.map((L) => `${L.id}:${L.visible}:${L.opacity}:${L.blend || ""}:${L.ox || 0}:${L.oy || 0}`).join(",")}`;
   }
   async function flattenedBlobCached() {
@@ -3456,8 +3457,12 @@
     loadActiveBitmap();
     commitAction("Duplicate Layer");
   }
-  function setLayerVisible(i, v) { layers[i] = { ...layers[i], visible: v }; }
-  function setLayerOpacity(i, o) { layers[i] = { ...layers[i], opacity: o }; }
+  function setLayerVisible(i, v) { layers[i] = { ...layers[i], visible: v }; commitAction("Visibility"); }
+  // Opacity drags fire on every tick — mutate in place for the live preview and
+  // commit ONCE on release (see the slider's onpointerdown/onchange) so the
+  // change is undoable and dirties the doc without flooding the history ring.
+  let opacityDragStart = null;
+  function setLayerOpacity(i, o) { if (layers[i].opacity === o) return; layers[i] = { ...layers[i], opacity: o }; }
 
   // Blend modes — CSS mix-blend-mode keywords double as canvas
   // globalCompositeOperation names, so the live stacked-canvas view and every
@@ -3523,7 +3528,7 @@
   function commitRename() {
     const i = layers.findIndex((L) => L.id === renamingId);
     const name = renameText.trim();
-    if (i >= 0 && name && name !== layers[i].name) layers[i] = { ...layers[i], name };
+    if (i >= 0 && name && name !== layers[i].name) { layers[i] = { ...layers[i], name }; commitAction("Rename Layer"); }
     renamingId = null;
   }
 
@@ -3546,6 +3551,7 @@
     layers = rest;
     activeIndex = layers.findIndex((L) => L.id === activeId);
     dragId = null;
+    commitAction("Reorder Layers");
   }
 
   // Composite a set of layer indices (z-order) into one ImageData.
@@ -4684,7 +4690,10 @@
                       ondblclick={(e) => { e.stopPropagation(); startRename(L); }}>{L.name}{#if L.mask}<span class="pcr-ed-layer-blendtag" title="Has a layer mask">▦</span>{/if}{#if layerBlendCss(L)}<span class="pcr-ed-layer-blendtag">{L.blend}</span>{/if}</span>
                   {/if}
                   <input class="pcr-ed-layer-opacity" type="range" min="0" max="1" step="0.05"
-                    value={L.opacity} oninput={(e) => setLayerOpacity(i, +e.currentTarget.value)}
+                    value={L.opacity}
+                    onpointerdown={() => { opacityDragStart = L.opacity; }}
+                    oninput={(e) => setLayerOpacity(i, +e.currentTarget.value)}
+                    onchange={(e) => { if (opacityDragStart === null || +e.currentTarget.value !== opacityDragStart) commitAction("Opacity"); opacityDragStart = null; }}
                     onclick={(e) => e.stopPropagation()} title="Opacity" />
                 </div>
               {/each}

@@ -570,7 +570,7 @@ function SearchableSelect($$anchor, $$props) {
 delegate(["click", "keydown"]);
 var root_2$8 = from_html(`<button class="pcr-modal-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>`);
 var root_3$8 = from_html(`<img class="pcr-up-live svelte-xw7bpl" alt="" draggable="false"/>`);
-var root_5$7 = from_html(`<div class="pcr-up-split-before svelte-xw7bpl"><div class="pcr-up-zoomwrap svelte-xw7bpl"><img class="pcr-up-preview svelte-xw7bpl" alt="" draggable="false"/></div></div> <div class="pcr-up-split-label before svelte-xw7bpl">Before</div> <div class="pcr-up-split-label after svelte-xw7bpl">After</div> <div class="pcr-up-split-divider svelte-xw7bpl"><div class="pcr-up-split-knob svelte-xw7bpl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="svelte-xw7bpl"><polyline points="9.5 8 5.5 12 9.5 16"></polyline><polyline points="14.5 8 18.5 12 14.5 16"></polyline></svg></div></div>`, 1);
+var root_5$7 = from_html(`<div class="pcr-up-split-before svelte-xw7bpl"><div class="pcr-up-zoomwrap svelte-xw7bpl"><img class="pcr-up-preview svelte-xw7bpl" alt="" draggable="false"/></div></div> <div class="pcr-up-split-label before svelte-xw7bpl"> </div> <div class="pcr-up-split-label after svelte-xw7bpl">After</div> <div class="pcr-up-split-divider svelte-xw7bpl"><div class="pcr-up-split-knob svelte-xw7bpl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="svelte-xw7bpl"><polyline points="9.5 8 5.5 12 9.5 16"></polyline><polyline points="14.5 8 18.5 12 14.5 16"></polyline></svg></div></div>`, 1);
 var root_7$7 = from_html(`<button title="Drag the divider to wipe the original over the result">Compare</button>`);
 var root_6$7 = from_html(`<div class="pcr-up-zoomctl svelte-xw7bpl"><span class="pcr-up-zoompct svelte-xw7bpl"> </span> <!> <button class="pcr-up-fit-btn svelte-xw7bpl">Fit</button></div>`);
 var root_4$8 = from_html(`<div class="pcr-up-zoomwrap svelte-xw7bpl"><img class="pcr-up-preview svelte-xw7bpl" alt="" draggable="false"/></div> <!> <!>`, 1);
@@ -580,7 +580,7 @@ var root_12$6 = from_html(`<div class="pcr-up-bar-label svelte-xw7bpl"> </div>`)
 var root_11$5 = from_html(`<div class="pcr-up-progress-text svelte-xw7bpl"> </div> <div class="pcr-up-bar svelte-xw7bpl"><div></div></div> <!>`, 1);
 var root_8$7 = from_html(`<div class="pcr-up-progress svelte-xw7bpl"><!></div>`);
 var root_13$6 = from_html(`<button class="pcr-up-restore-chip svelte-xw7bpl" title="Re-apply the dials from your last upscale of this image">↩ Restore last setup</button>`);
-var root_14$6 = from_html(`<p class="pcr-up-floor-msg svelte-xw7bpl">This image has no usable prompt metadata — a plain model upscale (ESRGAN) will be used.</p>`);
+var root_14$6 = from_html(`<p class="pcr-up-floor-msg svelte-xw7bpl">No re-detail engine is available for this image — a plain model upscale (ESRGAN) will be used.</p>`);
 var root_16$5 = from_html(`<span class="pcr-up-cond-hint svelte-xw7bpl"> </span>`);
 var root_17$4 = from_html(`<span class="pcr-up-cond-hint svelte-xw7bpl">re-renders the whole frame at ~2MP from your instruction — composition can shift slightly; the climb model below pushes to the target size</span>`);
 var root_18$4 = from_html(`<span class="pcr-up-cond-hint svelte-xw7bpl">deterministic enlargement with the climb model below — add a Restore step for degraded sources (webcam, jpeg, blur)</span>`);
@@ -588,16 +588,16 @@ var root_15$5 = from_html(`<div class="pcr-mcard"><div class="pcr-mcard-title">E
 var root_20$3 = from_html(`<option> </option>`);
 var root_21$3 = from_html(`<div class="pcr-up-sources svelte-xw7bpl"><span class="pcr-up-sources-label svelte-xw7bpl">Depth from</span> <div class="pcr-up-seg svelte-xw7bpl"><div>3D pose</div> <div>This image</div></div></div>`);
 var root_19$4 = from_html(`<div class="pcr-mcard"><div class="pcr-mcard-title">Mode</div> <select class="pcr-up-select svelte-xw7bpl" data-mode-select=""></select> <div class="pcr-up-cond-hint svelte-xw7bpl"> </div> <!></div>`);
-var root_23$2 = from_html(`<option> </option>`);
-var root_24$3 = from_html(`<option> </option>`);
+var root_23$3 = from_html(`<option> </option>`);
+var root_24$2 = from_html(`<option> </option>`);
 var root_22$2 = from_html(`<div class="pcr-mcard"><div class="pcr-mcard-title">Character lock</div> <div class="pcr-up-cond svelte-xw7bpl"><select id="pcr-up-condition" class="pcr-up-select svelte-xw7bpl"><option>None</option><!><!></select> <span class="pcr-up-cond-hint svelte-xw7bpl">keeps the character from drifting while tiles re-detail — the image itself is the reference</span></div></div>`);
 var root_27$3 = from_html(`<div class="pcr-up-prompt pcr-up-prompt-editor svelte-xw7bpl"></div>`);
 var root_28$2 = from_html(`<textarea class="pcr-up-prompt svelte-xw7bpl" spellcheck="false"></textarea>`);
 var root_29$3 = from_html(`<span class="pcr-up-save-label svelte-xw7bpl">Workflow prompt (reference)</span> <textarea class="pcr-up-refprompt svelte-xw7bpl" readonly="" spellcheck="false"></textarea>`, 1);
 var root_25$3 = from_html(`<div class="pcr-mcard"><div class="pcr-mcard-title"> </div> <div class="pcr-up-prompt-block svelte-xw7bpl"><span class="pcr-up-save-label svelte-xw7bpl"> </span> <!> <!></div></div>`);
 var root_31$3 = from_html(`<div class="pcr-up-canvas svelte-xw7bpl"><div class="pcr-up-canvas-title svelte-xw7bpl">This quality is bigger than the region's footprint — how should it land?</div> <div><div class="pcr-up-mode-radio svelte-xw7bpl"><div class="pcr-up-mode-dot svelte-xw7bpl"></div></div> <div class="pcr-up-mode-text svelte-xw7bpl"><div class="pcr-up-mode-label svelte-xw7bpl"> </div> <div class="pcr-up-mode-desc svelte-xw7bpl">The whole document scales up and the region lands pixel-for-pixel — full quality kept. The UltraSharp-enlarged image becomes the new Background, so erasing the upscale layer reveals it.</div></div></div> <div><div class="pcr-up-mode-radio svelte-xw7bpl"><div class="pcr-up-mode-dot svelte-xw7bpl"></div></div> <div class="pcr-up-mode-text svelte-xw7bpl"><div class="pcr-up-mode-label svelte-xw7bpl"> </div> <div class="pcr-up-mode-desc svelte-xw7bpl">The render is rescaled back into the region — re-detailed, but softer than 1:1.</div></div></div></div>`);
-var root_32$2 = from_html(`<label class="pcr-up-ultrasharp svelte-xw7bpl"><input type="checkbox" class="svelte-xw7bpl"/> <span class="pcr-up-ultrasharp-text svelte-xw7bpl">Keep a plain UltraSharp layer underneath <span class="pcr-up-ultrasharp-hint svelte-xw7bpl">erase the AI layer anywhere to reveal a faithfully sharpened original instead of the soft source</span></span></label>`);
-var root_33$3 = from_html(`<div class="pcr-up-slider-row svelte-xw7bpl"><span class="pcr-up-slider-label svelte-xw7bpl">Denoise</span> <!></div>`);
+var root_32$3 = from_html(`<label class="pcr-up-ultrasharp svelte-xw7bpl"><input type="checkbox" class="svelte-xw7bpl"/> <span class="pcr-up-ultrasharp-text svelte-xw7bpl">Keep a plain UltraSharp layer underneath <span class="pcr-up-ultrasharp-hint svelte-xw7bpl">erase the AI layer anywhere to reveal a faithfully sharpened original instead of the soft source</span></span></label>`);
+var root_33$2 = from_html(`<div class="pcr-up-slider-row svelte-xw7bpl"><span class="pcr-up-slider-label svelte-xw7bpl">Denoise</span> <!></div>`);
 var root_30$3 = from_html(`<div class="pcr-up-sliders svelte-xw7bpl"><div><span class="pcr-up-slider-label svelte-xw7bpl">Scale</span> <!></div> <div class="pcr-up-slider-target svelte-xw7bpl"> </div> <!> <!> <!></div>`);
 var root_34$3 = from_html(`<div class="pcr-up-combos svelte-xw7bpl"><div class="pcr-up-combo svelte-xw7bpl"><label class="pcr-up-combo-label svelte-xw7bpl" for="pcr-up-plainpass">Plain pass — Background / under-layer</label> <select id="pcr-up-plainpass"><option> </option><option> </option></select></div></div>`);
 var root_36$3 = from_html(`<div class="pcr-up-combo svelte-xw7bpl"><label class="pcr-up-combo-label svelte-xw7bpl" for="pcr-up-restore">Restore</label> <select id="pcr-up-restore"><option> </option><option> </option></select></div>`);
@@ -608,7 +608,7 @@ var root_40$3 = from_html(`<option> </option>`);
 var root_38$3 = from_html(`<div class="pcr-up-combos svelte-xw7bpl"><div class="pcr-up-combo svelte-xw7bpl"><label class="pcr-up-combo-label svelte-xw7bpl" for="pcr-up-sampler">Sampler</label> <select id="pcr-up-sampler"></select></div> <div class="pcr-up-combo svelte-xw7bpl"><label class="pcr-up-combo-label svelte-xw7bpl" for="pcr-up-scheduler">Scheduler</label> <select id="pcr-up-scheduler"></select></div></div>`);
 var root_42$3 = from_html(`<span class="pcr-up-adv-dirty svelte-xw7bpl"> </span>`);
 var root_44$3 = from_html(`<label class="pcr-up-ultrasharp svelte-xw7bpl"><input type="checkbox" class="svelte-xw7bpl"/> <span class="pcr-up-ultrasharp-text svelte-xw7bpl">Preserve soft background <span class="pcr-up-ultrasharp-hint svelte-xw7bpl">defocused regions keep the original's smoothness instead of growing invented texture</span></span></label>`);
-var root_47$2 = from_html(`<option> </option>`);
+var root_47$3 = from_html(`<option> </option>`);
 var root_46$3 = from_html(`<div class="pcr-up-slider-row svelte-xw7bpl"><span class="pcr-up-slider-label svelte-xw7bpl"> </span> <select class="pcr-up-select pcr-up-adv-select svelte-xw7bpl"></select></div>`);
 var root_48$2 = from_html(`<div class="pcr-up-slider-row svelte-xw7bpl"><span class="pcr-up-slider-label svelte-xw7bpl"> </span> <!></div>`);
 var root_43$3 = from_html(`<div class="pcr-up-adv-body svelte-xw7bpl"><!> <!> <!></div>`);
@@ -720,19 +720,20 @@ function UpscaleOptionsModal($$anchor, $$props) {
     var _a, _b;
     return ((_b = (_a = caps()) == null ? void 0 : _a.engineModels) == null ? void 0 : _b.find((m) => m.hash === get(engineSel))) || null;
   });
-  let engineKind = user_derived(() => get(engineEntry) ? get(engineEntry).architecture === "qwen_edit" ? "qwen" : get(engineEntry).architecture === "zimage" ? "zimage" : get(engineEntry).architecture === "flux" ? "flux1" : "sdxl" : get(engineSel) === "source" ? "source" : "plain");
+  let engineKind = user_derived(() => get(engineEntry) ? get(engineEntry).architecture === "qwen_edit" ? "qwen" : get(engineEntry).architecture === "zimage" ? "zimage" : get(engineEntry).architecture === "krea2" ? "krea2" : get(engineEntry).architecture === "flux" ? "flux1" : "sdxl" : get(engineSel) === "source" ? "source" : "plain");
   let sourceGraftable = user_derived(() => {
     var _a;
     return get(engineKind) === "source" && !!((_a = caps()) == null ? void 0 : _a.graftable);
   });
-  let tileEngine = user_derived(() => get(engineKind) === "sdxl" || get(engineKind) === "flux1" || get(engineKind) === "zimage");
+  let tileEngine = user_derived(() => get(engineKind) === "sdxl" || get(engineKind) === "flux1" || get(engineKind) === "zimage" || get(engineKind) === "krea2");
   let engineGroups = user_derived(() => {
-    var _a, _b, _c, _d;
+    var _a, _b, _c, _d, _e;
     return {
       sdxl: (((_a = caps()) == null ? void 0 : _a.engineModels) || []).filter((m) => m.architecture === "sdxl"),
       flux1: (((_b = caps()) == null ? void 0 : _b.engineModels) || []).filter((m) => m.architecture === "flux"),
       zimage: (((_c = caps()) == null ? void 0 : _c.engineModels) || []).filter((m) => m.architecture === "zimage"),
-      qwen: (((_d = caps()) == null ? void 0 : _d.engineModels) || []).filter((m) => m.architecture === "qwen_edit")
+      krea2: (((_d = caps()) == null ? void 0 : _d.engineModels) || []).filter((m) => m.architecture === "krea2"),
+      qwen: (((_e = caps()) == null ? void 0 : _e.engineModels) || []).filter((m) => m.architecture === "qwen_edit")
     };
   });
   let engineChoices = user_derived(() => {
@@ -771,6 +772,12 @@ function UpscaleOptionsModal($$anchor, $$props) {
           options: get(engineGroups).zimage.map((m) => ({ value: m.hash, label: m.displayName }))
         }
       ] : [],
+      ...get(engineGroups).krea2.length ? [
+        {
+          label: "Krea 2 — tiled re-detail",
+          options: get(engineGroups).krea2.map((m) => ({ value: m.hash, label: m.displayName }))
+        }
+      ] : [],
       ...get(engineGroups).qwen.length ? [
         {
           label: "Qwen Edit — instruction enhance",
@@ -790,11 +797,11 @@ function UpscaleOptionsModal($$anchor, $$props) {
   });
   let recSampler = user_derived(() => {
     var _a;
-    return get(engineKind) === "sdxl" ? "dpmpp_2m" : get(engineKind) === "zimage" ? "res_multistep" : get(engineKind) === "flux1" || get(engineKind) === "qwen" ? "euler" : (_a = caps()) == null ? void 0 : _a.recommendedSampler;
+    return get(engineKind) === "sdxl" ? "dpmpp_2m" : get(engineKind) === "zimage" ? "res_multistep" : get(engineKind) === "krea2" ? "euler" : get(engineKind) === "flux1" || get(engineKind) === "qwen" ? "euler" : (_a = caps()) == null ? void 0 : _a.recommendedSampler;
   });
   let recScheduler = user_derived(() => {
     var _a;
-    return get(engineKind) === "sdxl" ? "karras" : get(engineKind) === "zimage" ? "beta" : get(engineKind) === "flux1" || get(engineKind) === "qwen" ? "simple" : (_a = caps()) == null ? void 0 : _a.recommendedScheduler;
+    return get(engineKind) === "sdxl" ? "karras" : get(engineKind) === "zimage" ? "beta" : get(engineKind) === "flux1" || get(engineKind) === "qwen" || get(engineKind) === "krea2" ? "simple" : (_a = caps()) == null ? void 0 : _a.recommendedScheduler;
   });
   let advDefaults = user_derived(() => {
     var _a, _b;
@@ -806,11 +813,11 @@ function UpscaleOptionsModal($$anchor, $$props) {
   });
   let denoiseDefault = user_derived(() => {
     var _a, _b, _c;
-    return get(tileEngine) ? ((_b = (_a = get(engineEntry)) == null ? void 0 : _a.defaults) == null ? void 0 : _b.denoise) ?? (get(engineKind) === "flux1" ? 0.2 : 0.15) : (_c = caps()) == null ? void 0 : _c.defaultDenoise;
+    return get(tileEngine) ? ((_b = (_a = get(engineEntry)) == null ? void 0 : _a.defaults) == null ? void 0 : _b.denoise) ?? (get(engineKind) === "flux1" ? 0.2 : get(engineKind) === "krea2" ? 0.45 : 0.15) : (_c = caps()) == null ? void 0 : _c.defaultDenoise;
   });
   user_effect(() => {
     if ($$props.open && caps()) untrack(() => {
-      var _a, _b, _c, _d, _e;
+      var _a, _b, _c, _d, _e, _f;
       set(mode, caps().defaultMode || "prompt", true);
       set(depthSource, caps().defaultDepthSource || "pose", true);
       set(savePrefix, caps().defaultSavePrefix || "upscale/upscale", true);
@@ -827,6 +834,8 @@ function UpscaleOptionsModal($$anchor, $$props) {
       }
       set(condition, onUseInEdit() && ((_b = (_a = caps().conditions) == null ? void 0 : _a.ipadapter) == null ? void 0 : _b.ok) ? "ipadapter" : "none", true);
       memoryPrompt = null;
+      const rawEngine = ((_c = caps().sourceModelInfo) == null ? void 0 : _c.family) === "krea2_raw" ? (caps().engineModels || []).find((m) => m.architecture === "krea2" && /raw/i.test(m.filename || "") && !/turbo/i.test(m.filename || "")) : null;
+      const rawHash = (rawEngine == null ? void 0 : rawEngine.hash) || null;
       set(engineSel, caps().graftable ? "source" : "plain", true);
       set(prompt, prefillFor(caps().graftable ? "source" : "plain"), true);
       set(plainEngine, caps().seedvr2Available ? "seedvr2" : "ultrasharp", true);
@@ -835,7 +844,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
       set(preserveDefocus, true);
       set(advanced, {}, true);
       set(advancedOpen, false);
-      const modelKey = ((_c = caps().sourceModelInfo) == null ? void 0 : _c.hash) || "";
+      const modelKey = ((_d = caps().sourceModelInfo) == null ? void 0 : _d.hash) || "";
       const modelMem = modelKey ? recallModalMemory("upscale-model", modelKey) : null;
       if ((modelMem == null ? void 0 : modelMem.plainEngine) === "ultrasharp" || (modelMem == null ? void 0 : modelMem.plainEngine) === "seedvr2" && caps().seedvr2Available) {
         set(plainEngine, modelMem.plainEngine, true);
@@ -843,16 +852,17 @@ function UpscaleOptionsModal($$anchor, $$props) {
       if (typeof (modelMem == null ? void 0 : modelMem.denoise) === "number") set(denoise, modelMem.denoise, true);
       const mem = recallModalMemory("upscale", imageKey());
       const memEngine = (mem == null ? void 0 : mem.engine) === "ultrasharp" || (mem == null ? void 0 : mem.engine) === "seedvr2" ? "plain" : mem == null ? void 0 : mem.engine;
-      const memEngineValid = memEngine === "source" ? !!caps().graftable : memEngine === "plain" ? true : !!memEngine && !!((_d = caps().engineModels) == null ? void 0 : _d.some((m) => m.hash === memEngine));
+      const memEngineValid = memEngine === "source" ? !!caps().graftable : memEngine === "plain" ? true : !!memEngine && !!((_e = caps().engineModels) == null ? void 0 : _e.some((m) => m.hash === memEngine));
       if (memEngineValid) {
         memoryPrompt = typeof mem.prompt === "string" && mem.prompt.trim() ? mem.prompt : null;
         pickEngine(memEngine);
         if (memEngine === "source" && typeof (modelMem == null ? void 0 : modelMem.denoise) === "number") set(denoise, modelMem.denoise, true);
         if (typeof mem.denoise === "number") set(denoise, mem.denoise, true);
         if ((mem.climbStage === "seedvr2" || mem.engine === "seedvr2") && caps().seedvr2Available) set(climbStage, "seedvr2");
-        if (mem.climbModel && ((_e = caps().upscaleModelOptions) == null ? void 0 : _e.includes(mem.climbModel))) set(climbModel, mem.climbModel, true);
+        if (mem.climbModel && ((_f = caps().upscaleModelOptions) == null ? void 0 : _f.includes(mem.climbModel))) set(climbModel, mem.climbModel, true);
         if (mem.plainEngine === "ultrasharp" || mem.plainEngine === "seedvr2" && caps().seedvr2Available) set(plainEngine, mem.plainEngine, true);
       }
+      if (rawHash && (!memEngineValid || memEngine === "source")) pickEngine(rawHash);
       requestAnimationFrame(() => confirmBtn == null ? void 0 : confirmBtn.focus());
     });
   });
@@ -860,7 +870,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
   function basePrefillFor(kind) {
     var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k;
     if (kind === "qwen") return ((_b = (_a = caps()) == null ? void 0 : _a.enginePromptDefaults) == null ? void 0 : _b.qwen) || "";
-    if (kind === "sdxl" || kind === "flux1" || kind === "zimage") {
+    if (kind === "sdxl" || kind === "flux1" || kind === "zimage" || kind === "krea2") {
       const srcArch = ((_c = caps()) == null ? void 0 : _c.architecture) || ((_e = (_d = caps()) == null ? void 0 : _d.sourceModelInfo) == null ? void 0 : _e.architecture) || "";
       const descriptive = srcArch === "qwen_edit" ? "" : (_f = caps()) == null ? void 0 : _f.prefillPrompt;
       return descriptive || ((_h = (_g = caps()) == null ? void 0 : _g.enginePromptDefaults) == null ? void 0 : _h.sdxlFallback) || "";
@@ -879,7 +889,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
     var _a, _b, _c, _d, _e, _f, _g;
     set(engineSel, value, true);
     const entry = ((_b = (_a = caps()) == null ? void 0 : _a.engineModels) == null ? void 0 : _b.find((m) => m.hash === value)) || null;
-    const kind = entry ? entry.architecture === "qwen_edit" ? "qwen" : entry.architecture === "zimage" ? "zimage" : entry.architecture === "flux" ? "flux1" : "sdxl" : value === "source" ? "source" : "plain";
+    const kind = entry ? entry.architecture === "qwen_edit" ? "qwen" : entry.architecture === "zimage" ? "zimage" : entry.architecture === "krea2" ? "krea2" : entry.architecture === "flux" ? "flux1" : "sdxl" : value === "source" ? "source" : "plain";
     set(advanced, {}, true);
     const d = entry == null ? void 0 : entry.defaults;
     set(denoise, (d == null ? void 0 : d.denoise) ?? ((_c = caps()) == null ? void 0 : _c.defaultDenoise) ?? 0.3, true);
@@ -1144,7 +1154,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
     base.condition = get(condition);
     base.engine = get(engineKind) === "source" ? "source" : (
       // Consolidated plain entry: Restore decides which floor builds.
-      get(engineKind) === "plain" ? get(climbStage) === "seedvr2" && ((_b = caps()) == null ? void 0 : _b.seedvr2Available) ? "seedvr2" : "ultrasharp" : get(engineKind) === "qwen" ? "qwen-edit" : get(engineKind) === "zimage" ? "zimage-unet" : get(engineKind) === "flux1" ? "flux1-unet" : "sdxl-ckpt"
+      get(engineKind) === "plain" ? get(climbStage) === "seedvr2" && ((_b = caps()) == null ? void 0 : _b.seedvr2Available) ? "seedvr2" : "ultrasharp" : get(engineKind) === "qwen" ? "qwen-edit" : get(engineKind) === "zimage" ? "zimage-unet" : get(engineKind) === "krea2" ? "krea2-unet" : get(engineKind) === "flux1" ? "flux1-unet" : "sdxl-ckpt"
     );
     if (get(engineEntry)) base.engineModel = {
       hash: get(engineEntry).hash,
@@ -1158,7 +1168,8 @@ function UpscaleOptionsModal($$anchor, $$props) {
     } else if (get(prompt).trim() && get(prompt).trim() !== basePrefillFor(get(engineKind)).trim()) {
       base.prompt = get(prompt);
     }
-    if (Object.keys(get(advanced)).length) base.advanced = { ...get(advanced) };
+    if (get(engineEntry)) base.advanced = { ...get(advDefaults), ...get(advanced) };
+    else if (Object.keys(get(advanced)).length) base.advanced = { ...get(advanced) };
     storeModalMemory("upscale", imageKey(), {
       engine: get(engineKind) === "source" ? "source" : get(engineSel),
       prompt: get(prompt),
@@ -1426,19 +1437,23 @@ function UpscaleOptionsModal($$anchor, $$props) {
               var div_7 = first_child(fragment_2);
               var div_8 = child(div_7);
               var img_2 = child(div_8);
-              var div_9 = sibling(div_7, 6);
+              var div_9 = sibling(div_7, 2);
+              var text_2 = child(div_9);
+              var div_10 = sibling(div_9, 4);
               template_effect(() => {
+                var _a, _b;
                 set_style(div_7, `clip-path: inset(0 calc(100% - ${get(splitX) ?? ""}px) 0 0);`);
                 set_style(div_8, `transform: translate(${get(panX) ?? ""}px, ${get(panY) ?? ""}px) scale(${get(zoom) ?? ""});`);
-                set_attribute(img_2, "src", previewUrl());
+                set_attribute(img_2, "src", ((_a = progress()) == null ? void 0 : _a.enlargedUrl) || previewUrl());
                 set_attribute(img_2, "width", get(imgNatW));
                 set_attribute(img_2, "height", get(imgNatH));
-                set_style(div_9, `left: ${get(splitX) ?? ""}px;`);
+                set_text(text_2, ((_b = progress()) == null ? void 0 : _b.enlargedUrl) ? "Enlarged" : "Before");
+                set_style(div_10, `left: ${get(splitX) ?? ""}px;`);
               });
-              delegated("pointerdown", div_9, onSplitDown);
-              delegated("pointermove", div_9, onSplitMove);
-              delegated("pointerup", div_9, onSplitUp);
-              event("pointercancel", div_9, onSplitUp);
+              delegated("pointerdown", div_10, onSplitDown);
+              delegated("pointermove", div_10, onSplitMove);
+              delegated("pointerup", div_10, onSplitUp);
+              event("pointercancel", div_10, onSplitUp);
               append($$anchor4, fragment_2);
             };
             if_block(node_4, ($$render) => {
@@ -1448,9 +1463,9 @@ function UpscaleOptionsModal($$anchor, $$props) {
           var node_5 = sibling(node_4, 2);
           {
             var consequent_4 = ($$anchor4) => {
-              var div_10 = root_6$7();
-              var span_1 = child(div_10);
-              var text_2 = child(span_1);
+              var div_11 = root_6$7();
+              var span_1 = child(div_11);
+              var text_3 = child(span_1);
               var node_6 = sibling(span_1, 2);
               {
                 var consequent_3 = ($$anchor5) => {
@@ -1465,9 +1480,9 @@ function UpscaleOptionsModal($$anchor, $$props) {
                 });
               }
               var button_2 = sibling(node_6, 2);
-              template_effect(($0) => set_text(text_2, `${$0 ?? ""}%`), [() => Math.round(get(zoom) * 100)]);
+              template_effect(($0) => set_text(text_3, `${$0 ?? ""}%`), [() => Math.round(get(zoom) * 100)]);
               delegated("click", button_2, fitView);
-              append($$anchor4, div_10);
+              append($$anchor4, div_11);
             };
             if_block(node_5, ($$render) => {
               if (get(imgNatW)) $$render(consequent_4);
@@ -1489,44 +1504,44 @@ function UpscaleOptionsModal($$anchor, $$props) {
       var node_7 = sibling(div_5, 2);
       {
         var consequent_9 = ($$anchor3) => {
-          var div_11 = root_8$7();
-          var node_8 = child(div_11);
+          var div_12 = root_8$7();
+          var node_8 = child(div_12);
           {
             var consequent_6 = ($$anchor4) => {
-              var div_12 = root_9$6();
-              var text_3 = child(div_12);
-              template_effect(() => set_text(text_3, `Done${progress().filename ? ` — ${progress().filename}` : ""}`));
-              append($$anchor4, div_12);
+              var div_13 = root_9$6();
+              var text_4 = child(div_13);
+              template_effect(() => set_text(text_4, `Done${progress().filename ? ` — ${progress().filename}` : ""}`));
+              append($$anchor4, div_13);
             };
             var consequent_7 = ($$anchor4) => {
-              var div_13 = root_10$6();
-              var text_4 = child(div_13);
-              template_effect(() => set_text(text_4, progress().message || "Failed"));
-              append($$anchor4, div_13);
+              var div_14 = root_10$6();
+              var text_5 = child(div_14);
+              template_effect(() => set_text(text_5, progress().message || "Failed"));
+              append($$anchor4, div_14);
             };
             var alternate = ($$anchor4) => {
               var fragment_3 = root_11$5();
-              var div_14 = first_child(fragment_3);
-              var text_5 = child(div_14);
-              var div_15 = sibling(div_14, 2);
-              var div_16 = child(div_15);
+              var div_15 = first_child(fragment_3);
+              var text_6 = child(div_15);
+              var div_16 = sibling(div_15, 2);
+              var div_17 = child(div_16);
               let classes_2;
-              var node_9 = sibling(div_15, 2);
+              var node_9 = sibling(div_16, 2);
               {
                 var consequent_8 = ($$anchor5) => {
-                  var div_17 = root_12$6();
-                  var text_6 = child(div_17);
-                  template_effect(() => set_text(text_6, get(progressLabel)));
-                  append($$anchor5, div_17);
+                  var div_18 = root_12$6();
+                  var text_7 = child(div_18);
+                  template_effect(() => set_text(text_7, get(progressLabel)));
+                  append($$anchor5, div_18);
                 };
                 if_block(node_9, ($$render) => {
                   if (get(progressLabel)) $$render(consequent_8);
                 });
               }
               template_effect(() => {
-                set_text(text_5, get(progressStatus));
-                classes_2 = set_class(div_16, 1, "pcr-up-bar-fill svelte-xw7bpl", null, classes_2, { indeterminate: get(progressPercent) == null });
-                set_style(div_16, get(progressPercent) != null ? `width: ${get(progressPercent)}%` : "");
+                set_text(text_6, get(progressStatus));
+                classes_2 = set_class(div_17, 1, "pcr-up-bar-fill svelte-xw7bpl", null, classes_2, { indeterminate: get(progressPercent) == null });
+                set_style(div_17, get(progressPercent) != null ? `width: ${get(progressPercent)}%` : "");
               });
               append($$anchor4, fragment_3);
             };
@@ -1536,15 +1551,15 @@ function UpscaleOptionsModal($$anchor, $$props) {
               else $$render(alternate, -1);
             });
           }
-          append($$anchor3, div_11);
+          append($$anchor3, div_12);
         };
         if_block(node_7, ($$render) => {
           if (progress()) $$render(consequent_9);
         });
       }
-      var div_18 = sibling(div_4, 2);
+      var div_19 = sibling(div_4, 2);
       let classes_3;
-      var node_10 = child(div_18);
+      var node_10 = child(div_19);
       {
         var consequent_10 = ($$anchor3) => {
           var button_3 = root_13$6();
@@ -1563,15 +1578,15 @@ function UpscaleOptionsModal($$anchor, $$props) {
         };
         if_block(node_11, ($$render) => {
           var _a;
-          if (!((_a = caps()) == null ? void 0 : _a.graftable) && get(engineKind) === "plain") $$render(consequent_11);
+          if (!((_a = caps()) == null ? void 0 : _a.graftable) && get(engineKind) === "plain" && get(engineChoices) <= 1) $$render(consequent_11);
         });
       }
       var node_12 = sibling(node_11, 2);
       {
         var consequent_15 = ($$anchor3) => {
-          var div_19 = root_15$5();
-          var div_20 = sibling(child(div_19), 2);
-          var node_13 = child(div_20);
+          var div_20 = root_15$5();
+          var div_21 = sibling(child(div_20), 2);
+          var node_13 = child(div_21);
           SearchableSelect(node_13, {
             id: "pcr-up-engine",
             get value() {
@@ -1590,8 +1605,8 @@ function UpscaleOptionsModal($$anchor, $$props) {
           {
             var consequent_12 = ($$anchor4) => {
               var span_2 = root_16$5();
-              var text_7 = child(span_2);
-              template_effect(() => set_text(text_7, get(engineKind) === "flux1" ? "the climb model below pushes to the target, then this FLUX.1 model re-details every tile with the prompt below — low denoise holds structure without a ControlNet" : get(engineKind) === "zimage" ? "the climb model below pushes to the target, then this Z-Image model re-details every tile with the prompt below — Base holds structure at low denoise; Turbo (distilled) needs ~0.7 or it blotches" : "the climb model below pushes to the target, then this checkpoint re-details every tile (structure locked by a tile ControlNet) with the prompt below"));
+              var text_8 = child(span_2);
+              template_effect(() => set_text(text_8, get(engineKind) === "flux1" ? "the climb model below pushes to the target, then this FLUX.1 model re-details every tile with the prompt below — low denoise holds structure without a ControlNet" : get(engineKind) === "zimage" ? "the climb model below pushes to the target, then this Z-Image model re-details every tile with the prompt below — Base holds structure at low denoise; Turbo (distilled) needs ~0.7 or it blotches" : get(engineKind) === "krea2" ? "the climb model below pushes to the target, then this Krea 2 model re-details every tile with the prompt below — distilled turbo re-detail at moderate denoise, no ControlNet" : "the climb model below pushes to the target, then this checkpoint re-details every tile (structure locked by a tile ControlNet) with the prompt below"));
               append($$anchor4, span_2);
             };
             var consequent_13 = ($$anchor4) => {
@@ -1608,7 +1623,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
               else if (get(engineKind) === "plain") $$render(consequent_14, 2);
             });
           }
-          append($$anchor3, div_19);
+          append($$anchor3, div_20);
         };
         if_block(node_12, ($$render) => {
           if (get(engineChoices) > 1) $$render(consequent_15);
@@ -1617,17 +1632,17 @@ function UpscaleOptionsModal($$anchor, $$props) {
       var node_15 = sibling(node_12, 2);
       {
         var consequent_17 = ($$anchor3) => {
-          var div_21 = root_19$4();
-          var select = sibling(child(div_21), 2);
+          var div_22 = root_19$4();
+          var select = sibling(child(div_22), 2);
           each(select, 21, () => MODE_ROWS, index, ($$anchor4, row) => {
             var option = root_20$3();
-            var text_8 = child(option);
+            var text_9 = child(option);
             var option_value = {};
             template_effect(() => {
               var _a, _b;
               option.disabled = !((_a = caps().modes[get(row).key]) == null ? void 0 : _a.ok);
               set_attribute(option, "title", ((_b = caps().modes[get(row).key]) == null ? void 0 : _b.reason) || "");
-              set_text(text_8, get(row).label);
+              set_text(text_9, get(row).label);
               if (option_value !== (option_value = get(row).key)) {
                 option.value = (option.__value = get(row).key) ?? "";
               }
@@ -1636,35 +1651,35 @@ function UpscaleOptionsModal($$anchor, $$props) {
           });
           var select_value;
           init_select(select);
-          var div_22 = sibling(select, 2);
-          var text_9 = child(div_22);
-          var node_16 = sibling(div_22, 2);
+          var div_23 = sibling(select, 2);
+          var text_10 = child(div_23);
+          var node_16 = sibling(div_23, 2);
           {
             var consequent_16 = ($$anchor4) => {
-              var div_23 = root_21$3();
-              var div_24 = sibling(child(div_23), 2);
-              var div_25 = child(div_24);
+              var div_24 = root_21$3();
+              var div_25 = sibling(child(div_24), 2);
+              var div_26 = child(div_25);
               let classes_4;
-              var div_26 = sibling(div_25, 2);
+              var div_27 = sibling(div_26, 2);
               let classes_5;
               template_effect(() => {
-                classes_4 = set_class(div_25, 1, "pcr-up-seg-opt svelte-xw7bpl", null, classes_4, {
+                classes_4 = set_class(div_26, 1, "pcr-up-seg-opt svelte-xw7bpl", null, classes_4, {
                   active: get(depthSource) === "pose",
                   disabled: !caps().sources.pose.ok
                 });
-                set_attribute(div_25, "title", caps().sources.pose.ok ? "" : "No 3D pose in this image's workflow");
-                classes_5 = set_class(div_26, 1, "pcr-up-seg-opt svelte-xw7bpl", null, classes_5, {
+                set_attribute(div_26, "title", caps().sources.pose.ok ? "" : "No 3D pose in this image's workflow");
+                classes_5 = set_class(div_27, 1, "pcr-up-seg-opt svelte-xw7bpl", null, classes_5, {
                   active: get(depthSource) === "image",
                   disabled: !caps().sources.image.ok
                 });
               });
-              delegated("click", div_25, () => {
+              delegated("click", div_26, () => {
                 if (caps().sources.pose.ok) set(depthSource, "pose");
               });
-              delegated("click", div_26, () => {
+              delegated("click", div_27, () => {
                 if (caps().sources.image.ok) set(depthSource, "image");
               });
-              append($$anchor4, div_23);
+              append($$anchor4, div_24);
             };
             if_block(node_16, ($$render) => {
               if (get(mode) === "depth") $$render(consequent_16);
@@ -1675,10 +1690,10 @@ function UpscaleOptionsModal($$anchor, $$props) {
             if (select_value !== (select_value = get(mode))) {
               select.value = (select.__value = get(mode)) ?? "", select_option(select, get(mode));
             }
-            set_text(text_9, ((_a = caps().modes[get(mode)]) == null ? void 0 : _a.ok) ? get(currentModeRow).desc : ((_b = caps().modes[get(mode)]) == null ? void 0 : _b.reason) || get(currentModeRow).desc);
+            set_text(text_10, ((_a = caps().modes[get(mode)]) == null ? void 0 : _a.ok) ? get(currentModeRow).desc : ((_b = caps().modes[get(mode)]) == null ? void 0 : _b.reason) || get(currentModeRow).desc);
           });
           delegated("change", select, (e) => pickModeKey(e.currentTarget.value));
-          append($$anchor3, div_21);
+          append($$anchor3, div_22);
         };
         if_block(node_15, ($$render) => {
           var _a;
@@ -1688,20 +1703,20 @@ function UpscaleOptionsModal($$anchor, $$props) {
       var node_17 = sibling(node_15, 2);
       {
         var consequent_20 = ($$anchor3) => {
-          var div_27 = root_22$2();
-          var div_28 = sibling(child(div_27), 2);
-          var select_1 = child(div_28);
+          var div_28 = root_22$2();
+          var div_29 = sibling(child(div_28), 2);
+          var select_1 = child(div_29);
           var option_1 = child(select_1);
           option_1.value = option_1.__value = "none";
           var node_18 = sibling(option_1);
           {
             var consequent_18 = ($$anchor4) => {
-              var option_2 = root_23$2();
-              var text_10 = child(option_2);
+              var option_2 = root_23$3();
+              var text_11 = child(option_2);
               option_2.value = option_2.__value = "ipadapter";
               template_effect(() => {
                 var _a;
-                return set_text(text_10, `Style Reference — lock look to this image${((_a = caps().conditions.ipadapter) == null ? void 0 : _a.ok) ? "" : " (installs on apply)"}`);
+                return set_text(text_11, `Style Reference — lock look to this image${((_a = caps().conditions.ipadapter) == null ? void 0 : _a.ok) ? "" : " (installs on apply)"}`);
               });
               append($$anchor4, option_2);
             };
@@ -1713,12 +1728,12 @@ function UpscaleOptionsModal($$anchor, $$props) {
           var node_19 = sibling(node_18);
           {
             var consequent_19 = ($$anchor4) => {
-              var option_3 = root_24$3();
-              var text_11 = child(option_3);
+              var option_3 = root_24$2();
+              var text_12 = child(option_3);
               option_3.value = option_3.__value = "pulid";
               template_effect(() => {
                 var _a;
-                return set_text(text_11, `PuLID — lock the face to this image${((_a = caps().conditions.pulid) == null ? void 0 : _a.ok) ? "" : " (installs on apply)"}`);
+                return set_text(text_12, `PuLID — lock the face to this image${((_a = caps().conditions.pulid) == null ? void 0 : _a.ok) ? "" : " (installs on apply)"}`);
               });
               append($$anchor4, option_3);
             };
@@ -1728,7 +1743,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
             });
           }
           bind_select_value(select_1, () => get(condition), ($$value) => set(condition, $$value));
-          append($$anchor3, div_27);
+          append($$anchor3, div_28);
         };
         if_block(node_17, ($$render) => {
           var _a, _b, _c, _d, _e, _f, _g, _h;
@@ -1738,21 +1753,21 @@ function UpscaleOptionsModal($$anchor, $$props) {
       var node_20 = sibling(node_17, 2);
       {
         var consequent_23 = ($$anchor3) => {
-          var div_29 = root_25$3();
-          var div_30 = child(div_29);
-          var text_12 = child(div_30);
-          var div_31 = sibling(div_30, 2);
-          var span_5 = child(div_31);
-          var text_13 = child(span_5);
+          var div_30 = root_25$3();
+          var div_31 = child(div_30);
+          var text_13 = child(div_31);
+          var div_32 = sibling(div_31, 2);
+          var span_5 = child(div_32);
+          var text_14 = child(span_5);
           var node_21 = sibling(span_5, 2);
           key(node_21, () => get(promptSeedKey) + ":" + get(promptRestoreNonce), ($$anchor4) => {
             var fragment_4 = comment();
             var node_22 = first_child(fragment_4);
             {
               var consequent_21 = ($$anchor5) => {
-                var div_32 = root_27$3();
-                action(div_32, ($$node) => promptEditor == null ? void 0 : promptEditor($$node));
-                append($$anchor5, div_32);
+                var div_33 = root_27$3();
+                action(div_33, ($$node) => promptEditor == null ? void 0 : promptEditor($$node));
+                append($$anchor5, div_33);
               };
               var alternate_1 = ($$anchor5) => {
                 var textarea = root_28$2();
@@ -1780,23 +1795,23 @@ function UpscaleOptionsModal($$anchor, $$props) {
             });
           }
           template_effect(() => {
-            set_text(text_12, get(engineKind) === "qwen" ? "Instruction" : "Prompt");
-            set_text(text_13, get(engineKind) === "qwen" ? "how Qwen Edit should enhance" : "what the tiles re-detail with");
+            set_text(text_13, get(engineKind) === "qwen" ? "Instruction" : "Prompt");
+            set_text(text_14, get(engineKind) === "qwen" ? "how Qwen Edit should enhance" : "what the tiles re-detail with");
           });
-          append($$anchor3, div_29);
+          append($$anchor3, div_30);
         };
         if_block(node_20, ($$render) => {
           if (get(sourceGraftable) && caps().prefillPrompt != null || get(tileEngine) || get(engineKind) === "qwen") $$render(consequent_23);
         });
       }
-      var div_33 = sibling(node_20, 2);
-      var node_24 = sibling(child(div_33), 2);
+      var div_34 = sibling(node_20, 2);
+      var node_24 = sibling(child(div_34), 2);
       {
         var consequent_27 = ($$anchor3) => {
-          var div_34 = root_30$3();
-          var div_35 = child(div_34);
+          var div_35 = root_30$3();
+          var div_36 = child(div_35);
           let classes_6;
-          var node_25 = sibling(child(div_35), 2);
+          var node_25 = sibling(child(div_36), 2);
           {
             let $0 = user_derived(() => {
               var _a;
@@ -1824,35 +1839,35 @@ function UpscaleOptionsModal($$anchor, $$props) {
               }
             });
           }
-          var div_36 = sibling(div_35, 2);
-          var text_14 = child(div_36);
-          var node_26 = sibling(div_36, 2);
+          var div_37 = sibling(div_36, 2);
+          var text_15 = child(div_37);
+          var node_26 = sibling(div_37, 2);
           {
             var consequent_24 = ($$anchor4) => {
-              var div_37 = root_31$3();
-              var div_38 = sibling(child(div_37), 2);
-              let classes_7;
+              var div_38 = root_31$3();
               var div_39 = sibling(child(div_38), 2);
-              var div_40 = child(div_39);
-              var text_15 = child(div_40);
-              var div_41 = sibling(div_38, 2);
+              let classes_7;
+              var div_40 = sibling(child(div_39), 2);
+              var div_41 = child(div_40);
+              var text_16 = child(div_41);
+              var div_42 = sibling(div_39, 2);
               let classes_8;
-              var div_42 = sibling(child(div_41), 2);
-              var div_43 = child(div_42);
-              var text_16 = child(div_43);
+              var div_43 = sibling(child(div_42), 2);
+              var div_44 = child(div_43);
+              var text_17 = child(div_44);
               template_effect(() => {
-                classes_7 = set_class(div_38, 1, "pcr-up-mode svelte-xw7bpl", null, classes_7, { selected: get(canvasMode) === "grow" });
-                set_text(text_15, `Grow canvas to ${get(grownW) ?? ""}×${get(grownH) ?? ""}`);
-                classes_8 = set_class(div_41, 1, "pcr-up-mode svelte-xw7bpl", null, classes_8, { selected: get(canvasMode) === "keep" });
-                set_text(text_16, `Keep canvas at ${docWidth() ?? ""}×${docHeight() ?? ""}`);
+                classes_7 = set_class(div_39, 1, "pcr-up-mode svelte-xw7bpl", null, classes_7, { selected: get(canvasMode) === "grow" });
+                set_text(text_16, `Grow canvas to ${get(grownW) ?? ""}×${get(grownH) ?? ""}`);
+                classes_8 = set_class(div_42, 1, "pcr-up-mode svelte-xw7bpl", null, classes_8, { selected: get(canvasMode) === "keep" });
+                set_text(text_17, `Keep canvas at ${docWidth() ?? ""}×${docHeight() ?? ""}`);
               });
-              delegated("click", div_38, () => {
+              delegated("click", div_39, () => {
                 set(canvasMode, "grow");
               });
-              delegated("click", div_41, () => {
+              delegated("click", div_42, () => {
                 set(canvasMode, "keep");
               });
-              append($$anchor4, div_37);
+              append($$anchor4, div_38);
             };
             if_block(node_26, ($$render) => {
               if (get(needsGrow)) $$render(consequent_24);
@@ -1861,7 +1876,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
           var node_27 = sibling(node_26, 2);
           {
             var consequent_25 = ($$anchor4) => {
-              var label = root_32$2();
+              var label = root_32$3();
               var input = child(label);
               template_effect(() => set_checked(input, get(ultrasharpUnder)));
               delegated("change", input, (e) => setUltrasharpUnder(e.currentTarget.checked));
@@ -1874,8 +1889,8 @@ function UpscaleOptionsModal($$anchor, $$props) {
           var node_28 = sibling(node_27, 2);
           {
             var consequent_26 = ($$anchor4) => {
-              var div_44 = root_33$3();
-              var node_29 = sibling(child(div_44), 2);
+              var div_45 = root_33$2();
+              var node_29 = sibling(child(div_45), 2);
               SettingsSlider(node_29, {
                 min: 0.05,
                 get max() {
@@ -1892,36 +1907,36 @@ function UpscaleOptionsModal($$anchor, $$props) {
                   set(denoise, v, true);
                 }
               });
-              append($$anchor4, div_44);
+              append($$anchor4, div_45);
             };
             if_block(node_28, ($$render) => {
               if (get(sourceGraftable) || get(tileEngine)) $$render(consequent_26);
             });
           }
           template_effect(() => {
-            classes_6 = set_class(div_35, 1, "pcr-up-slider-row svelte-xw7bpl", null, classes_6, { "pcr-up-slider-row-ticks": !!get(scaleSlider).ticks });
-            set_text(text_14, get(targetRes) ? `→ ${get(targetRes)}` : "");
+            classes_6 = set_class(div_36, 1, "pcr-up-slider-row svelte-xw7bpl", null, classes_6, { "pcr-up-slider-row-ticks": !!get(scaleSlider).ticks });
+            set_text(text_15, get(targetRes) ? `→ ${get(targetRes)}` : "");
           });
-          append($$anchor3, div_34);
+          append($$anchor3, div_35);
         };
         if_block(node_24, ($$render) => {
-          if (get(sourceGraftable) || get(tileEngine) || get(engineKind) === "qwen") $$render(consequent_27);
+          if (get(sourceGraftable) || get(tileEngine) || get(engineKind) === "qwen" || get(engineKind) === "plain") $$render(consequent_27);
         });
       }
       var node_30 = sibling(node_24, 2);
       {
         var consequent_28 = ($$anchor3) => {
-          var div_45 = root_34$3();
-          var div_46 = child(div_45);
-          var select_2 = sibling(child(div_46), 2);
+          var div_46 = root_34$3();
+          var div_47 = child(div_46);
+          var select_2 = sibling(child(div_47), 2);
           let classes_9;
           var option_4 = child(select_2);
           let styles_1;
-          var text_17 = child(option_4);
+          var text_18 = child(option_4);
           option_4.value = option_4.__value = "ultrasharp";
           var option_5 = sibling(option_4);
           let styles_2;
-          var text_18 = child(option_5);
+          var text_19 = child(option_5);
           option_5.value = option_5.__value = "seedvr2";
           template_effect(() => {
             var _a;
@@ -1931,14 +1946,14 @@ function UpscaleOptionsModal($$anchor, $$props) {
             styles_1 = set_style(option_4, "", styles_1, {
               color: get(recommendedPlainEngine) === "ultrasharp" ? "#5ed357" : "#999"
             });
-            set_text(text_17, `UltraSharp${get(recommendedPlainEngine) === "ultrasharp" ? "  ●" : ""}`);
+            set_text(text_18, `UltraSharp${get(recommendedPlainEngine) === "ultrasharp" ? "  ●" : ""}`);
             styles_2 = set_style(option_5, "", styles_2, {
               color: get(recommendedPlainEngine) === "seedvr2" ? "#5ed357" : "#999"
             });
-            set_text(text_18, `SeedVR2 + UltraSharp (slow)${((_a = caps()) == null ? void 0 : _a.seedvr2Available) ? get(recommendedPlainEngine) === "seedvr2" ? "  ●" : "" : " (installs on apply)"}`);
+            set_text(text_19, `SeedVR2 + UltraSharp (slow)${((_a = caps()) == null ? void 0 : _a.seedvr2Available) ? get(recommendedPlainEngine) === "seedvr2" ? "  ●" : "" : " (installs on apply)"}`);
           });
           bind_select_value(select_2, () => get(plainEngine), ($$value) => set(plainEngine, $$value));
-          append($$anchor3, div_45);
+          append($$anchor3, div_46);
         };
         if_block(node_30, ($$render) => {
           if (onUseInEdit() && get(engineKind) !== "plain") $$render(consequent_28);
@@ -1947,20 +1962,20 @@ function UpscaleOptionsModal($$anchor, $$props) {
       var node_31 = sibling(node_30, 2);
       {
         var consequent_30 = ($$anchor3) => {
-          var div_47 = root_35$3();
-          var node_32 = child(div_47);
+          var div_48 = root_35$3();
+          var node_32 = child(div_48);
           {
             var consequent_29 = ($$anchor4) => {
-              var div_48 = root_36$3();
-              var select_3 = sibling(child(div_48), 2);
+              var div_49 = root_36$3();
+              var select_3 = sibling(child(div_49), 2);
               let classes_10;
               var option_6 = child(select_3);
               let styles_3;
-              var text_19 = child(option_6);
+              var text_20 = child(option_6);
               option_6.value = option_6.__value = "ultrasharp";
               var option_7 = sibling(option_6);
               let styles_4;
-              var text_20 = child(option_7);
+              var text_21 = child(option_7);
               option_7.value = option_7.__value = "seedvr2";
               template_effect(() => {
                 var _a;
@@ -1970,32 +1985,32 @@ function UpscaleOptionsModal($$anchor, $$props) {
                 styles_3 = set_style(option_6, "", styles_3, {
                   color: (caps().recommendedRestore || "none") === "none" ? "#5ed357" : "#999"
                 });
-                set_text(text_19, `None${(caps().recommendedRestore || "none") === "none" ? "  ●" : ""}`);
+                set_text(text_20, `None${(caps().recommendedRestore || "none") === "none" ? "  ●" : ""}`);
                 styles_4 = set_style(option_7, "", styles_4, {
                   color: caps().recommendedRestore === "seedvr2" ? "#5ed357" : "#999"
                 });
-                set_text(text_20, `SeedVR2 — repair degraded source${((_a = caps()) == null ? void 0 : _a.seedvr2Available) ? caps().recommendedRestore === "seedvr2" ? "  ●" : "" : " (installs on apply)"}`);
+                set_text(text_21, `SeedVR2 — repair degraded source${((_a = caps()) == null ? void 0 : _a.seedvr2Available) ? caps().recommendedRestore === "seedvr2" ? "  ●" : "" : " (installs on apply)"}`);
               });
               bind_select_value(select_3, () => get(climbStage), ($$value) => set(climbStage, $$value));
-              append($$anchor4, div_48);
+              append($$anchor4, div_49);
             };
             if_block(node_32, ($$render) => {
               if (get(engineKind) !== "qwen") $$render(consequent_29);
             });
           }
-          var div_49 = sibling(node_32, 2);
-          var select_4 = sibling(child(div_49), 2);
+          var div_50 = sibling(node_32, 2);
+          var select_4 = sibling(child(div_50), 2);
           let classes_11;
           each(select_4, 21, () => caps().upscaleModelOptions, index, ($$anchor4, opt) => {
             var option_8 = root_37$3();
             let styles_5;
-            var text_21 = child(option_8);
+            var text_22 = child(option_8);
             var option_8_value = {};
             template_effect(() => {
               styles_5 = set_style(option_8, "", styles_5, {
                 color: get(opt) === caps().recommendedUpscaleModel ? "#5ed357" : "#999"
               });
-              set_text(text_21, `${get(opt) ?? ""}${get(opt) === caps().recommendedUpscaleModel ? "  ●" : ""}`);
+              set_text(text_22, `${get(opt) ?? ""}${get(opt) === caps().recommendedUpscaleModel ? "  ●" : ""}`);
               if (option_8_value !== (option_8_value = get(opt))) {
                 option_8.value = (option_8.__value = get(opt)) ?? "";
               }
@@ -2006,7 +2021,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
             "at-rec": get(climbModel) === caps().recommendedUpscaleModel
           }));
           bind_select_value(select_4, () => get(climbModel), ($$value) => set(climbModel, $$value));
-          append($$anchor3, div_47);
+          append($$anchor3, div_48);
         };
         if_block(node_31, ($$render) => {
           var _a, _b;
@@ -2016,19 +2031,19 @@ function UpscaleOptionsModal($$anchor, $$props) {
       var node_33 = sibling(node_31, 2);
       {
         var consequent_31 = ($$anchor3) => {
-          var div_50 = root_38$3();
-          var div_51 = child(div_50);
-          var select_5 = sibling(child(div_51), 2);
+          var div_51 = root_38$3();
+          var div_52 = child(div_51);
+          var select_5 = sibling(child(div_52), 2);
           let classes_12;
           each(select_5, 21, () => caps().samplerOptions, index, ($$anchor4, opt) => {
             var option_9 = root_39$3();
             let styles_6;
-            var text_22 = child(option_9);
+            var text_23 = child(option_9);
             var option_9_value = {};
             template_effect(
               ($0) => {
                 styles_6 = set_style(option_9, "", styles_6, $0);
-                set_text(text_22, `${get(opt) ?? ""}${get(opt) === get(recSampler) ? "  ●" : ""}`);
+                set_text(text_23, `${get(opt) ?? ""}${get(opt) === get(recSampler) ? "  ●" : ""}`);
                 if (option_9_value !== (option_9_value = get(opt))) {
                   option_9.value = (option_9.__value = get(opt)) ?? "";
                 }
@@ -2044,18 +2059,18 @@ function UpscaleOptionsModal($$anchor, $$props) {
             );
             append($$anchor4, option_9);
           });
-          var div_52 = sibling(div_51, 2);
-          var select_6 = sibling(child(div_52), 2);
+          var div_53 = sibling(div_52, 2);
+          var select_6 = sibling(child(div_53), 2);
           let classes_13;
           each(select_6, 21, () => caps().schedulerOptions, index, ($$anchor4, opt) => {
             var option_10 = root_40$3();
             let styles_7;
-            var text_23 = child(option_10);
+            var text_24 = child(option_10);
             var option_10_value = {};
             template_effect(
               ($0) => {
                 styles_7 = set_style(option_10, "", styles_7, $0);
-                set_text(text_23, `${get(opt) ?? ""}${get(opt) === get(recScheduler) ? "  ●" : ""}`);
+                set_text(text_24, `${get(opt) ?? ""}${get(opt) === get(recScheduler) ? "  ●" : ""}`);
                 if (option_10_value !== (option_10_value = get(opt))) {
                   option_10.value = (option_10.__value = get(opt)) ?? "";
                 }
@@ -2077,7 +2092,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
           });
           bind_select_value(select_5, () => get(sampler), ($$value) => set(sampler, $$value));
           bind_select_value(select_6, () => get(scheduler), ($$value) => set(scheduler, $$value));
-          append($$anchor3, div_50);
+          append($$anchor3, div_51);
         };
         if_block(node_33, ($$render) => {
           var _a;
@@ -2088,15 +2103,15 @@ function UpscaleOptionsModal($$anchor, $$props) {
       {
         var consequent_36 = ($$anchor3) => {
           var fragment_6 = root_41$3();
-          var div_53 = first_child(fragment_6);
-          var span_6 = child(div_53);
+          var div_54 = first_child(fragment_6);
+          var span_6 = child(div_54);
           let classes_14;
           var node_35 = sibling(span_6, 2);
           {
             var consequent_32 = ($$anchor4) => {
               var span_7 = root_42$3();
-              var text_24 = child(span_7);
-              template_effect(($0) => set_text(text_24, `${$0 ?? ""} changed`), [() => Object.keys(get(advanced)).length]);
+              var text_25 = child(span_7);
+              template_effect(($0) => set_text(text_25, `${$0 ?? ""} changed`), [() => Object.keys(get(advanced)).length]);
               append($$anchor4, span_7);
             };
             var d_1 = user_derived(() => Object.keys(get(advanced)).length);
@@ -2104,11 +2119,11 @@ function UpscaleOptionsModal($$anchor, $$props) {
               if (get(d_1)) $$render(consequent_32);
             });
           }
-          var node_36 = sibling(div_53, 2);
+          var node_36 = sibling(div_54, 2);
           {
             var consequent_35 = ($$anchor4) => {
-              var div_54 = root_43$3();
-              var node_37 = child(div_54);
+              var div_55 = root_43$3();
+              var node_37 = child(div_55);
               {
                 var consequent_33 = ($$anchor5) => {
                   var label_1 = root_44$3();
@@ -2127,20 +2142,20 @@ function UpscaleOptionsModal($$anchor, $$props) {
                 var node_39 = first_child(fragment_7);
                 {
                   var consequent_34 = ($$anchor6) => {
-                    var div_55 = root_46$3();
-                    var span_8 = child(div_55);
-                    var text_25 = child(span_8);
+                    var div_56 = root_46$3();
+                    var span_8 = child(div_56);
+                    var text_26 = child(span_8);
                     var select_7 = sibling(span_8, 2);
                     each(select_7, 21, () => caps()[get(combo).optionsKey], index, ($$anchor7, opt) => {
-                      var option_11 = root_47$2();
+                      var option_11 = root_47$3();
                       let styles_8;
-                      var text_26 = child(option_11);
+                      var text_27 = child(option_11);
                       var option_11_value = {};
                       template_effect(() => {
                         styles_8 = set_style(option_11, "", styles_8, {
                           color: get(opt) === get(advDefaults)[get(combo).name] ? "#5ed357" : "#999"
                         });
-                        set_text(text_26, `${get(opt) ?? ""}${get(opt) === get(advDefaults)[get(combo).name] ? "  ●" : ""}`);
+                        set_text(text_27, `${get(opt) ?? ""}${get(opt) === get(advDefaults)[get(combo).name] ? "  ●" : ""}`);
                         if (option_11_value !== (option_11_value = get(opt))) {
                           option_11.value = (option_11.__value = get(opt)) ?? "";
                         }
@@ -2151,7 +2166,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
                     init_select(select_7);
                     template_effect(
                       ($0) => {
-                        set_text(text_25, get(combo).label);
+                        set_text(text_26, get(combo).label);
                         if (select_7_value !== (select_7_value = $0)) {
                           select_7.value = (select_7.__value = $0) ?? "", select_option(select_7, $0);
                         }
@@ -2159,7 +2174,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
                       [() => advValue(get(combo).name)]
                     );
                     delegated("change", select_7, (e) => setAdv(get(combo).name, e.target.value));
-                    append($$anchor6, div_55);
+                    append($$anchor6, div_56);
                   };
                   if_block(node_39, ($$render) => {
                     var _a;
@@ -2175,9 +2190,9 @@ function UpscaleOptionsModal($$anchor, $$props) {
                 () => get(engineKind) === "qwen" ? ADV_SLIDERS.filter((r) => r.name === "steps" || r.name === "cfg") : ADV_SLIDERS,
                 index,
                 ($$anchor5, row) => {
-                  var div_56 = root_48$2();
-                  var span_9 = child(div_56);
-                  var text_27 = child(span_9);
+                  var div_57 = root_48$2();
+                  var span_9 = child(div_57);
+                  var text_28 = child(span_9);
                   var node_41 = sibling(span_9, 2);
                   {
                     let $0 = user_derived(() => Number(advValue(get(row).name) ?? get(row).min));
@@ -2200,18 +2215,18 @@ function UpscaleOptionsModal($$anchor, $$props) {
                       onChange: (v) => setAdv(get(row).name, v)
                     });
                   }
-                  template_effect(() => set_text(text_27, get(row).label));
-                  append($$anchor5, div_56);
+                  template_effect(() => set_text(text_28, get(row).label));
+                  append($$anchor5, div_57);
                 }
               );
-              append($$anchor4, div_54);
+              append($$anchor4, div_55);
             };
             if_block(node_36, ($$render) => {
               if (get(advancedOpen)) $$render(consequent_35);
             });
           }
           template_effect(() => classes_14 = set_class(span_6, 1, "pcr-up-adv-arrow svelte-xw7bpl", null, classes_14, { open: get(advancedOpen) }));
-          delegated("click", div_53, () => {
+          delegated("click", div_54, () => {
             set(advancedOpen, !get(advancedOpen));
           });
           append($$anchor3, fragment_6);
@@ -2223,8 +2238,8 @@ function UpscaleOptionsModal($$anchor, $$props) {
       var node_42 = sibling(node_34, 2);
       {
         var consequent_37 = ($$anchor3) => {
-          var div_57 = root_49$2();
-          var node_43 = sibling(child(div_57), 2);
+          var div_58 = root_49$2();
+          var node_43 = sibling(child(div_58), 2);
           SavePathInput(node_43, {
             get value() {
               return get(savePrefix);
@@ -2236,14 +2251,14 @@ function UpscaleOptionsModal($$anchor, $$props) {
               return fetchApi();
             }
           });
-          append($$anchor3, div_57);
+          append($$anchor3, div_58);
         };
         if_block(node_42, ($$render) => {
           if (!onUseInEdit()) $$render(consequent_37);
         });
       }
-      var div_58 = sibling(div_3, 2);
-      var node_44 = child(div_58);
+      var div_59 = sibling(div_3, 2);
+      var node_44 = child(div_59);
       {
         var consequent_41 = ($$anchor3) => {
           var fragment_8 = comment();
@@ -2261,7 +2276,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
               var fragment_9 = root_52$2();
               var button_5 = first_child(fragment_9);
               var button_6 = sibling(button_5, 2);
-              var text_28 = child(button_6);
+              var text_29 = child(button_6);
               var node_46 = sibling(button_6, 2);
               {
                 var consequent_39 = ($$anchor5) => {
@@ -2280,7 +2295,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
                   else if (progress().phase === "done" && progress().resultHash && onViewResult()) $$render(consequent_40, 1);
                 });
               }
-              template_effect(() => set_text(text_28, progress().phase === "done" ? "Run Again" : "Apply"));
+              template_effect(() => set_text(text_29, progress().phase === "done" ? "Run Again" : "Apply"));
               delegated("click", button_5, function(...$$args) {
                 var _a;
                 (_a = $$props.onCancel) == null ? void 0 : _a.apply(this, $$args);
@@ -2331,7 +2346,7 @@ function UpscaleOptionsModal($$anchor, $$props) {
         styles = set_style(div, "", styles, { "z-index": elevated() ? 10006 : null });
         set_text(text_1, `${progress() ? get(runActive) ? "Upscaling Image" : progress().phase === "done" ? "Upscale Complete" : progress().phase === "error" ? "Upscale Failed" : "Upscale Cancelled" : "Image Upscale"}${filename() ? ` — ${filename()}` : ""}${width() && height() ? ` · ${width()}×${height()}` : ""}`);
         classes = set_class(div_5, 1, "pcr-up-stage svelte-xw7bpl", null, classes, { zoomable: !!get(inspectSrc) });
-        classes_3 = set_class(div_18, 1, "pcr-up-right svelte-xw7bpl", null, classes_3, { running: get(runActive) });
+        classes_3 = set_class(div_19, 1, "pcr-up-right svelte-xw7bpl", null, classes_3, { running: get(runActive) });
       });
       delegated("keydown", div, handleKeydown);
       delegated("pointerdown", div_5, onStageDown);
@@ -2374,35 +2389,36 @@ var root_6$6 = from_html(`<!> <!>`, 1);
 var root_13$5 = from_html(`<button class="pcr-ip-restore-chip svelte-ch4fw9" title="Re-apply the engine / reference / dials from your last inpaint of this image">↩ Restore last setup</button>`);
 var root_15$4 = from_html(`<div class="pcr-ip-hint svelte-ch4fw9">renders the painted region with this checkpoint — no render metadata needed, and PuLID / Style Reference work on any source</div>`);
 var root_16$4 = from_html(`<div class="pcr-ip-hint svelte-ch4fw9">re-renders the painted region with this FLUX.1 model at the denoise below — describe the content, strong on faces and eyes</div>`);
-var root_17$3 = from_html(`<div class="pcr-ip-hint svelte-ch4fw9">follows your instruction inside the mask only — unmasked pixels stay untouched; the region renders at full model resolution</div>`);
+var root_17$3 = from_html(`<div class="pcr-ip-hint svelte-ch4fw9">re-renders the painted region with this Krea 2 model at the denoise below — describe the content, sharp detail and clean structure</div>`);
+var root_18$3 = from_html(`<div class="pcr-ip-hint svelte-ch4fw9">follows your instruction inside the mask only — unmasked pixels stay untouched; the region renders at full model resolution</div>`);
 var root_14$5 = from_html(`<div class="pcr-mcard"><div class="pcr-mcard-title">Engine</div> <!> <!></div>`);
-var root_19$3 = from_html(`<div class="pcr-ip-hint svelte-ch4fw9">Installing pack…</div>`);
-var root_21$2 = from_html(`<img class="pcr-ip-ref-thumb svelte-ch4fw9" alt="reference"/>`);
-var root_22$1 = from_html(`<img class="pcr-ip-ref-thumb svelte-ch4fw9" alt="this image"/> <span class="pcr-ip-hint svelte-ch4fw9">this image (default)</span>`, 1);
-var root_25$2 = from_html(`<option> </option>`);
-var root_24$2 = from_html(`<label class="pcr-ip-label svelte-ch4fw9" for="pcr-ip-wtype">Weight type</label> <select id="pcr-ip-wtype" class="pcr-ip-select svelte-ch4fw9"></select> <div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Start</span> <!></div> <div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">End</span> <!></div>`, 1);
-var root_26$2 = from_html(`<div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Fidelity</span> <!></div> <div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Start</span> <!></div> <div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">End</span> <!></div>`, 1);
-var root_20$2 = from_html(`<div class="pcr-ip-ref svelte-ch4fw9"><button class="pcr-ip-tool-btn svelte-ch4fw9">Choose image</button> <!> <input type="file" accept="image/*" style="display:none"/></div> <div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Strength</span> <!></div>  <div class="pcr-ip-adv-head svelte-ch4fw9"> </div> <!>`, 1);
-var root_18$3 = from_html(`<div class="pcr-mcard"><div class="pcr-mcard-title">Condition</div> <select id="pcr-ip-cond" class="pcr-ip-select svelte-ch4fw9"><option>Inpaint</option><option>Inpaint + PuLID</option><option>Inpaint + Style Reference</option></select> <!></div>`);
-var root_28$1 = from_html(`<option> </option>`);
-var root_27$2 = from_html(`<div class="pcr-mcard"><div class="pcr-mcard-title">Mode</div> <select class="pcr-ip-select svelte-ch4fw9" data-mode-select=""></select> <div class="pcr-ip-hint svelte-ch4fw9"> </div></div>`);
-var root_30$2 = from_html(`<span class="pcr-ip-region-auto svelte-ch4fw9"> </span>`);
-var root_31$2 = from_html(`<button> </button>`);
-var root_29$2 = from_html(`<!> <div class="pcr-ip-regionrow svelte-ch4fw9"></div>`, 1);
-var root_33$2 = from_html(`<div class="pcr-ip-prompt pcr-ip-prompt-editor svelte-ch4fw9"></div>`);
-var root_34$2 = from_html(`<textarea class="pcr-ip-prompt svelte-ch4fw9" spellcheck="false"></textarea>`);
-var root_35$2 = from_html(`<span class="pcr-ip-label svelte-ch4fw9">Workflow prompt (reference)</span> <textarea class="pcr-ip-refprompt svelte-ch4fw9" readonly="" spellcheck="false"></textarea>`, 1);
-var root_36$2 = from_html(`<div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Denoise</span> <!></div>`);
-var root_38$2 = from_html(`<option> </option>`);
+var root_20$2 = from_html(`<div class="pcr-ip-hint svelte-ch4fw9">Installing pack…</div>`);
+var root_22$1 = from_html(`<img class="pcr-ip-ref-thumb svelte-ch4fw9" alt="reference"/>`);
+var root_23$2 = from_html(`<img class="pcr-ip-ref-thumb svelte-ch4fw9" alt="this image"/> <span class="pcr-ip-hint svelte-ch4fw9">this image (default)</span>`, 1);
+var root_26$2 = from_html(`<option> </option>`);
+var root_25$2 = from_html(`<label class="pcr-ip-label svelte-ch4fw9" for="pcr-ip-wtype">Weight type</label> <select id="pcr-ip-wtype" class="pcr-ip-select svelte-ch4fw9"></select> <div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Start</span> <!></div> <div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">End</span> <!></div>`, 1);
+var root_27$2 = from_html(`<div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Fidelity</span> <!></div> <div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Start</span> <!></div> <div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">End</span> <!></div>`, 1);
+var root_21$2 = from_html(`<div class="pcr-ip-ref svelte-ch4fw9"><button class="pcr-ip-tool-btn svelte-ch4fw9">Choose image</button> <!> <input type="file" accept="image/*" style="display:none"/></div> <div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Strength</span> <!></div>  <div class="pcr-ip-adv-head svelte-ch4fw9"> </div> <!>`, 1);
+var root_19$3 = from_html(`<div class="pcr-mcard"><div class="pcr-mcard-title">Condition</div> <select id="pcr-ip-cond" class="pcr-ip-select svelte-ch4fw9"><option>Inpaint</option><option>Inpaint + PuLID</option><option>Inpaint + Style Reference</option></select> <!></div>`);
+var root_29$2 = from_html(`<option> </option>`);
+var root_28$1 = from_html(`<div class="pcr-mcard"><div class="pcr-mcard-title">Mode</div> <select class="pcr-ip-select svelte-ch4fw9" data-mode-select=""></select> <div class="pcr-ip-hint svelte-ch4fw9"> </div></div>`);
+var root_31$2 = from_html(`<span class="pcr-ip-region-auto svelte-ch4fw9"> </span>`);
+var root_32$2 = from_html(`<button> </button>`);
+var root_30$2 = from_html(`<!> <div class="pcr-ip-regionrow svelte-ch4fw9"></div>`, 1);
+var root_34$2 = from_html(`<div class="pcr-ip-prompt pcr-ip-prompt-editor svelte-ch4fw9"></div>`);
+var root_35$2 = from_html(`<textarea class="pcr-ip-prompt svelte-ch4fw9" spellcheck="false"></textarea>`);
+var root_36$2 = from_html(`<span class="pcr-ip-label svelte-ch4fw9">Workflow prompt (reference)</span> <textarea class="pcr-ip-refprompt svelte-ch4fw9" readonly="" spellcheck="false"></textarea>`, 1);
+var root_37$2 = from_html(`<div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Denoise</span> <!></div>`);
 var root_39$2 = from_html(`<option> </option>`);
-var root_37$2 = from_html(`<div class="pcr-ip-combos svelte-ch4fw9"><div class="pcr-ip-combo svelte-ch4fw9"><label class="pcr-ip-label svelte-ch4fw9" for="pcr-ip-sampler">Sampler</label> <select id="pcr-ip-sampler"></select></div> <div class="pcr-ip-combo svelte-ch4fw9"><label class="pcr-ip-label svelte-ch4fw9" for="pcr-ip-scheduler">Scheduler</label> <select id="pcr-ip-scheduler"></select></div></div>`);
-var root_40$2 = from_html(`<div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Grow</span> <!></div> <div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Feather</span> <!></div>`, 1);
-var root_41$2 = from_html(`<span class="pcr-ip-label svelte-ch4fw9">Save to</span> <!>`, 1);
-var root_42$2 = from_html(`<div class="pcr-ip-error svelte-ch4fw9"> </div>`);
-var root_43$2 = from_html(`<button class="pcr-modal-btn pcr-modal-btn-danger svelte-ch4fw9">Stop</button>`);
-var root_45$2 = from_html(`<button class="pcr-modal-btn pcr-modal-btn-primary svelte-ch4fw9">Add to Edit</button>`);
-var root_46$2 = from_html(`<button class="pcr-modal-btn pcr-modal-btn-primary svelte-ch4fw9"> </button>`);
-var root_44$2 = from_html(`<button class="pcr-modal-btn pcr-modal-btn-secondary svelte-ch4fw9">Cancel</button> <button class="pcr-modal-btn pcr-modal-btn-primary svelte-ch4fw9"> </button> <!>`, 1);
+var root_40$2 = from_html(`<option> </option>`);
+var root_38$2 = from_html(`<div class="pcr-ip-combos svelte-ch4fw9"><div class="pcr-ip-combo svelte-ch4fw9"><label class="pcr-ip-label svelte-ch4fw9" for="pcr-ip-sampler">Sampler</label> <select id="pcr-ip-sampler"></select></div> <div class="pcr-ip-combo svelte-ch4fw9"><label class="pcr-ip-label svelte-ch4fw9" for="pcr-ip-scheduler">Scheduler</label> <select id="pcr-ip-scheduler"></select></div></div>`);
+var root_41$2 = from_html(`<div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Grow</span> <!></div> <div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Feather</span> <!></div> <div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">Steps</span> <!></div> <div class="pcr-ip-denoise svelte-ch4fw9"><span class="pcr-ip-label svelte-ch4fw9">CFG</span> <!></div> <div style="opacity:0.55;font-size:11px;padding:2px 0 0 2px">Pre-filled with this engine's recipe (Turbo 8/1.0 · RAW 30/3.5 · SDXL 25/5). On the source model, 0 = inherit the image's own.</div>`, 1);
+var root_42$2 = from_html(`<span class="pcr-ip-label svelte-ch4fw9">Save to</span> <!>`, 1);
+var root_43$2 = from_html(`<div class="pcr-ip-error svelte-ch4fw9"> </div>`);
+var root_44$2 = from_html(`<button class="pcr-modal-btn pcr-modal-btn-danger svelte-ch4fw9">Stop</button>`);
+var root_46$2 = from_html(`<button class="pcr-modal-btn pcr-modal-btn-primary svelte-ch4fw9">Add to Edit</button>`);
+var root_47$2 = from_html(`<button class="pcr-modal-btn pcr-modal-btn-primary svelte-ch4fw9"> </button>`);
+var root_45$2 = from_html(`<button class="pcr-modal-btn pcr-modal-btn-secondary svelte-ch4fw9">Cancel</button> <button class="pcr-modal-btn pcr-modal-btn-primary svelte-ch4fw9"> </button> <!>`, 1);
 var root_1$7 = from_html(`<div class="pcr-modal-backdrop"><div class="pcr-modal pcr-ip-modal svelte-ch4fw9" role="dialog" aria-modal="true"><div class="pcr-modal-header"><span class="pcr-modal-title"> </span> <!></div> <div class="pcr-modal-body pcr-ip-body svelte-ch4fw9"><div class="pcr-ip-left svelte-ch4fw9"><div class="pcr-ip-tabs svelte-ch4fw9"><div class="pcr-ip-seg svelte-ch4fw9"><div>Mask</div>  <div>Output</div></div> <!></div> <div><div class="pcr-ip-stage svelte-ch4fw9"><img alt="" draggable="false" class="svelte-ch4fw9"/> <canvas class="svelte-ch4fw9"></canvas></div> <!> <!></div></div> <div class="pcr-ip-right svelte-ch4fw9"><!> <!> <!> <!> <div class="pcr-mcard"><div class="pcr-mcard-title"> </div> <!> <!> <!></div> <div class="pcr-mcard"><div class="pcr-mcard-title">Settings</div> <!> <!>  <div class="pcr-ip-adv-head svelte-ch4fw9"> </div> <!> <!></div></div></div> <!> <div class="pcr-modal-footer"><!></div></div></div>`);
 function InpaintModal($$anchor, $$props) {
   push($$props, true);
@@ -2490,6 +2506,14 @@ function InpaintModal($$anchor, $$props) {
   let denoise = state(0.5);
   let sampler = state("");
   let scheduler = state("");
+  let steps = state(
+    0
+    // pre-filled to the engine's recipe on open (engineRecipe); 0 = inherit (source)
+  );
+  let cfg = state(
+    0
+    // pre-filled to the engine's recipe on open; 0 = inherit (source)
+  );
   let grow = state(0);
   let feather = state(24);
   let maskAdvancedOpen = state(false);
@@ -2520,13 +2544,14 @@ function InpaintModal($$anchor, $$props) {
     var _a, _b;
     return ((_b = (_a = caps()) == null ? void 0 : _a.engineModels) == null ? void 0 : _b.find((m) => m.hash === get(engineSel))) || null;
   });
-  let engineKind = user_derived(() => get(engineEntry) ? get(engineEntry).architecture === "qwen_edit" ? "qwen" : get(engineEntry).architecture === "flux" ? "flux1" : "sdxl" : "source");
+  let engineKind = user_derived(() => get(engineEntry) ? get(engineEntry).architecture === "qwen_edit" ? "qwen" : get(engineEntry).architecture === "flux" ? "flux1" : get(engineEntry).architecture === "krea2" ? "krea2" : "sdxl" : "source");
   let engineGroups = user_derived(() => {
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     return {
       sdxl: (((_a = caps()) == null ? void 0 : _a.engineModels) || []).filter((m) => m.architecture === "sdxl"),
       flux1: (((_b = caps()) == null ? void 0 : _b.engineModels) || []).filter((m) => m.architecture === "flux"),
-      qwen: (((_c = caps()) == null ? void 0 : _c.engineModels) || []).filter((m) => m.architecture === "qwen_edit")
+      krea2: (((_c = caps()) == null ? void 0 : _c.engineModels) || []).filter((m) => m.architecture === "krea2"),
+      qwen: (((_d = caps()) == null ? void 0 : _d.engineModels) || []).filter((m) => m.architecture === "qwen_edit")
     };
   });
   let engineSelectGroups = user_derived(() => {
@@ -2555,6 +2580,12 @@ function InpaintModal($$anchor, $$props) {
           options: get(engineGroups).flux1.map((m) => ({ value: m.hash, label: m.displayName }))
         }
       ] : [],
+      ...get(engineGroups).krea2.length ? [
+        {
+          label: "Krea 2 — re-render the masked region",
+          options: get(engineGroups).krea2.map((m) => ({ value: m.hash, label: m.displayName }))
+        }
+      ] : [],
       ...get(engineGroups).qwen.length ? [
         {
           label: "Qwen Edit — instruction edit (masked)",
@@ -2565,15 +2596,27 @@ function InpaintModal($$anchor, $$props) {
   });
   let recSampler = user_derived(() => {
     var _a, _b, _c, _d, _e;
-    return get(engineKind) === "qwen" || get(engineKind) === "flux1" ? ((_b = (_a = get(engineEntry)) == null ? void 0 : _a.gen) == null ? void 0 : _b.sampler) || "euler" : ((_d = (_c = get(engineEntry)) == null ? void 0 : _c.gen) == null ? void 0 : _d.sampler) || ((_e = caps()) == null ? void 0 : _e.recommendedSampler);
+    return get(engineKind) === "qwen" || get(engineKind) === "flux1" || get(engineKind) === "krea2" ? ((_b = (_a = get(engineEntry)) == null ? void 0 : _a.gen) == null ? void 0 : _b.sampler) || "euler" : ((_d = (_c = get(engineEntry)) == null ? void 0 : _c.gen) == null ? void 0 : _d.sampler) || ((_e = caps()) == null ? void 0 : _e.recommendedSampler);
   });
   let recScheduler = user_derived(() => {
     var _a, _b, _c, _d, _e;
-    return get(engineKind) === "qwen" || get(engineKind) === "flux1" ? ((_b = (_a = get(engineEntry)) == null ? void 0 : _a.gen) == null ? void 0 : _b.scheduler) || "simple" : ((_d = (_c = get(engineEntry)) == null ? void 0 : _c.gen) == null ? void 0 : _d.scheduler) || ((_e = caps()) == null ? void 0 : _e.recommendedScheduler);
+    return get(engineKind) === "qwen" || get(engineKind) === "flux1" || get(engineKind) === "krea2" ? ((_b = (_a = get(engineEntry)) == null ? void 0 : _a.gen) == null ? void 0 : _b.scheduler) || "simple" : ((_d = (_c = get(engineEntry)) == null ? void 0 : _c.gen) == null ? void 0 : _d.scheduler) || ((_e = caps()) == null ? void 0 : _e.recommendedScheduler);
   });
+  function engineRecipe(entry) {
+    var _a, _b, _c, _d, _e;
+    const kind = entry ? entry.architecture === "qwen_edit" ? "qwen" : entry.architecture === "flux" ? "flux1" : entry.architecture === "krea2" ? "krea2" : "sdxl" : "source";
+    const isRaw = kind === "krea2" && /raw/i.test((entry == null ? void 0 : entry.filename) || "") && !/turbo/i.test((entry == null ? void 0 : entry.filename) || "");
+    if (kind === "krea2") return { steps: isRaw ? 30 : 8, cfg: isRaw ? 3.5 : 1 };
+    if (kind === "sdxl") return { steps: ((_a = entry == null ? void 0 : entry.gen) == null ? void 0 : _a.steps) || 25, cfg: ((_b = entry == null ? void 0 : entry.gen) == null ? void 0 : _b.cfg) ?? 5 };
+    if (kind === "qwen") return { steps: ((_c = entry == null ? void 0 : entry.gen) == null ? void 0 : _c.steps) || 40, cfg: ((_d = entry == null ? void 0 : entry.gen) == null ? void 0 : _d.cfg) ?? 4 };
+    if (kind === "flux1") return { steps: ((_e = entry == null ? void 0 : entry.gen) == null ? void 0 : _e.steps) || 25, cfg: 1 };
+    return { steps: 0, cfg: 0 };
+  }
+  let recSteps = user_derived(() => engineRecipe(get(engineEntry)).steps);
+  let recCfg = user_derived(() => engineRecipe(get(engineEntry)).cfg);
   function conditionOk(key2) {
     var _a, _b, _c;
-    if (get(engineKind) === "qwen" || get(engineKind) === "flux1") return false;
+    if (get(engineKind) === "qwen" || get(engineKind) === "flux1" || get(engineKind) === "krea2") return false;
     return get(engineKind) === "sdxl" || !!((_c = (_b = (_a = caps()) == null ? void 0 : _a.conditions) == null ? void 0 : _b[key2]) == null ? void 0 : _c.ok);
   }
   let mode = state("regional");
@@ -2657,9 +2700,9 @@ function InpaintModal($$anchor, $$props) {
     var _a, _b, _c, _d, _e, _f, _g, _h, _i;
     set(engineSel, value, true);
     const entry = ((_b = (_a = caps()) == null ? void 0 : _a.engineModels) == null ? void 0 : _b.find((m) => m.hash === value)) || null;
-    const kind = entry ? entry.architecture === "qwen_edit" ? "qwen" : entry.architecture === "flux" ? "flux1" : "sdxl" : "source";
+    const kind = entry ? entry.architecture === "qwen_edit" ? "qwen" : entry.architecture === "flux" ? "flux1" : entry.architecture === "krea2" ? "krea2" : "sdxl" : "source";
     if (entry) {
-      const fluxLike = kind === "qwen" || kind === "flux1";
+      const fluxLike = kind === "qwen" || kind === "flux1" || kind === "krea2";
       set(sampler, ((_c = entry.gen) == null ? void 0 : _c.sampler) || (fluxLike ? "euler" : get(sampler)), true);
       set(scheduler, ((_d = entry.gen) == null ? void 0 : _d.scheduler) || (fluxLike ? "simple" : get(scheduler)), true);
       if (fluxLike && get(condition) !== "none") set(condition, "none");
@@ -2668,6 +2711,9 @@ function InpaintModal($$anchor, $$props) {
       set(scheduler, ((_f = caps()) == null ? void 0 : _f.defaultScheduler) || "", true);
       if (get(condition) !== "none" && !((_i = (_h = (_g = caps()) == null ? void 0 : _g.conditions) == null ? void 0 : _h[get(condition)]) == null ? void 0 : _i.ok)) set(condition, "none");
     }
+    const r = engineRecipe(entry);
+    set(steps, r.steps, true);
+    set(cfg, r.cfg, true);
     memoryPrompt = null;
     set(prompt, prefillFor(), true);
   }
@@ -2744,6 +2790,9 @@ function InpaintModal($$anchor, $$props) {
         const preEntry = (_d = caps().engineModels) == null ? void 0 : _d.find((m) => m.hash === get(engineSel));
         if ((_e = preEntry == null ? void 0 : preEntry.gen) == null ? void 0 : _e.sampler) set(sampler, preEntry.gen.sampler, true);
         if ((_f = preEntry == null ? void 0 : preEntry.gen) == null ? void 0 : _f.scheduler) set(scheduler, preEntry.gen.scheduler, true);
+        const r0 = engineRecipe(preEntry);
+        set(steps, r0.steps, true);
+        set(cfg, r0.cfg, true);
         if (memEngineValid && typeof mem.denoise === "number") set(denoise, mem.denoise, true);
         set(grow, 0);
         set(feather, 24);
@@ -2816,7 +2865,7 @@ function InpaintModal($$anchor, $$props) {
     if (typeof s.grow === "number") set(grow, s.grow, true);
     if (typeof s.feather === "number") set(feather, s.feather, true);
     if (typeof s.maskOpacity === "number") set(maskOpacity, s.maskOpacity, true);
-    const fluxLike = get(engineKind) === "flux1" || get(engineKind) === "qwen";
+    const fluxLike = get(engineKind) === "flux1" || get(engineKind) === "qwen" || get(engineKind) === "krea2";
     if (typeof s.condition === "string" && !(fluxLike && s.condition !== "none") && (s.condition === "none" || conditionOk(s.condition))) {
       set(condition, s.condition, true);
       if (typeof s.referenceImage === "string") set(referenceImage, s.referenceImage, true);
@@ -3198,12 +3247,14 @@ function InpaintModal($$anchor, $$props) {
       feather: get(feather),
       sampler: get(sampler) || null,
       scheduler: get(scheduler) || null,
+      steps: get(steps) > 0 ? get(steps) : void 0,
+      cfg: get(cfg) > 0 ? get(cfg) : void 0,
       // Source engine carries the mode so a Basic pick forces a flat encode
       // even if the prompt still has $blocks; engine models ignore it. (Moved
       // content rides regional + the ImageViewer-injected condOffset, which
       // shifts the region masks to the content's origin.)
       mode: get(engineKind) === "source" ? get(mode) : void 0,
-      engine: get(engineKind) === "sdxl" ? "sdxl-ckpt" : get(engineKind) === "flux1" ? "flux1-unet" : get(engineKind) === "qwen" ? "qwen-edit" : "source",
+      engine: get(engineKind) === "sdxl" ? "sdxl-ckpt" : get(engineKind) === "flux1" ? "flux1-unet" : get(engineKind) === "krea2" ? "krea2-unet" : get(engineKind) === "qwen" ? "qwen-edit" : "source",
       engineModel: get(engineEntry) ? {
         hash: get(engineEntry).hash,
         filename: get(engineEntry).filename
@@ -3322,7 +3373,7 @@ function InpaintModal($$anchor, $$props) {
   var fragment = comment();
   var node_1 = first_child(fragment);
   {
-    var consequent_32 = ($$anchor2) => {
+    var consequent_33 = ($$anchor2) => {
       var div = root_1$7();
       let styles;
       var div_1 = child(div);
@@ -3535,7 +3586,7 @@ function InpaintModal($$anchor, $$props) {
       }
       var node_11 = sibling(node_10, 2);
       {
-        var consequent_13 = ($$anchor3) => {
+        var consequent_14 = ($$anchor3) => {
           var div_26 = root_14$5();
           var node_12 = sibling(child(div_26), 2);
           {
@@ -3569,24 +3620,29 @@ function InpaintModal($$anchor, $$props) {
               var div_29 = root_17$3();
               append($$anchor4, div_29);
             };
+            var consequent_13 = ($$anchor4) => {
+              var div_30 = root_18$3();
+              append($$anchor4, div_30);
+            };
             if_block(node_13, ($$render) => {
               if (get(engineKind) === "sdxl") $$render(consequent_10);
               else if (get(engineKind) === "flux1") $$render(consequent_11, 1);
-              else if (get(engineKind) === "qwen") $$render(consequent_12, 2);
+              else if (get(engineKind) === "krea2") $$render(consequent_12, 2);
+              else if (get(engineKind) === "qwen") $$render(consequent_13, 3);
             });
           }
           append($$anchor3, div_26);
         };
         if_block(node_11, ($$render) => {
           var _a, _b;
-          if ((_b = (_a = caps()) == null ? void 0 : _a.engineModels) == null ? void 0 : _b.length) $$render(consequent_13);
+          if ((_b = (_a = caps()) == null ? void 0 : _a.engineModels) == null ? void 0 : _b.length) $$render(consequent_14);
         });
       }
       var node_14 = sibling(node_11, 2);
       {
-        var consequent_19 = ($$anchor3) => {
-          var div_30 = root_18$3();
-          var select = sibling(child(div_30), 2);
+        var consequent_20 = ($$anchor3) => {
+          var div_31 = root_19$3();
+          var select = sibling(child(div_31), 2);
           var option = child(select);
           option.value = option.__value = "none";
           var option_1 = sibling(option);
@@ -3597,36 +3653,36 @@ function InpaintModal($$anchor, $$props) {
           init_select(select);
           var node_15 = sibling(select, 2);
           {
-            var consequent_14 = ($$anchor4) => {
-              var div_31 = root_19$3();
-              append($$anchor4, div_31);
+            var consequent_15 = ($$anchor4) => {
+              var div_32 = root_20$2();
+              append($$anchor4, div_32);
             };
-            var consequent_18 = ($$anchor4) => {
-              var fragment_5 = root_20$2();
-              var div_32 = first_child(fragment_5);
-              var button_8 = child(div_32);
+            var consequent_19 = ($$anchor4) => {
+              var fragment_5 = root_21$2();
+              var div_33 = first_child(fragment_5);
+              var button_8 = child(div_33);
               var node_16 = sibling(button_8, 2);
               {
-                var consequent_15 = ($$anchor5) => {
-                  var img_5 = root_21$2();
+                var consequent_16 = ($$anchor5) => {
+                  var img_5 = root_22$1();
                   template_effect(() => set_attribute(img_5, "src", get(refThumbUrl)));
                   append($$anchor5, img_5);
                 };
                 var alternate_2 = ($$anchor5) => {
-                  var fragment_6 = root_22$1();
+                  var fragment_6 = root_23$2();
                   var img_6 = first_child(fragment_6);
                   template_effect(() => set_attribute(img_6, "src", sourceUrl()));
                   append($$anchor5, fragment_6);
                 };
                 if_block(node_16, ($$render) => {
-                  if (get(refThumbUrl)) $$render(consequent_15);
+                  if (get(refThumbUrl)) $$render(consequent_16);
                   else $$render(alternate_2, -1);
                 });
               }
               var input_2 = sibling(node_16, 2);
               bind_this(input_2, ($$value) => refInputEl = $$value, () => refInputEl);
-              var div_33 = sibling(div_32, 2);
-              var node_17 = sibling(child(div_33), 2);
+              var div_34 = sibling(div_33, 2);
+              var node_17 = sibling(child(div_34), 2);
               {
                 let $0 = user_derived(() => DEFAULT_WEIGHT[get(condition)] ?? 0.6);
                 SettingsSlider(node_17, {
@@ -3644,19 +3700,19 @@ function InpaintModal($$anchor, $$props) {
                   }
                 });
               }
-              var div_34 = sibling(div_33, 2);
-              var text_4 = child(div_34);
-              var node_18 = sibling(div_34, 2);
+              var div_35 = sibling(div_34, 2);
+              var text_4 = child(div_35);
+              var node_18 = sibling(div_35, 2);
               {
-                var consequent_17 = ($$anchor5) => {
+                var consequent_18 = ($$anchor5) => {
                   var fragment_7 = comment();
                   var node_19 = first_child(fragment_7);
                   {
-                    var consequent_16 = ($$anchor6) => {
-                      var fragment_8 = root_24$2();
+                    var consequent_17 = ($$anchor6) => {
+                      var fragment_8 = root_25$2();
                       var select_1 = sibling(first_child(fragment_8), 2);
                       each(select_1, 21, () => IPA_WEIGHT_TYPES, index, ($$anchor7, wt) => {
-                        var option_3 = root_25$2();
+                        var option_3 = root_26$2();
                         var text_5 = child(option_3);
                         var option_3_value = {};
                         template_effect(() => {
@@ -3667,8 +3723,8 @@ function InpaintModal($$anchor, $$props) {
                         });
                         append($$anchor7, option_3);
                       });
-                      var div_35 = sibling(select_1, 2);
-                      var node_20 = sibling(child(div_35), 2);
+                      var div_36 = sibling(select_1, 2);
+                      var node_20 = sibling(child(div_36), 2);
                       SettingsSlider(node_20, {
                         min: 0,
                         max: 1,
@@ -3681,8 +3737,8 @@ function InpaintModal($$anchor, $$props) {
                           set(ipaStartAt, v, true);
                         }
                       });
-                      var div_36 = sibling(div_35, 2);
-                      var node_21 = sibling(child(div_36), 2);
+                      var div_37 = sibling(div_36, 2);
+                      var node_21 = sibling(child(div_37), 2);
                       SettingsSlider(node_21, {
                         min: 0,
                         max: 1,
@@ -3699,9 +3755,9 @@ function InpaintModal($$anchor, $$props) {
                       append($$anchor6, fragment_8);
                     };
                     var alternate_3 = ($$anchor6) => {
-                      var fragment_9 = root_26$2();
-                      var div_37 = first_child(fragment_9);
-                      var node_22 = sibling(child(div_37), 2);
+                      var fragment_9 = root_27$2();
+                      var div_38 = first_child(fragment_9);
+                      var node_22 = sibling(child(div_38), 2);
                       SettingsSlider(node_22, {
                         min: 0,
                         max: 10,
@@ -3714,8 +3770,8 @@ function InpaintModal($$anchor, $$props) {
                           set(pulidFidelity, v, true);
                         }
                       });
-                      var div_38 = sibling(div_37, 2);
-                      var node_23 = sibling(child(div_38), 2);
+                      var div_39 = sibling(div_38, 2);
+                      var node_23 = sibling(child(div_39), 2);
                       SettingsSlider(node_23, {
                         min: 0,
                         max: 1,
@@ -3728,8 +3784,8 @@ function InpaintModal($$anchor, $$props) {
                           set(pulidStartAt, v, true);
                         }
                       });
-                      var div_39 = sibling(div_38, 2);
-                      var node_24 = sibling(child(div_39), 2);
+                      var div_40 = sibling(div_39, 2);
+                      var node_24 = sibling(child(div_40), 2);
                       SettingsSlider(node_24, {
                         min: 0,
                         max: 1,
@@ -3745,27 +3801,27 @@ function InpaintModal($$anchor, $$props) {
                       append($$anchor6, fragment_9);
                     };
                     if_block(node_19, ($$render) => {
-                      if (get(condition) === "ipadapter") $$render(consequent_16);
+                      if (get(condition) === "ipadapter") $$render(consequent_17);
                       else $$render(alternate_3, -1);
                     });
                   }
                   append($$anchor5, fragment_7);
                 };
                 if_block(node_18, ($$render) => {
-                  if (get(conditionAdvancedOpen)) $$render(consequent_17);
+                  if (get(conditionAdvancedOpen)) $$render(consequent_18);
                 });
               }
               template_effect(() => set_text(text_4, `${get(conditionAdvancedOpen) ? "▾" : "▸"} Advanced`));
               delegated("click", button_8, () => refInputEl == null ? void 0 : refInputEl.click());
               delegated("change", input_2, chooseReference);
-              delegated("click", div_34, () => {
+              delegated("click", div_35, () => {
                 set(conditionAdvancedOpen, !get(conditionAdvancedOpen));
               });
               append($$anchor4, fragment_5);
             };
             if_block(node_15, ($$render) => {
-              if (get(installing)) $$render(consequent_14);
-              else if (get(needsReference)) $$render(consequent_18, 1);
+              if (get(installing)) $$render(consequent_15);
+              else if (get(needsReference)) $$render(consequent_19, 1);
             });
           }
           template_effect(
@@ -3793,20 +3849,20 @@ function InpaintModal($$anchor, $$props) {
             ]
           );
           delegated("change", select, (e) => pickCondition(e.currentTarget.value));
-          append($$anchor3, div_30);
+          append($$anchor3, div_31);
         };
         if_block(node_14, ($$render) => {
           var _a;
-          if (((_a = caps()) == null ? void 0 : _a.conditions) && get(engineKind) !== "qwen" && get(engineKind) !== "flux1") $$render(consequent_19);
+          if (((_a = caps()) == null ? void 0 : _a.conditions) && get(engineKind) !== "qwen" && get(engineKind) !== "flux1" && get(engineKind) !== "krea2") $$render(consequent_20);
         });
       }
       var node_25 = sibling(node_14, 2);
       {
-        var consequent_20 = ($$anchor3) => {
-          var div_40 = root_27$2();
-          var select_2 = sibling(child(div_40), 2);
+        var consequent_21 = ($$anchor3) => {
+          var div_41 = root_28$1();
+          var select_2 = sibling(child(div_41), 2);
           each(select_2, 21, () => MODE_ROWS, index, ($$anchor4, row) => {
-            var option_4 = root_28$1();
+            var option_4 = root_29$2();
             var text_6 = child(option_4);
             var option_4_value = {};
             template_effect(
@@ -3824,8 +3880,8 @@ function InpaintModal($$anchor, $$props) {
           });
           var select_2_value;
           init_select(select_2);
-          var div_41 = sibling(select_2, 2);
-          var text_7 = child(div_41);
+          var div_42 = sibling(select_2, 2);
+          var text_7 = child(div_42);
           template_effect(
             ($0) => {
               if (select_2_value !== (select_2_value = get(mode))) {
@@ -3838,34 +3894,34 @@ function InpaintModal($$anchor, $$props) {
             ]
           );
           delegated("change", select_2, (e) => pickModeKey(e.currentTarget.value));
-          append($$anchor3, div_40);
+          append($$anchor3, div_41);
         };
         if_block(node_25, ($$render) => {
-          if (get(showModeRows)) $$render(consequent_20);
+          if (get(showModeRows)) $$render(consequent_21);
         });
       }
-      var div_42 = sibling(node_25, 2);
-      var div_43 = child(div_42);
-      var text_8 = child(div_43);
-      var node_26 = sibling(div_43, 2);
+      var div_43 = sibling(node_25, 2);
+      var div_44 = child(div_43);
+      var text_8 = child(div_44);
+      var node_26 = sibling(div_44, 2);
       {
-        var consequent_22 = ($$anchor3) => {
-          var fragment_10 = root_29$2();
+        var consequent_23 = ($$anchor3) => {
+          var fragment_10 = root_30$2();
           var node_27 = first_child(fragment_10);
           {
-            var consequent_21 = ($$anchor4) => {
-              var span_2 = root_30$2();
+            var consequent_22 = ($$anchor4) => {
+              var span_2 = root_31$2();
               var text_9 = child(span_2);
               template_effect(() => set_text(text_9, `🧍 auto-loaded ${forcedPrefillLabel() ?? ""}'s prompt — switch below or edit`));
               append($$anchor4, span_2);
             };
             if_block(node_27, ($$render) => {
-              if (forcedPrefill() && forcedPrefillLabel() && !get(showModeRows)) $$render(consequent_21);
+              if (forcedPrefill() && forcedPrefillLabel() && !get(showModeRows)) $$render(consequent_22);
             });
           }
-          var div_44 = sibling(node_27, 2);
-          each(div_44, 21, () => regionPrompts().filter((r) => r.text), (r) => r.name, ($$anchor4, r) => {
-            var button_9 = root_31$2();
+          var div_45 = sibling(node_27, 2);
+          each(div_45, 21, () => regionPrompts().filter((r) => r.text), (r) => r.name, ($$anchor4, r) => {
+            var button_9 = root_32$2();
             let classes_8;
             var text_10 = child(button_9);
             template_effect(
@@ -3882,7 +3938,7 @@ function InpaintModal($$anchor, $$props) {
           append($$anchor3, fragment_10);
         };
         if_block(node_26, ($$render) => {
-          if (regionPrompts().length && get(engineKind) !== "qwen" && !movedContent() && (!get(showModeRows) || !get(isRegionalMode))) $$render(consequent_22);
+          if (regionPrompts().length && get(engineKind) !== "qwen" && !movedContent() && (!get(showModeRows) || !get(isRegionalMode))) $$render(consequent_23);
         });
       }
       var node_28 = sibling(node_26, 2);
@@ -3890,19 +3946,19 @@ function InpaintModal($$anchor, $$props) {
         var fragment_11 = comment();
         var node_29 = first_child(fragment_11);
         {
-          var consequent_23 = ($$anchor4) => {
-            var div_45 = root_33$2();
-            action(div_45, ($$node) => promptEditor == null ? void 0 : promptEditor($$node));
-            append($$anchor4, div_45);
+          var consequent_24 = ($$anchor4) => {
+            var div_46 = root_34$2();
+            action(div_46, ($$node) => promptEditor == null ? void 0 : promptEditor($$node));
+            append($$anchor4, div_46);
           };
           var alternate_4 = ($$anchor4) => {
-            var textarea = root_34$2();
+            var textarea = root_35$2();
             set_attribute(textarea, "placeholder", "what should appear in the painted region\n\nNegative Prompt:\noptional");
             bind_value(textarea, () => get(prompt), ($$value) => set(prompt, $$value));
             append($$anchor4, textarea);
           };
           if_block(node_29, ($$render) => {
-            if (mountPromptEditor()) $$render(consequent_23);
+            if (mountPromptEditor()) $$render(consequent_24);
             else $$render(alternate_4, -1);
           });
         }
@@ -3910,23 +3966,23 @@ function InpaintModal($$anchor, $$props) {
       });
       var node_30 = sibling(node_28, 2);
       {
-        var consequent_24 = ($$anchor3) => {
-          var fragment_12 = root_35$2();
+        var consequent_25 = ($$anchor3) => {
+          var fragment_12 = root_36$2();
           var textarea_1 = sibling(first_child(fragment_12), 2);
           bind_this(textarea_1, ($$value) => refEl = $$value, () => refEl);
           template_effect(() => set_value(textarea_1, referencePrompt()));
           append($$anchor3, fragment_12);
         };
         if_block(node_30, ($$render) => {
-          if (referencePrompt() && get(engineKind) !== "qwen") $$render(consequent_24);
+          if (referencePrompt() && get(engineKind) !== "qwen") $$render(consequent_25);
         });
       }
-      var div_46 = sibling(div_42, 2);
-      var node_31 = sibling(child(div_46), 2);
+      var div_47 = sibling(div_43, 2);
+      var node_31 = sibling(child(div_47), 2);
       {
-        var consequent_25 = ($$anchor3) => {
-          var div_47 = root_36$2();
-          var node_32 = sibling(child(div_47), 2);
+        var consequent_26 = ($$anchor3) => {
+          var div_48 = root_37$2();
+          var node_32 = sibling(child(div_48), 2);
           {
             let $0 = user_derived(() => {
               var _a;
@@ -3947,21 +4003,21 @@ function InpaintModal($$anchor, $$props) {
               }
             });
           }
-          append($$anchor3, div_47);
+          append($$anchor3, div_48);
         };
         if_block(node_31, ($$render) => {
-          if (get(engineKind) !== "qwen") $$render(consequent_25);
+          if (get(engineKind) !== "qwen") $$render(consequent_26);
         });
       }
       var node_33 = sibling(node_31, 2);
       {
-        var consequent_26 = ($$anchor3) => {
-          var div_48 = root_37$2();
-          var div_49 = child(div_48);
-          var select_3 = sibling(child(div_49), 2);
+        var consequent_27 = ($$anchor3) => {
+          var div_49 = root_38$2();
+          var div_50 = child(div_49);
+          var select_3 = sibling(child(div_50), 2);
           let classes_9;
           each(select_3, 21, () => caps().samplerOptions, index, ($$anchor4, opt) => {
-            var option_5 = root_38$2();
+            var option_5 = root_39$2();
             let styles_3;
             var text_11 = child(option_5);
             var option_5_value = {};
@@ -3984,11 +4040,11 @@ function InpaintModal($$anchor, $$props) {
             );
             append($$anchor4, option_5);
           });
-          var div_50 = sibling(div_49, 2);
-          var select_4 = sibling(child(div_50), 2);
+          var div_51 = sibling(div_50, 2);
+          var select_4 = sibling(child(div_51), 2);
           let classes_10;
           each(select_4, 21, () => caps().schedulerOptions, index, ($$anchor4, opt) => {
-            var option_6 = root_39$2();
+            var option_6 = root_40$2();
             let styles_4;
             var text_12 = child(option_6);
             var option_6_value = {};
@@ -4017,21 +4073,21 @@ function InpaintModal($$anchor, $$props) {
           });
           bind_select_value(select_3, () => get(sampler), ($$value) => set(sampler, $$value));
           bind_select_value(select_4, () => get(scheduler), ($$value) => set(scheduler, $$value));
-          append($$anchor3, div_48);
+          append($$anchor3, div_49);
         };
         if_block(node_33, ($$render) => {
           var _a, _b;
-          if ((_b = (_a = caps()) == null ? void 0 : _a.samplerOptions) == null ? void 0 : _b.length) $$render(consequent_26);
+          if ((_b = (_a = caps()) == null ? void 0 : _a.samplerOptions) == null ? void 0 : _b.length) $$render(consequent_27);
         });
       }
-      var div_51 = sibling(node_33, 2);
-      var text_13 = child(div_51);
-      var node_34 = sibling(div_51, 2);
+      var div_52 = sibling(node_33, 2);
+      var text_13 = child(div_52);
+      var node_34 = sibling(div_52, 2);
       {
-        var consequent_27 = ($$anchor3) => {
-          var fragment_13 = root_40$2();
-          var div_52 = first_child(fragment_13);
-          var node_35 = sibling(child(div_52), 2);
+        var consequent_28 = ($$anchor3) => {
+          var fragment_13 = root_41$2();
+          var div_53 = first_child(fragment_13);
+          var node_35 = sibling(child(div_53), 2);
           SettingsSlider(node_35, {
             min: 0,
             max: 64,
@@ -4044,8 +4100,8 @@ function InpaintModal($$anchor, $$props) {
               set(grow, v, true);
             }
           });
-          var div_53 = sibling(div_52, 2);
-          var node_36 = sibling(child(div_53), 2);
+          var div_54 = sibling(div_53, 2);
+          var node_36 = sibling(child(div_54), 2);
           SettingsSlider(node_36, {
             min: 0,
             max: 128,
@@ -4058,18 +4114,50 @@ function InpaintModal($$anchor, $$props) {
               set(feather, v, true);
             }
           });
+          var div_55 = sibling(div_54, 2);
+          var node_37 = sibling(child(div_55), 2);
+          SettingsSlider(node_37, {
+            min: 0,
+            max: 60,
+            step: 1,
+            get value() {
+              return get(steps);
+            },
+            get savedValue() {
+              return get(recSteps);
+            },
+            onChange: (v) => {
+              set(steps, v, true);
+            }
+          });
+          var div_56 = sibling(div_55, 2);
+          var node_38 = sibling(child(div_56), 2);
+          SettingsSlider(node_38, {
+            min: 0,
+            max: 10,
+            step: 0.1,
+            get value() {
+              return get(cfg);
+            },
+            get savedValue() {
+              return get(recCfg);
+            },
+            onChange: (v) => {
+              set(cfg, v, true);
+            }
+          });
           append($$anchor3, fragment_13);
         };
         if_block(node_34, ($$render) => {
-          if (get(maskAdvancedOpen)) $$render(consequent_27);
+          if (get(maskAdvancedOpen)) $$render(consequent_28);
         });
       }
-      var node_37 = sibling(node_34, 2);
+      var node_39 = sibling(node_34, 2);
       {
-        var consequent_28 = ($$anchor3) => {
-          var fragment_14 = root_41$2();
-          var node_38 = sibling(first_child(fragment_14), 2);
-          SavePathInput(node_38, {
+        var consequent_29 = ($$anchor3) => {
+          var fragment_14 = root_42$2();
+          var node_40 = sibling(first_child(fragment_14), 2);
+          SavePathInput(node_40, {
             get value() {
               return get(savePrefix);
             },
@@ -4082,45 +4170,45 @@ function InpaintModal($$anchor, $$props) {
           });
           append($$anchor3, fragment_14);
         };
-        if_block(node_37, ($$render) => {
-          if (!onUseInEdit()) $$render(consequent_28);
-        });
-      }
-      var node_39 = sibling(div_3, 2);
-      {
-        var consequent_29 = ($$anchor3) => {
-          var div_54 = root_42$2();
-          var text_14 = child(div_54);
-          template_effect(() => set_text(text_14, `⚠ ${get(errorMsg) ?? ""}`));
-          append($$anchor3, div_54);
-        };
         if_block(node_39, ($$render) => {
-          if (get(errorMsg)) $$render(consequent_29);
+          if (!onUseInEdit()) $$render(consequent_29);
         });
       }
-      var div_55 = sibling(node_39, 2);
-      var node_40 = child(div_55);
+      var node_41 = sibling(div_3, 2);
       {
         var consequent_30 = ($$anchor3) => {
-          var button_10 = root_43$2();
+          var div_57 = root_43$2();
+          var text_14 = child(div_57);
+          template_effect(() => set_text(text_14, `⚠ ${get(errorMsg) ?? ""}`));
+          append($$anchor3, div_57);
+        };
+        if_block(node_41, ($$render) => {
+          if (get(errorMsg)) $$render(consequent_30);
+        });
+      }
+      var div_58 = sibling(node_41, 2);
+      var node_42 = child(div_58);
+      {
+        var consequent_31 = ($$anchor3) => {
+          var button_10 = root_44$2();
           delegated("click", button_10, stopRun);
           append($$anchor3, button_10);
         };
         var alternate_6 = ($$anchor3) => {
-          var fragment_15 = root_44$2();
+          var fragment_15 = root_45$2();
           var button_11 = first_child(fragment_15);
           var button_12 = sibling(button_11, 2);
           var text_15 = child(button_12);
-          var node_41 = sibling(button_12, 2);
+          var node_43 = sibling(button_12, 2);
           {
-            var consequent_31 = ($$anchor4) => {
-              var button_13 = root_45$2();
+            var consequent_32 = ($$anchor4) => {
+              var button_13 = root_46$2();
               template_effect(() => button_13.disabled = !get(doneState));
               delegated("click", button_13, () => onUseInEdit()(get(doneState)));
               append($$anchor4, button_13);
             };
             var alternate_5 = ($$anchor4) => {
-              var button_14 = root_46$2();
+              var button_14 = root_47$2();
               var text_16 = child(button_14);
               template_effect(() => {
                 button_14.disabled = !get(doneState) || get(saving);
@@ -4129,8 +4217,8 @@ function InpaintModal($$anchor, $$props) {
               delegated("click", button_14, save);
               append($$anchor4, button_14);
             };
-            if_block(node_41, ($$render) => {
-              if (onUseInEdit()) $$render(consequent_31);
+            if_block(node_43, ($$render) => {
+              if (onUseInEdit()) $$render(consequent_32);
               else $$render(alternate_5, -1);
             });
           }
@@ -4143,8 +4231,8 @@ function InpaintModal($$anchor, $$props) {
           delegated("click", button_12, apply);
           append($$anchor3, fragment_15);
         };
-        if_block(node_40, ($$render) => {
-          if (get(running)) $$render(consequent_30);
+        if_block(node_42, ($$render) => {
+          if (get(running)) $$render(consequent_31);
           else $$render(alternate_6, -1);
         });
       }
@@ -4189,13 +4277,13 @@ function InpaintModal($$anchor, $$props) {
       delegated("contextmenu", div_12, (e) => e.preventDefault());
       event("dragstart", div_12, (e) => e.preventDefault());
       event("selectstart", div_12, (e) => e.preventDefault());
-      delegated("click", div_51, () => {
+      delegated("click", div_52, () => {
         set(maskAdvancedOpen, !get(maskAdvancedOpen));
       });
       append($$anchor2, div);
     };
     if_block(node_1, ($$render) => {
-      if ($$props.open) $$render(consequent_32);
+      if ($$props.open) $$render(consequent_33);
     });
   }
   append($$anchor, fragment);
@@ -8889,8 +8977,11 @@ function EditModal($$anchor, $$props) {
   }
   function setLayerVisible(i, v) {
     get(layers)[i] = { ...get(layers)[i], visible: v };
+    commitAction("Visibility");
   }
+  let opacityDragStart = null;
   function setLayerOpacity(i, o) {
+    if (get(layers)[i].opacity === o) return;
     get(layers)[i] = { ...get(layers)[i], opacity: o };
   }
   const BLEND_MODES = [
@@ -8993,7 +9084,10 @@ function EditModal($$anchor, $$props) {
   function commitRename() {
     const i = get(layers).findIndex((L) => L.id === get(renamingId));
     const name = get(renameText).trim();
-    if (i >= 0 && name && name !== get(layers)[i].name) get(layers)[i] = { ...get(layers)[i], name };
+    if (i >= 0 && name && name !== get(layers)[i].name) {
+      get(layers)[i] = { ...get(layers)[i], name };
+      commitAction("Rename Layer");
+    }
     set(renamingId, null);
   }
   function dropLayer(targetId) {
@@ -9017,6 +9111,7 @@ function EditModal($$anchor, $$props) {
     set(layers, rest, true);
     set(activeIndex, get(layers).findIndex((L) => L.id === activeId), true);
     dragId = null;
+    commitAction("Reorder Layers");
   }
   function compositeLayers(idxs) {
     const c = document.createElement("canvas");
@@ -10795,7 +10890,14 @@ function EditModal($$anchor, $$props) {
               e.stopPropagation();
               setLayerVisible(get(i), !get(L).visible);
             });
+            delegated("pointerdown", input_2, () => {
+              opacityDragStart = get(L).opacity;
+            });
             delegated("input", input_2, (e) => setLayerOpacity(get(i), +e.currentTarget.value));
+            delegated("change", input_2, (e) => {
+              if (opacityDragStart === null || +e.currentTarget.value !== opacityDragStart) commitAction("Opacity");
+              opacityDragStart = null;
+            });
             delegated("click", input_2, (e) => e.stopPropagation());
             append($$anchor4, div_72);
           });
@@ -13571,6 +13673,9 @@ function ImageViewer($$anchor, $$props) {
   }
   user_effect(() => {
     if (fetchApi()) refreshEditDocs();
+    const onEditDocsChanged = () => refreshEditDocs();
+    window.addEventListener("promptchain:edit-docs-changed", onEditDocsChanged);
+    return () => window.removeEventListener("promptchain:edit-docs-changed", onEditDocsChanged);
   });
   let lineageData = state(null);
   let lineageList = user_derived(() => (() => {
@@ -14351,7 +14456,7 @@ function ImageViewer($$anchor, $$props) {
           showNewGenBanner(state2.elapsedSec);
           viewUpscaleResult(state2.resultHash);
         } else if (state2.phase === "cancelled") {
-          cancelUpscale();
+          set(upscaleProgress, null);
         }
       });
       return;
@@ -16929,7 +17034,7 @@ ${get(imageInfo).negative}` : "") : "");
       var _a2;
       return (_a2 = get(editPrepared)) == null ? void 0 : _a2.caps;
     });
-    let $5 = user_derived(() => get(editPrepared) ? get(displayedHash) || "" : "");
+    let $5 = user_derived(() => get(editPrepared) && /^[0-9a-f]{64}$/.test(get(displayedHash) || "") ? get(displayedHash) : "");
     let $6 = user_derived(() => onInpaintRegion() ? openInpaintFromEdit : null);
     let $7 = user_derived(() => onUpscalePrepare() && onUpscaleBackground() && onInpaintUploadReference() ? openUpscaleFromEdit : null);
     let $8 = user_derived(() => onReposeCaps() && onReposeRun() && onMountPoser() && onInpaintUploadReference() ? openReposeFromEdit : null);

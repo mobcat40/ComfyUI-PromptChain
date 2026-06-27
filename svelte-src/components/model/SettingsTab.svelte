@@ -128,19 +128,27 @@
     editors[nodeType][widgetName] = val;
   }
 
-  // Ideogram's noise schedule is computed by Ideogram4Scheduler, which carries its
-  // OWN width/height that must match the latent or the schedule and the image size
-  // disagree. The resolution row writes only the latent node, so slave the
-  // scheduler's width/height to it here (it is intentionally not shown as a second
-  // resolution row). No-op on any graph without an Ideogram4Scheduler section.
-  function mirrorIdeogramScheduler(latentNode) {
-    const sched = detected.find((d) => d.type === "Ideogram4Scheduler");
-    if (!sched) return;
-    for (const dim of ["width", "height"]) {
-      const v = readWidgetValue(latentNode, dim);
-      if (v !== undefined) {
-        writeWidgetValue(sched.node, dim, v);
-        setEditorValue("Ideogram4Scheduler", dim, v);
+  // Some nodes carry their OWN width/height that must match the latent or their
+  // schedule/shift disagrees with the image size. The resolution row writes only the
+  // latent node, so slave those dependents to it here (they are intentionally not
+  // shown as a second resolution row). Ideogram4Scheduler (noise schedule) persists
+  // its width/height with the saved model config; Krea 2 RAW's ModelSamplingFlux
+  // (resolution-dynamic flow-shift) is mirror-only — written to the live node but
+  // never into editors, so handleSave can never re-bake a static shift (it must stay
+  // dynamic). No-op on any graph without these sections.
+  const RES_DEPENDENTS = [
+    { type: "Ideogram4Scheduler", persist: true },
+    { type: "ModelSamplingFlux", persist: false },
+  ];
+  function mirrorResolutionDependents(latentNode) {
+    for (const { type: depType, persist } of RES_DEPENDENTS) {
+      const dep = detected.find((d) => d.type === depType);
+      if (!dep) continue;
+      for (const dim of ["width", "height"]) {
+        const v = readWidgetValue(latentNode, dim);
+        if (v === undefined) continue;
+        writeWidgetValue(dep.node, dim, v);
+        if (persist) setEditorValue(depType, dim, v);
       }
     }
   }
@@ -252,7 +260,7 @@
     <div class="pcr-model-panel-empty">No supported nodes detected.</div>
   {/if}
 
-  {#each detected as { node, config, type }}
+  {#each detected.filter((d) => !d.config?.mirrorOnly) as { node, config, type }}
     {@const savedWidgets = savedWidgetsFor(type)}
     {@const isExpanded = rangeMode || !!expandedState[type]}
     <div class="pcr-model-panel-section">
@@ -338,7 +346,7 @@
                                 writeWidgetValue(node, "height", p.height);
                                 setEditorValue(type, "width", p.width);
                                 setEditorValue(type, "height", p.height);
-                                mirrorIdeogramScheduler(node);
+                                mirrorResolutionDependents(node);
                                 presetMenuOpen[type] = false;
                               }}>
                               <span class="pcr-resolution-preset-item-label">{p.width}×{p.height}</span>
@@ -374,7 +382,7 @@
                     const v = parseInt(e.target.value) || 512;
                     setEditorValue(type, "width", v);
                     writeWidgetValue(node, "width", v);
-                    mirrorIdeogramScheduler(node);
+                    mirrorResolutionDependents(node);
                   }} />
                 <span class="pcr-resolution-sep">×</span>
                 <input type="number" class="pcr-resolution-input"
@@ -385,7 +393,7 @@
                     const v = parseInt(e.target.value) || 512;
                     setEditorValue(type, "height", v);
                     writeWidgetValue(node, "height", v);
-                    mirrorIdeogramScheduler(node);
+                    mirrorResolutionDependents(node);
                   }} />
               </div>
             </div>

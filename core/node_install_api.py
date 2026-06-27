@@ -147,6 +147,20 @@ NODE_PACKS: dict[str, dict] = {
              "dest": "ultralytics/bbox/face_yolov8n.pt"},
         ],
     },
+    "Krea2HighDetail": {
+        "label": "Krea 2 High Detail",
+        # The High-Detail krea2 templates (t2i + i2i) need two packs: nova452's
+        # ConditioningKrea2Rebalance (a cond amplifier) and spacepxl's VAE-Utils
+        # (its VAEUtils_VAEDecodeTiled + CustomVAELoader run the clean 2x decode).
+        # Neither has pip deps. VAE-Utils ships no model downloader, so we fetch
+        # the spacepxl decoder weight into models/vae for CustomVAELoader to pick.
+        "bundle": ["ComfyUI-ConditioningKrea2Rebalance", "ComfyUI-VAE-Utils"],
+        "proof_nodes": ["ConditioningKrea2Rebalance", "VAEUtils_VAEDecodeTiled"],
+        "models": [
+            {"url": "https://huggingface.co/spacepxl/Wan2.1-VAE-upscale2x/resolve/main/Wan2.1_VAE_upscale2x_imageonly_real_v1.safetensors",
+             "dest": "vae/Wan2.1_VAE_upscale2x_imageonly_real_v1.safetensors"},
+        ],
+    },
     "StyleReference": {
         "label": "Style Reference",
         # cubiq's IPAdapter pack is BUNDLED (bundled_packs/ComfyUI_IPAdapter_plus),

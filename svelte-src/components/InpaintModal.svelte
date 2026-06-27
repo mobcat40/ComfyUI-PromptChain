@@ -46,6 +46,8 @@
   let denoise = $state(0.5);
   let sampler = $state("");
   let scheduler = $state("");
+  let steps = $state(0); // pre-filled to the engine's recipe on open (engineRecipe); 0 = inherit (source)
+  let cfg = $state(0);   // pre-filled to the engine's recipe on open; 0 = inherit (source)
   // Mask shaping (Advanced): grow dilates the painted mask, feather softens its
   // edge — both forwarded to PromptChain_MaskedDetail.
   let grow = $state(0);
@@ -76,11 +78,12 @@
   let engineSel = $state("source");
   let engineEntry = $derived(caps?.engineModels?.find((m) => m.hash === engineSel) || null);
   let engineKind = $derived(engineEntry
-    ? (engineEntry.architecture === "qwen_edit" ? "qwen" : engineEntry.architecture === "flux" ? "flux1" : "sdxl")
+    ? (engineEntry.architecture === "qwen_edit" ? "qwen" : engineEntry.architecture === "flux" ? "flux1" : engineEntry.architecture === "krea2" ? "krea2" : "sdxl")
     : "source");
   let engineGroups = $derived({
     sdxl: (caps?.engineModels || []).filter((m) => m.architecture === "sdxl"),
     flux1: (caps?.engineModels || []).filter((m) => m.architecture === "flux"),
+    krea2: (caps?.engineModels || []).filter((m) => m.architecture === "krea2"),
     qwen: (caps?.engineModels || []).filter((m) => m.architecture === "qwen_edit"),
   });
   // SearchableSelect feed — same rows/groups the native <select> carried.
@@ -94,20 +97,40 @@
     ...(engineGroups.flux1.length
       ? [{ label: "FLUX.1 — re-render the masked region", options: engineGroups.flux1.map((m) => ({ value: m.hash, label: m.displayName })) }]
       : []),
+    ...(engineGroups.krea2.length
+      ? [{ label: "Krea 2 — re-render the masked region", options: engineGroups.krea2.map((m) => ({ value: m.hash, label: m.displayName })) }]
+      : []),
     ...(engineGroups.qwen.length
       ? [{ label: "Qwen Edit — instruction edit (masked)", options: engineGroups.qwen.map((m) => ({ value: m.hash, label: m.displayName })) }]
       : []),
   ]);
-  let recSampler = $derived(engineKind === "qwen" || engineKind === "flux1"
+  let recSampler = $derived(engineKind === "qwen" || engineKind === "flux1" || engineKind === "krea2"
     ? (engineEntry?.gen?.sampler || "euler")
     : (engineEntry?.gen?.sampler || caps?.recommendedSampler));
-  let recScheduler = $derived(engineKind === "qwen" || engineKind === "flux1"
+  let recScheduler = $derived(engineKind === "qwen" || engineKind === "flux1" || engineKind === "krea2"
     ? (engineEntry?.gen?.scheduler || "simple")
     : (engineEntry?.gen?.scheduler || caps?.recommendedScheduler));
+  // Steps/CFG the modal pre-fills per engine, mirroring the inpaint builders'
+  // own defaults (RAW 30/3.5 · Turbo 8/1.0 · SDXL 25/5 · Qwen 40/4 · Flux 25/1)
+  // so the sliders show real values instead of a bare 0. The source model has
+  // no fixed recipe — 0 tells the builder to inherit the image's own steps/cfg.
+  function engineRecipe(entry) {
+    const kind = entry
+      ? (entry.architecture === "qwen_edit" ? "qwen" : entry.architecture === "flux" ? "flux1" : entry.architecture === "krea2" ? "krea2" : "sdxl")
+      : "source";
+    const isRaw = kind === "krea2" && /raw/i.test(entry?.filename || "") && !/turbo/i.test(entry?.filename || "");
+    if (kind === "krea2") return { steps: isRaw ? 30 : 8, cfg: isRaw ? 3.5 : 1.0 };
+    if (kind === "sdxl") return { steps: entry?.gen?.steps || 25, cfg: entry?.gen?.cfg ?? 5 };
+    if (kind === "qwen") return { steps: entry?.gen?.steps || 40, cfg: entry?.gen?.cfg ?? 4 };
+    if (kind === "flux1") return { steps: entry?.gen?.steps || 25, cfg: 1.0 };
+    return { steps: 0, cfg: 0 };
+  }
+  let recSteps = $derived(engineRecipe(engineEntry).steps);
+  let recCfg = $derived(engineRecipe(engineEntry).cfg);
   function conditionOk(key) {
-    // PuLID/IPAdapter patch an SDXL checkpoint UNET — the qwen/flux1
+    // PuLID/IPAdapter patch an SDXL checkpoint UNET — the qwen/flux1/krea2
     // builders have no splice point.
-    if (engineKind === "qwen" || engineKind === "flux1") return false;
+    if (engineKind === "qwen" || engineKind === "flux1" || engineKind === "krea2") return false;
     return engineKind === "sdxl" || !!caps?.conditions?.[key]?.ok;
   }
 
@@ -176,11 +199,11 @@
     engineSel = value;
     const entry = caps?.engineModels?.find((m) => m.hash === value) || null;
     const kind = entry
-      ? (entry.architecture === "qwen_edit" ? "qwen" : entry.architecture === "flux" ? "flux1" : "sdxl")
+      ? (entry.architecture === "qwen_edit" ? "qwen" : entry.architecture === "flux" ? "flux1" : entry.architecture === "krea2" ? "krea2" : "sdxl")
       : "source";
     if (entry) {
       // The picked model's own gen-time sampler pick beats the source's.
-      const fluxLike = kind === "qwen" || kind === "flux1";
+      const fluxLike = kind === "qwen" || kind === "flux1" || kind === "krea2";
       sampler = entry.gen?.sampler || (fluxLike ? "euler" : sampler);
       scheduler = entry.gen?.scheduler || (fluxLike ? "simple" : scheduler);
       if (fluxLike && condition !== "none") condition = "none";
@@ -190,6 +213,8 @@
       // Back on source: a condition the source architecture can't carry resets.
       if (condition !== "none" && !caps?.conditions?.[condition]?.ok) condition = "none";
     }
+    const r = engineRecipe(entry);
+    steps = r.steps; cfg = r.cfg;
     // The mode rows only apply to the source engine; switching engine changes
     // what the prompt MEANS, so re-seed deterministically (edits discarded).
     memoryPrompt = null;
@@ -290,6 +315,8 @@
         const preEntry = caps.engineModels?.find((m) => m.hash === engineSel);
         if (preEntry?.gen?.sampler) sampler = preEntry.gen.sampler;
         if (preEntry?.gen?.scheduler) scheduler = preEntry.gen.scheduler;
+        const r0 = engineRecipe(preEntry);
+        steps = r0.steps; cfg = r0.cfg;
         if (memEngineValid && typeof mem.denoise === "number") denoise = mem.denoise;
         grow = 0;
         feather = 24;
@@ -361,7 +388,7 @@
     if (typeof s.maskOpacity === "number") maskOpacity = s.maskOpacity;
     // Condition cluster — only when the resolved engine can carry it and the
     // condition is actually installed (flux/qwen engines can't).
-    const fluxLike = engineKind === "flux1" || engineKind === "qwen";
+    const fluxLike = engineKind === "flux1" || engineKind === "qwen" || engineKind === "krea2";
     // conditionOk (not the raw caps flag) so an SDXL-engine pick re-enables the
     // condition the same way the live dropdown does — else it's silently dropped.
     if (typeof s.condition === "string" && !(fluxLike && s.condition !== "none")
@@ -753,6 +780,7 @@
     activeTab = "output";
     tracker = onRun({
       maskBlob, prompt, denoise, grow, feather, sampler: sampler || null, scheduler: scheduler || null,
+      steps: steps > 0 ? steps : undefined, cfg: cfg > 0 ? cfg : undefined,
       // Source engine carries the mode so a Basic pick forces a flat encode
       // even if the prompt still has $blocks; engine models ignore it. (Moved
       // content rides regional + the ImageViewer-injected condOffset, which
@@ -760,6 +788,7 @@
       mode: engineKind === "source" ? mode : undefined,
       engine: engineKind === "sdxl" ? "sdxl-ckpt"
         : engineKind === "flux1" ? "flux1-unet"
+        : engineKind === "krea2" ? "krea2-unet"
         : engineKind === "qwen" ? "qwen-edit" : "source",
       engineModel: engineEntry ? { hash: engineEntry.hash, filename: engineEntry.filename } : undefined,
       engineGen: engineEntry?.gen || undefined,
@@ -1018,13 +1047,15 @@
               <div class="pcr-ip-hint">renders the painted region with this checkpoint — no render metadata needed, and PuLID / Style Reference work on any source</div>
             {:else if engineKind === "flux1"}
               <div class="pcr-ip-hint">re-renders the painted region with this FLUX.1 model at the denoise below — describe the content, strong on faces and eyes</div>
+            {:else if engineKind === "krea2"}
+              <div class="pcr-ip-hint">re-renders the painted region with this Krea 2 model at the denoise below — describe the content, sharp detail and clean structure</div>
             {:else if engineKind === "qwen"}
               <div class="pcr-ip-hint">follows your instruction inside the mask only — unmasked pixels stay untouched; the region renders at full model resolution</div>
             {/if}
             </div>
           {/if}
-          {#if caps?.conditions && engineKind !== "qwen" && engineKind !== "flux1"}
-            <!-- conditions patch an SDXL checkpoint UNET — the qwen/flux1
+          {#if caps?.conditions && engineKind !== "qwen" && engineKind !== "flux1" && engineKind !== "krea2"}
+            <!-- conditions patch an SDXL checkpoint UNET — the qwen/flux1/krea2
                  engines have no splice point, so the whole block disappears
                  rather than offering dead options -->
             <div class="pcr-mcard">
@@ -1196,6 +1227,17 @@
               <SettingsSlider min={0} max={128} step={1} value={feather}
                 savedValue={24} onChange={(v) => { feather = v; }} />
             </div>
+            <div class="pcr-ip-denoise">
+              <span class="pcr-ip-label">Steps</span>
+              <SettingsSlider min={0} max={60} step={1} value={steps}
+                savedValue={recSteps} onChange={(v) => { steps = v; }} />
+            </div>
+            <div class="pcr-ip-denoise">
+              <span class="pcr-ip-label">CFG</span>
+              <SettingsSlider min={0} max={10} step={0.1} value={cfg}
+                savedValue={recCfg} onChange={(v) => { cfg = v; }} />
+            </div>
+            <div style="opacity:0.55;font-size:11px;padding:2px 0 0 2px">Pre-filled with this engine's recipe (Turbo 8/1.0 · RAW 30/3.5 · SDXL 25/5). On the source model, 0 = inherit the image's own.</div>
           {/if}
           {#if !onUseInEdit}
             <!-- Edit handoffs return the render as a layer — Edit's own Save persists. -->

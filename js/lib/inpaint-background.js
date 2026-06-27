@@ -18,6 +18,7 @@ import { api } from "../../../scripts/api.js";
 import { externallyTrackedPrompts, refreshEntryWorkflows, armExternalQueue, disarmExternalQueue } from "./history.js";
 import { sourceSavePrefixInfo, fetchSavedUsduSettings, fetchEngineModels, engineAssetSupport, QWEN_ENHANCE_INSTRUCTION, FLUX1_TILE_GUIDANCE } from "./upscale-from-image.js";
 import { resolvePre, hasPre } from "./model-settings-bridge.js";
+import { offscreenIdBase } from "./offscreen-graph.js";
 
 function toast(severity, detail) {
   app.extensionManager?.toast?.add({ severity, summary: "Inpaint", detail, life: 7000 });
@@ -182,6 +183,7 @@ function inpaintArch(entries) {
   if (has("CheckpointLoaderSimple", "CheckpointLoader")) return "sdxl";
   const clipType = String(entries.find((n) => n?.class_type === "CLIPLoader")?.inputs?.type || "").toLowerCase();
   if (clipType === "flux2") return "flux2";
+  if (clipType === "krea2") return "krea2"; // Krea 2 DiT: UNETLoader+CLIPLoader(type krea2) — must not fall through to flux1 (would mis-wire PuLID)
   if (has("DualCLIPLoader") || clipType === "flux" || has("UNETLoader", "UnetLoaderGGUF")) return "flux1";
   return "other";
 }
@@ -313,7 +315,11 @@ export async function prepareInpaint(entry) {
     // (dual clip + flux VAE) are part of that check.
     engineModels = (await fetchEngineModels()).filter((m) => m.architecture === "sdxl"
       || (m.architecture === "qwen_edit" && support.qwen)
-      || (m.architecture === "flux" && support.flux1));
+      || (m.architecture === "flux" && support.flux1)
+      // Krea 2 DiT: UNETLoader + CLIPLoader(type krea2) + qwen_image VAE, all
+      // self-contained in buildKrea2InpaintPrompt — admit unless the support
+      // probe explicitly reports the krea2 assets absent.
+      || (m.architecture === "krea2" && support.krea2 !== false));
   } catch { /* engine list is optional — source surgery still works */ }
   if (!sourceUsable && !engineModels.length) {
     // Apply would die in buildInpaintPrompt — refuse with the reason up front.
@@ -496,18 +502,33 @@ export function buildInpaintPrompt(apiPrompt, data, options, maskName) {
   // VAE: whatever decodes today, else the anchor's own vae input (MaskedDetail
   // and USDU carry one; a pruned inpaint graph has no VAEDecode), else the
   // checkpoint's.
-  const decId = idByClass("VAEDecode");
-  const vaeRef = (decId && isLink(graph[decId].inputs.vae) && graph[decId].inputs.vae)
+  const decId = idByClass("VAEDecode", "VAEUtils_VAEDecodeTiled", "VAEDecodeTiled");
+  let vaeRef = (decId && isLink(graph[decId].inputs.vae) && graph[decId].inputs.vae)
     || (isLink(src.inputs.vae) && src.inputs.vae)
     || (ckptId && [ckptId, 2]);
-  if (!clipRef || !vaeRef) throw new Error("couldn't trace the clip/vae lines");
+  if (!clipRef) throw new Error("couldn't trace the clip/vae lines");
 
-  let nextId = 1 + Object.keys(graph).reduce((m, id) => Math.max(m, Number.parseInt(id, 10) || 0), 0);
+  // Grafted nodes go far above both the source graph's ids and the live canvas's,
+  // so the background run's execution images never paint onto a live node.
+  let nextId = offscreenIdBase();
   const add = (class_type, inputs) => {
     const id = String(nextId++);
     graph[id] = { class_type, inputs };
     return id;
   };
+
+  // The traced VAE may be a decode-only/2x custom loader (the spacepxl VAEUtils
+  // decoder on High-Detail krea2 renders) that CAN'T encode — inpaint needs both
+  // encode and decode. If the trace failed or landed on that custom loader,
+  // graft a fresh stock VAELoader on the shared krea2/qwen latent (prefer
+  // qwen_image_vae, else the clean wan_2.1_vae).
+  const tracedVae = isLink(vaeRef) ? graph[String(vaeRef[0])] : null;
+  if (!vaeRef || (tracedVae && tracedVae.class_type === "VAEUtils_CustomVAELoader")) {
+    const vaeName = probeComboValue("VAELoader", "vae_name", (o) => /qwen.*image.*vae/i.test(o))
+      || probeComboValue("VAELoader", "vae_name", (o) => /wan.*2[._]?1.*vae/i.test(o) && !/upscale|2x/i.test(o));
+    if (!vaeName) throw new Error("couldn't trace the clip/vae lines");
+    vaeRef = [add("VAELoader", { vae_name: vaeName }), 0];
+  }
 
   const loadId = add("LoadImage", { image: data.input_ref });
   const maskId = add("LoadImageMask", { image: maskName, channel: "red" });
@@ -583,8 +604,8 @@ export function buildInpaintPrompt(apiPrompt, data, options, maskName) {
     image: [loadId, 0], mask: [maskId, 0],
     positive: posRef, negative: negRef,
     seed: Math.floor(Math.random() * 0xffffffffff),
-    steps: lit(src.inputs.steps) ?? 20,
-    cfg: lit(src.inputs.cfg) ?? 7,
+    steps: numOr(options.steps, lit(src.inputs.steps) ?? 20),
+    cfg: numOr(options.cfg, lit(src.inputs.cfg) ?? 7),
     sampler_name: options.sampler || lit(src.inputs.sampler_name) || "euler",
     scheduler: options.scheduler || lit(src.inputs.scheduler) || "normal",
     denoise: typeof options.denoise === "number" ? options.denoise : 0.5,
@@ -626,7 +647,7 @@ export function buildInpaintEnginePrompt(data, options, maskName) {
   const filename = options.engineModel?.filename;
   if (!filename) throw new Error("no engine model picked");
   const graph = {};
-  let nextId = 1;
+  let nextId = offscreenIdBase(); // render-node ids must stay off the live canvas — else execution images paint onto a live node sharing the id (see offscreen-graph.js)
   const add = (class_type, inputs) => {
     const id = String(nextId++);
     graph[id] = { class_type, inputs };
@@ -656,8 +677,8 @@ export function buildInpaintEnginePrompt(data, options, maskName) {
     image: [loadId, 0], mask: [maskId, 0],
     positive: [posId, 0], negative: [negId, 0],
     seed: Math.floor(Math.random() * 0xffffffffff),
-    steps: numOr(gen.steps, 25),
-    cfg: numOr(gen.cfg, 5),
+    steps: numOr(options.steps, numOr(gen.steps, 25)),
+    cfg: numOr(options.cfg, numOr(gen.cfg, 5)),
     sampler_name: options.sampler || gen.sampler || "dpmpp_2m",
     scheduler: options.scheduler || gen.scheduler || "karras",
     denoise: typeof options.denoise === "number" ? options.denoise : 0.5,
@@ -690,7 +711,7 @@ export function buildFlux1InpaintPrompt(data, options, maskName) {
   if (!clipL || !t5 || !vaeFile) throw new Error("the FLUX text encoders / VAE aren't installed");
 
   const graph = {};
-  let nextId = 1;
+  let nextId = offscreenIdBase(); // render-node ids must stay off the live canvas — else execution images paint onto a live node sharing the id (see offscreen-graph.js)
   const add = (class_type, inputs) => {
     const id = String(nextId++);
     graph[id] = { class_type, inputs };
@@ -716,7 +737,7 @@ export function buildFlux1InpaintPrompt(data, options, maskName) {
     image: [loadId, 0], mask: [maskId, 0],
     positive: [guidId, 0], negative: [negId, 0],
     seed: Math.floor(Math.random() * 0xffffffffff),
-    steps: numOr(gen.steps, 25),
+    steps: numOr(options.steps, numOr(gen.steps, 25)),
     // cfg pinned, never inherited — a gen cfg would double sampling and burn.
     cfg: 1.0,
     sampler_name: options.sampler || gen.sampler || "euler",
@@ -727,6 +748,82 @@ export function buildFlux1InpaintPrompt(data, options, maskName) {
   });
   add("PreviewImage", { images: [detailId, 0] });
   console.log("[PromptChain][inpaint] built flux1 engine prompt:", JSON.stringify(graph, null, 2));
+  return { graph, detailId };
+}
+
+// KREA 2 engine inpaint: a DiT that wires like FLUX.1 through the same
+// MaskedDetail crop path, minus FLUX's guidance regime. Shift is baked into the
+// model class (no ModelSampling) and it's cfg-native (no FluxGuidance), so the
+// UNET feeds the sampler straight and the empty negative is just the required
+// input — cfg is pinned 1.0, the same inert-negative posture as flux1/zimage.
+// Self-contained loaders (UNET + single CLIPLoader(type krea2) + qwen_image VAE)
+// mean an imported/arbitrary image needs no embedded render data. guide_size
+// 1024 / max_size 1536: krea2's native working res, matching the flux1 crop.
+export function buildKrea2InpaintPrompt(data, options, maskName) {
+  const filename = options.engineModel?.filename;
+  if (!filename) throw new Error("no engine model picked");
+  // Resolve the actual installed encoder/VAE (mirrors the flux1 builder + the krea2
+  // tile stage) so a differently-named file still binds and a missing one fails early.
+  const probe = (type, widget) => {
+    try {
+      const node = window.LiteGraph?.createNode?.(type);
+      return node?.widgets?.find((w) => w.name === widget)?.options?.values || [];
+    } catch { return []; }
+  };
+  const clipOpts = probe("CLIPLoader", "clip_name");
+  const clipFile = clipOpts.find((o) => /qwen3vl.*4b/i.test(o)) || clipOpts.find((o) => /qwen3.?vl.*4b/i.test(o));
+  const vaeFile = probe("VAELoader", "vae_name").find((o) => /qwen.*image.*vae/i.test(o));
+  if (!clipFile || !vaeFile) throw new Error("the Krea 2 text encoder / VAE aren't installed");
+
+  const graph = {};
+  let nextId = offscreenIdBase(); // render-node ids must stay off the live canvas — else execution images paint onto a live node sharing the id (see offscreen-graph.js)
+  const add = (class_type, inputs) => {
+    const id = String(nextId++);
+    graph[id] = { class_type, inputs };
+    return id;
+  };
+  const unetId = add("UNETLoader", { unet_name: filename, weight_dtype: "default" });
+  const clipId = add("CLIPLoader", { clip_name: clipFile, type: "krea2", device: "default" });
+  const vaeId = add("VAELoader", { vae_name: vaeFile });
+  const loadId = add("LoadImage", { image: data.input_ref });
+  const maskId = add("LoadImageMask", { image: maskName, channel: "red" });
+  const pcId = add("PromptChain_PromptChain", {
+    prompt: options.prompt || "", mode: "combine", switch_index: 1,
+    locked: false, disabled: false, cached_output: "", cached_neg_output: "",
+    iterate_index: 0, iterate_cycle: 1, collapsed: false,
+    wildcard_modes: "", cached_regions: "",
+  });
+  const posId = add("CLIPTextEncode", { text: [pcId, 1], clip: [clipId, 0] });
+  // Dummy negative: cfg is pinned 1.0 so it never influences sampling, but
+  // MaskedDetail requires the input — the UNET feeds the sampler straight
+  // (no ModelSampling, no FluxGuidance).
+  const negId = add("CLIPTextEncode", { text: [pcId, 2], clip: [clipId, 0] });
+  // RAW is the undistilled base: it needs full steps + a real cfg + the resolution
+  // shift, NOT Turbo's 8-step / cfg-1 / no-shift recipe (which under-resolves it and
+  // over-shifts → melted faces). The crop samples at guide_size 1024, so a static
+  // 1024 ModelSamplingFlux is correct here. Turbo keeps its pinned fast recipe.
+  const raw = /krea2_raw/i.test(filename);
+  let modelRef = [unetId, 0];
+  if (raw) {
+    const msfId = add("ModelSamplingFlux", { model: [unetId, 0], max_shift: 0.90625, base_shift: 0.5, width: 1024, height: 1024 });
+    modelRef = [msfId, 0];
+  }
+  const detailId = add("PromptChain_MaskedDetail", {
+    model: modelRef, vae: [vaeId, 0],
+    image: [loadId, 0], mask: [maskId, 0],
+    positive: [posId, 0], negative: [negId, 0],
+    seed: Math.floor(Math.random() * 0xffffffffff),
+    // Defaults are RAW/Turbo-aware but overridable from the modal (steps/cfg/sampler).
+    steps: numOr(options.steps, raw ? 30 : 8),
+    cfg: numOr(options.cfg, raw ? 3.5 : 1.0),
+    sampler_name: options.sampler || (raw ? "er_sde" : "euler"),
+    scheduler: options.scheduler || (raw ? "beta" : "simple"),
+    denoise: typeof options.denoise === "number" ? options.denoise : 0.5,
+    guide_size: 1024, max_size: 1536, crop_factor: 2.0,
+    feather: numOr(options.feather, 24), grow: numOr(options.grow, 0),
+  });
+  add("PreviewImage", { images: [detailId, 0] });
+  console.log("[PromptChain][inpaint] built krea2 engine prompt:", JSON.stringify(graph, null, 2));
   return { graph, detailId };
 }
 
@@ -785,7 +882,7 @@ export function buildQwenEditInpaintPrompt(data, options, maskName) {
   const scaled = qwenWorkingSize(crop.w, crop.h);
 
   const graph = {};
-  let nextId = 1;
+  let nextId = offscreenIdBase(); // render-node ids must stay off the live canvas — else execution images paint onto a live node sharing the id (see offscreen-graph.js)
   const add = (class_type, inputs) => {
     const id = String(nextId++);
     graph[id] = { class_type, inputs };
@@ -834,8 +931,8 @@ export function buildQwenEditInpaintPrompt(data, options, maskName) {
   const samplerId = add("KSampler", {
     model: [normId, 0], positive: [refPosId, 0], negative: [refNegId, 0], latent_image: [noisedId, 0],
     seed: Math.floor(Math.random() * 0xffffffffff),
-    steps: numOr(gen.steps, 40),
-    cfg: numOr(gen.cfg, 4),
+    steps: numOr(options.steps, numOr(gen.steps, 40)),
+    cfg: numOr(options.cfg, numOr(gen.cfg, 4)),
     sampler_name: options.sampler || gen.sampler || "euler",
     scheduler: options.scheduler || gen.scheduler || "simple",
     // 1.0 is structural: partial denoise blends the shifted re-render; full
@@ -912,9 +1009,11 @@ export function runInpaint(prepared, options = {}) {
         ? buildQwenEditInpaintPrompt(data, options, maskName)
         : options.engine === "flux1-unet" && options.engineModel
           ? buildFlux1InpaintPrompt(data, options, maskName)
-          : options.engine === "sdxl-ckpt" && options.engineModel
-            ? buildInpaintEnginePrompt(data, options, maskName)
-            : buildInpaintPrompt(data.prompt, data, options, maskName);
+          : options.engine === "krea2-unet" && options.engineModel
+            ? buildKrea2InpaintPrompt(data, options, maskName)
+            : options.engine === "sdxl-ckpt" && options.engineModel
+              ? buildInpaintEnginePrompt(data, options, maskName)
+              : buildInpaintPrompt(data.prompt, data, options, maskName);
     } catch (e) {
       console.error("[PromptChain][inpaint] build failed (rev abc3dbbd+):", e);
       tracker.emit({ phase: "error", message: `build failed: ${e.message}` });

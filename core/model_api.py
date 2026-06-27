@@ -98,6 +98,16 @@ async def _api_list_models(request):
             and model_settings.is_primary_model_file(m["filename"]))
         or not model_settings.is_catalog_filename(m["filename"])
     ]
+    # The fingerprint scanner assigns architecture from header patterns; newer
+    # DiT families (e.g. krea2) have no pattern yet and read as "unknown", which
+    # drops them from the upscale picker's engine list. Their curated config
+    # (matched by filename) carries the authoritative architecture — adopt it so
+    # the right re-detail engine is offered.
+    for m in filtered:
+        if m.get("architecture") in ("", "unknown", None):
+            config = model_settings.find_config_by_filename(m["filename"])
+            if config and config.get("architecture"):
+                m["architecture"] = config["architecture"]
     return web.json_response({"models": filtered})
 
 

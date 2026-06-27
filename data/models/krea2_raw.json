@@ -1,0 +1,164 @@
+{
+  "display_name": "Krea 2 - RAW",
+  "model_name": "Krea 2 RAW",
+  "version": "RAW",
+  "architecture": "krea2",
+  "family": "krea2_raw",
+  "author": "Krea AI",
+  "description": "Krea 2 RAW — the undistilled 12B base checkpoint (full-step, real cfg). Krea ships it for fine-tuning/LoRA training, but because it is NOT step-distilled it re-details cleanly at a LOW denoise — which makes it the right model for a faithful, blotch-free TILED upscale (the distilled Turbo can't: low denoise blotches, high denoise seams). Same Qwen3-VL encoder + Qwen Image VAE as Turbo.",
+  "license": "Krea 2 Community License Agreement v.1 (open weights; commercial use requires an Enterprise License once total annual revenue reaches $1M)",
+  "tags": [
+    "krea",
+    "krea2",
+    "dit",
+    "transformer",
+    "photorealistic",
+    "raw",
+    "base",
+    "undistilled"
+  ],
+  "url": "https://huggingface.co/Comfy-Org/Krea-2",
+  "release_date": "2026-06-18",
+  "tag_sources": [],
+  "tag_format": "spaces",
+  "prompt_style": "natural",
+  "trigger": "",
+  "default_prompt_id": "krea2-default",
+  "negative": "",
+  "notes": "Undistilled base: full-step sampling with a REAL cfg. Render recipe (52 steps / cfg 3.5 / er_sde+simple) is DOCUMENTED — Krea's official CLI is `--checkpoint oss_raw --steps 52 --cfg 3.5`. Negatives use the real CFG branch but efficacy on the Qwen3-VL encoder is A/B-pending (may be inert like Qwen-Image). Shift is baked into the model (no ModelSamplingAuraFlow needed; mu~1.15 at 1024). Shares qwen3vl_4b + qwen_image_vae with Turbo. ~13 GB fp8 / ~26 GB bf16. Slow (no distillation) — for UPSCALE re-detail the JS engine uses fewer steps at low denoise, this 52-step recipe is for from-scratch t2i. RESOLUTION: RAW is DOCUMENTED 'up to 1024' — keep BOTH dims <=1024 (1024x1024 is its sweet spot; long edge >1024 like 1152/1216 melts faces — confirmed). Turbo is the 1k-2k model. For bigger output, render <=1024 then upscale (RAW tiles at 1024 = exactly its trained size, why the tiled upscale is so clean). SHIFT FIX (critical): ComfyUI hardcodes flow-shift mu=1.15 (Turbo's value) for the WHOLE krea2 class, but RAW needs RESOLUTION-DYNAMIC shifting (mu~0.906 @ 1024^2, smaller below) — the over-shift compresses the detail tail and melts faces. The raw t2i/i2i templates insert a ModelSamplingFlux node (base_shift 0.5, max_shift 0.90625, width/height = render size) which REPLACES the bad baked shift (verified against ComfyUI master: supported_models.py Krea2 shift=1.15, ModelType.FLUX). SHIP RECIPE (quality-research-tuned): 52 steps / cfg 5.0 / er_sde / beta — DOCUMENTED crispest-photoreal combo; euler/simple is doubly-soft (euler smooths micro-texture, simple under-weights the detail band). cfg 5.0 ~ Krea --cfg 3.5 in ComfyUI's (1+g) convention + diffusers' native 4.5. ModelSamplingFlux width/height MUST match render size or mu over-shifts on non-square buckets (1024^2->0.906, 896x1024->0.852, 832x1024->0.825, 768x1024->0.798). Turbo needs no shift node (its real mu IS 1.15). Without the ModelSamplingFlux node a RAW render melts.",
+  "files": [
+    {
+      "label": "Diffusion Model",
+      "folder": "diffusion_models",
+      "variants": [
+        {
+          "precision": "fp8",
+          "filename": "krea2_raw_fp8_scaled.safetensors",
+          "size_bytes": 13141730784,
+          "source": {
+            "provider": "huggingface",
+            "repo": "Comfy-Org/Krea-2",
+            "path": "diffusion_models/krea2_raw_fp8_scaled.safetensors"
+          },
+          "quick_hash": null,
+          "sha256": null
+        },
+        {
+          "precision": "bf16",
+          "filename": "krea2_raw_bf16.safetensors",
+          "size_bytes": 26283332608,
+          "source": {
+            "provider": "huggingface",
+            "repo": "Comfy-Org/Krea-2",
+            "path": "diffusion_models/krea2_raw_bf16.safetensors"
+          },
+          "quick_hash": null,
+          "sha256": null
+        }
+      ]
+    },
+    {
+      "label": "Text Encoder",
+      "folder": "text_encoders",
+      "variants": [
+        {
+          "precision": "fp8",
+          "filename": "qwen3vl_4b_fp8_scaled.safetensors",
+          "size_bytes": 5242467968,
+          "source": {
+            "provider": "huggingface",
+            "repo": "Comfy-Org/Krea-2",
+            "path": "text_encoders/qwen3vl_4b_fp8_scaled.safetensors"
+          },
+          "sha256": null
+        },
+        {
+          "precision": "bf16",
+          "filename": "qwen3vl_4b_bf16.safetensors",
+          "size_bytes": 8875719384,
+          "source": {
+            "provider": "huggingface",
+            "repo": "Comfy-Org/Krea-2",
+            "path": "text_encoders/qwen3vl_4b_bf16.safetensors"
+          },
+          "sha256": null
+        }
+      ]
+    },
+    {
+      "label": "VAE",
+      "folder": "vae",
+      "filename": "qwen_image_vae.safetensors",
+      "size_bytes": 253806246,
+      "source": {
+        "provider": "huggingface",
+        "repo": "Comfy-Org/Krea-2",
+        "path": "vae/qwen_image_vae.safetensors"
+      },
+      "sha256": null
+    }
+  ],
+  "nodes": {
+    "KSampler": {
+      "steps": 52,
+      "cfg": 5.0,
+      "sampler_name": "er_sde",
+      "scheduler": "beta",
+      "steps_range": [
+        40,
+        60
+      ],
+      "cfg_range": [
+        3.5,
+        6.0
+      ],
+      "sampler_name_options": [
+        "er_sde",
+        "dpmpp_2m",
+        "euler",
+        "dpmpp_sde",
+        "euler_ancestral"
+      ],
+      "scheduler_options": [
+        "beta",
+        "simple",
+        "sgm_uniform",
+        "normal"
+      ]
+    },
+    "EmptySD3LatentImage": {
+      "width": 1024,
+      "height": 1024,
+      "_resolutions": [
+        {
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "width": 832,
+          "height": 1024
+        },
+        {
+          "width": 1024,
+          "height": 832
+        },
+        {
+          "width": 768,
+          "height": 1024
+        },
+        {
+          "width": 1024,
+          "height": 768
+        },
+        {
+          "width": 896,
+          "height": 1024
+        },
+        {
+          "width": 1024,
+          "height": 896
+        }
+      ]
+    }
+  }
+}

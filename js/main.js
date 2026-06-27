@@ -23,6 +23,7 @@ import { createHighlightExtension } from "./lib/active-label-highlight.js";
 import { createWildcardBadgeExtension } from "./lib/wildcard-badge.js";
 import { updateDynamicOutputs, initializeOutputSlots, healRegionsLinks, invalidateFluxCache, autoConnectToSampler } from "./lib/dynamic-outputs.js";
 import { setupIterateListeners, advanceAndCascade } from "./lib/iterate-hierarchy.js";
+import { setupShiftSync } from "./lib/krea2-shift-sync.js";
 import { getSwitchOptions, countLabeledOptions } from "./lib/label-utils.js";
 import { getWorkflowId, installSaveInterceptor, healWorkflowIdDrift } from "./lib/workflow-id.js";
 import { recordGeneration, fetchWorkflowImages, fetchWorkflowCount, subscribe as subscribeHistory, invalidateCache, getCachedImages, externallyTrackedPrompts, isExternalPrompt } from "./lib/history.js";
@@ -366,8 +367,19 @@ function setupImagePreviewListeners() {
     // here describe the user's active graph, not that prompt's.
     if (detail.prompt_id && externallyTrackedPrompts.has(detail.prompt_id)) return;
     const nodeId = Number(detail.node);
-    const pcNodes = _outputToPC.get(nodeId);
-    if (!pcNodes?.length) return;
+    let pcNodes = _outputToPC.get(nodeId);
+    let wfId = _executionWorkflowId;
+    if (!pcNodes?.length) {
+      // The SaveImage didn't map to a PromptChain node via the execution_start
+      // graph scan (trace miss / subgraph / workflow-id drift). Don't silently
+      // drop the generation — diagnose, then attribute it to the active graph's
+      // PromptChain node so the generation panel still catches it.
+      if (!wfId) wfId = getWorkflowId();
+      const fallbackPC = (app.graph?._nodes || []).find((n) => n.comfyClass === NODE_TYPE);
+      console.warn(`[PromptChain][record] unmapped output node=${detail.node}->${nodeId} mapKeys=[${[..._outputToPC.keys()]}] wfId=${wfId} graphNodes=${app.graph?._nodes?.length} rootGraph=${!!app.rootGraph} fallbackPC=${fallbackPC?.id ?? "none"}`);
+      if (!fallbackPC || !wfId) return;
+      pcNodes = [fallbackPC];
+    }
 
     const img = detail.output.images[detail.output.images.length - 1];
     const params = new URLSearchParams({
@@ -404,7 +416,7 @@ function setupImagePreviewListeners() {
     // the panel awaits it on filename-click to resolve the exact hash even
     // if the click lands before the POST response writes the entry to cache.
     const genPromise = recordGeneration(
-      _executionWorkflowId,
+      wfId,
       img.filename,
       img.subfolder || "",
       img.type || "output",
@@ -882,6 +894,7 @@ app.registerExtension({
 
   setup() {
     setupIterateListeners();
+    setupShiftSync(); // krea2 RAW: keep the flow-shift node's w/h matched to render size
     setupImagePreviewListeners();
     checkOnboarding();
     loadSvelteNode(); // preload Svelte module in background

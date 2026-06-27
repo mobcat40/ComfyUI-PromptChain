@@ -384,14 +384,19 @@ function SettingsTab($$anchor, $$props) {
     if (!get(editors)[nodeType]) get(editors)[nodeType] = {};
     get(editors)[nodeType][widgetName] = val;
   }
-  function mirrorIdeogramScheduler(latentNode) {
-    const sched = detected().find((d) => d.type === "Ideogram4Scheduler");
-    if (!sched) return;
-    for (const dim of ["width", "height"]) {
-      const v = $$props.readWidgetValue(latentNode, dim);
-      if (v !== void 0) {
-        $$props.writeWidgetValue(sched.node, dim, v);
-        setEditorValue("Ideogram4Scheduler", dim, v);
+  const RES_DEPENDENTS = [
+    { type: "Ideogram4Scheduler", persist: true },
+    { type: "ModelSamplingFlux", persist: false }
+  ];
+  function mirrorResolutionDependents(latentNode) {
+    for (const { type: depType, persist } of RES_DEPENDENTS) {
+      const dep = detected().find((d) => d.type === depType);
+      if (!dep) continue;
+      for (const dim of ["width", "height"]) {
+        const v = $$props.readWidgetValue(latentNode, dim);
+        if (v === void 0) continue;
+        $$props.writeWidgetValue(dep.node, dim, v);
+        if (persist) setEditorValue(depType, dim, v);
       }
     }
   }
@@ -484,7 +489,10 @@ function SettingsTab($$anchor, $$props) {
     });
   }
   var node_2 = sibling(node_1, 2);
-  each(node_2, 17, detected, index, ($$anchor2, $$item) => {
+  each(node_2, 17, () => detected().filter((d) => {
+    var _a2;
+    return !((_a2 = d.config) == null ? void 0 : _a2.mirrorOnly);
+  }), index, ($$anchor2, $$item) => {
     let node = () => get($$item).node;
     let config = () => get($$item).config;
     let type = () => get($$item).type;
@@ -634,7 +642,7 @@ function SettingsTab($$anchor, $$props) {
                               $$props.writeWidgetValue(node(), "height", get(p).height);
                               setEditorValue(type(), "width", get(p).width);
                               setEditorValue(type(), "height", get(p).height);
-                              mirrorIdeogramScheduler(node());
+                              mirrorResolutionDependents(node());
                               presetMenuOpen[type()] = false;
                             });
                             delegated("click", span_2, (e) => {
@@ -702,13 +710,13 @@ function SettingsTab($$anchor, $$props) {
                   const v = parseInt(e.target.value) || 512;
                   setEditorValue(type(), "width", v);
                   $$props.writeWidgetValue(node(), "width", v);
-                  mirrorIdeogramScheduler(node());
+                  mirrorResolutionDependents(node());
                 });
                 delegated("change", input_2, (e) => {
                   const v = parseInt(e.target.value) || 512;
                   setEditorValue(type(), "height", v);
                   $$props.writeWidgetValue(node(), "height", v);
-                  mirrorIdeogramScheduler(node());
+                  mirrorResolutionDependents(node());
                 });
                 append($$anchor5, div_6);
               };

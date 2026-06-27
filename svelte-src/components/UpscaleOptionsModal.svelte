@@ -67,16 +67,18 @@
   let engineKind = $derived(engineEntry
     ? (engineEntry.architecture === "qwen_edit" ? "qwen"
       : engineEntry.architecture === "zimage" ? "zimage"
+      : engineEntry.architecture === "krea2" ? "krea2"
       : engineEntry.architecture === "flux" ? "flux1" : "sdxl")
     : (engineSel === "source" ? "source" : "plain"));
   let sourceGraftable = $derived(engineKind === "source" && !!caps?.graftable);
   // Tile engines share the USDU recipe surface (denoise/climb/tile knobs);
   // qwen is the whole-frame re-render with its own reduced surface.
-  let tileEngine = $derived(engineKind === "sdxl" || engineKind === "flux1" || engineKind === "zimage");
+  let tileEngine = $derived(engineKind === "sdxl" || engineKind === "flux1" || engineKind === "zimage" || engineKind === "krea2");
   let engineGroups = $derived({
     sdxl: (caps?.engineModels || []).filter((m) => m.architecture === "sdxl"),
     flux1: (caps?.engineModels || []).filter((m) => m.architecture === "flux"),
     zimage: (caps?.engineModels || []).filter((m) => m.architecture === "zimage"),
+    krea2: (caps?.engineModels || []).filter((m) => m.architecture === "krea2"),
     qwen: (caps?.engineModels || []).filter((m) => m.architecture === "qwen_edit"),
   });
   // Degenerate picker (no models, nothing to choose) stays hidden.
@@ -95,19 +97,22 @@
     ...(engineGroups.zimage.length
       ? [{ label: "Z-Image — tiled re-detail", options: engineGroups.zimage.map((m) => ({ value: m.hash, label: m.displayName })) }]
       : []),
+    ...(engineGroups.krea2.length
+      ? [{ label: "Krea 2 — tiled re-detail", options: engineGroups.krea2.map((m) => ({ value: m.hash, label: m.displayName })) }]
+      : []),
     ...(engineGroups.qwen.length
       ? [{ label: "Qwen Edit — instruction enhance", options: engineGroups.qwen.map((m) => ({ value: m.hash, label: m.displayName })) }]
       : []),
     { label: "Plain upscale", options: [{ value: "plain", label: "Model climb only — no re-detail pass" }] },
   ]);
-  let recSampler = $derived(engineKind === "sdxl" ? "dpmpp_2m" : engineKind === "zimage" ? "res_multistep" : engineKind === "flux1" || engineKind === "qwen" ? "euler" : caps?.recommendedSampler);
-  let recScheduler = $derived(engineKind === "sdxl" ? "karras" : engineKind === "zimage" ? "beta" : engineKind === "flux1" || engineKind === "qwen" ? "simple" : caps?.recommendedScheduler);
+  let recSampler = $derived(engineKind === "sdxl" ? "dpmpp_2m" : engineKind === "zimage" ? "res_multistep" : engineKind === "krea2" ? "euler" : engineKind === "flux1" || engineKind === "qwen" ? "euler" : caps?.recommendedSampler);
+  let recScheduler = $derived(engineKind === "sdxl" ? "karras" : engineKind === "zimage" ? "beta" : engineKind === "flux1" || engineKind === "qwen" || engineKind === "krea2" ? "simple" : caps?.recommendedScheduler);
   let advDefaults = $derived(engineEntry ? (engineEntry.defaults?.advanced || {}) : (caps?.advancedDefaults || {}));
   let denoiseMax = $derived(tileEngine
     ? (engineEntry?.defaults?.denoiseMax || 0.4)
     : (caps?.denoiseMax || 0.7));
   let denoiseDefault = $derived(tileEngine
-    ? (engineEntry?.defaults?.denoise ?? (engineKind === "flux1" ? 0.2 : 0.15))
+    ? (engineEntry?.defaults?.denoise ?? (engineKind === "flux1" ? 0.2 : engineKind === "krea2" ? 0.45 : 0.15))
     : caps?.defaultDenoise);
 
   // Re-default per open: each image's workflow supports different modes.
@@ -142,6 +147,17 @@
       // resets BEFORE the seed so prefillFor can't echo a stale prompt; the
       // seed itself is mode-aware (a regional defaultMode opens on $blocks).
       memoryPrompt = null;
+      // A Krea 2 RAW *source* (image rendered with the undistilled base) upscales
+      // cleanest through the RAW tile engine, so default to it. Scoped to a RAW
+      // source ONLY: a Turbo (or any other) source keeps its own model as the
+      // default engine — preserving "default engine = the image's own model" —
+      // with RAW still one pick away in the dropdown. pickEngine applies RAW's
+      // tile-tuned denoise/sampler below.
+      const rawEngine = caps.sourceModelInfo?.family === "krea2_raw"
+        ? (caps.engineModels || []).find((m) => m.architecture === "krea2"
+            && /raw/i.test(m.filename || "") && !/turbo/i.test(m.filename || ""))
+        : null;
+      const rawHash = rawEngine?.hash || null;
       engineSel = caps.graftable ? "source" : "plain";
       prompt = prefillFor(caps.graftable ? "source" : "plain");
       // Plain pass defaults to SeedVR2 whenever it's installed (installed =
@@ -184,6 +200,13 @@
         if (mem.climbModel && caps.upscaleModelOptions?.includes(mem.climbModel)) climbModel = mem.climbModel;
         if (mem.plainEngine === "ultrasharp" || (mem.plainEngine === "seedvr2" && caps.seedvr2Available)) plainEngine = mem.plainEngine;
       }
+      // RAW source only (rawHash is null for every other source): prefer the RAW
+      // tile engine over the source graft, which would carry the from-scratch
+      // render recipe (52 steps) — wrong for a low-denoise tile pass. FINAL word,
+      // so it survives the memory restore above; fires when nothing was explicitly
+      // chosen for this image or the remembered choice was "source". An explicit
+      // pick (incl. RAW on a Turbo image) is respected. pickEngine sets RAW's dials.
+      if (rawHash && (!memEngineValid || memEngine === "source")) pickEngine(rawHash);
       requestAnimationFrame(() => confirmBtn?.focus());
     });
   });
@@ -201,7 +224,7 @@
   // silently drop every region the moment the user touched the text.
   function basePrefillFor(kind) {
     if (kind === "qwen") return caps?.enginePromptDefaults?.qwen || "";
-    if (kind === "sdxl" || kind === "flux1" || kind === "zimage") {
+    if (kind === "sdxl" || kind === "flux1" || kind === "zimage" || kind === "krea2") {
       // An edit-model source's prompt is an INSTRUCTION ("make the person in
       // image 1 do a pose…"), not a scene description — pushing it into a
       // tile pass conditions the tiles on the instruction's words. Neutral
@@ -226,7 +249,7 @@
   function pickEngine(value) {
     engineSel = value;
     const entry = caps?.engineModels?.find((m) => m.hash === value) || null;
-    const kind = entry ? (entry.architecture === "qwen_edit" ? "qwen" : entry.architecture === "zimage" ? "zimage" : entry.architecture === "flux" ? "flux1" : "sdxl")
+    const kind = entry ? (entry.architecture === "qwen_edit" ? "qwen" : entry.architecture === "zimage" ? "zimage" : entry.architecture === "krea2" ? "krea2" : entry.architecture === "flux" ? "flux1" : "sdxl")
       : (value === "source" ? "source" : "plain");
     advanced = {};
     // Restore/climbModel deliberately survive: they describe the SOURCE and
@@ -457,6 +480,7 @@
       : engineKind === "plain" ? (climbStage === "seedvr2" && caps?.seedvr2Available ? "seedvr2" : "ultrasharp")
       : engineKind === "qwen" ? "qwen-edit"
       : engineKind === "zimage" ? "zimage-unet"
+      : engineKind === "krea2" ? "krea2-unet"
       : engineKind === "flux1" ? "flux1-unet" : "sdxl-ckpt";
     if (engineEntry) base.engineModel = { hash: engineEntry.hash, filename: engineEntry.filename };
     if (tileEngine && climbStage !== "ultrasharp") base.climbStage = climbStage;
@@ -473,7 +497,13 @@
       // doesn't — the graft's own source already says exactly that.
       base.prompt = prompt;
     }
-    if (Object.keys(advanced).length) base.advanced = { ...advanced };
+    // Tile/engine builds read cfg/steps/tile from options.advanced and fall back
+    // to TURBO-shaped constants if absent — so a picked engine's OWN defaults
+    // (e.g. RAW's cfg 3.5 / 24 steps) must be sent, not just user overrides, or
+    // RAW silently runs on Turbo's 8/1.0. The source graft sets its own node
+    // defaults, so it only needs the user's overrides.
+    if (engineEntry) base.advanced = { ...advDefaults, ...advanced };
+    else if (Object.keys(advanced).length) base.advanced = { ...advanced };
     storeModalMemory("upscale", imageKey, {
       engine: engineKind === "source" ? "source" : engineSel,
       prompt,
@@ -715,10 +745,10 @@
                      natural box, so only the added detail differs. -->
                 <div class="pcr-up-split-before" style="clip-path: inset(0 calc(100% - {splitX}px) 0 0);">
                   <div class="pcr-up-zoomwrap" style="transform: translate({panX}px, {panY}px) scale({zoom});">
-                    <img class="pcr-up-preview" src={previewUrl} alt="" draggable="false" width={imgNatW} height={imgNatH} />
+                    <img class="pcr-up-preview" src={progress?.enlargedUrl || previewUrl} alt="" draggable="false" width={imgNatW} height={imgNatH} />
                   </div>
                 </div>
-                <div class="pcr-up-split-label before">Before</div>
+                <div class="pcr-up-split-label before">{progress?.enlargedUrl ? "Enlarged" : "Before"}</div>
                 <div class="pcr-up-split-label after">After</div>
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
                 <div class="pcr-up-split-divider" style="left: {splitX}px;"
@@ -770,9 +800,9 @@
             <button class="pcr-up-restore-chip" onclick={applySavedSetup}
               title="Re-apply the dials from your last upscale of this image">↩ Restore last setup</button>
           {/if}
-          {#if !caps?.graftable && engineKind === "plain"}
+          {#if !caps?.graftable && engineKind === "plain" && engineChoices <= 1}
             <p class="pcr-up-floor-msg">
-              This image has no usable prompt metadata — a plain model upscale (ESRGAN) will be used.
+              No re-detail engine is available for this image — a plain model upscale (ESRGAN) will be used.
             </p>
           {/if}
           {#if engineChoices > 1}
@@ -792,6 +822,8 @@
                     ? "the climb model below pushes to the target, then this FLUX.1 model re-details every tile with the prompt below — low denoise holds structure without a ControlNet"
                     : engineKind === "zimage"
                     ? "the climb model below pushes to the target, then this Z-Image model re-details every tile with the prompt below — Base holds structure at low denoise; Turbo (distilled) needs ~0.7 or it blotches"
+                    : engineKind === "krea2"
+                    ? "the climb model below pushes to the target, then this Krea 2 model re-details every tile with the prompt below — distilled turbo re-detail at moderate denoise, no ControlNet"
                     : "the climb model below pushes to the target, then this checkpoint re-details every tile (structure locked by a tile ControlNet) with the prompt below"}
                 </span>
               {:else if engineKind === "qwen"}
@@ -861,7 +893,7 @@
           {/if}
           <div class="pcr-mcard">
           <div class="pcr-mcard-title">Settings</div>
-          {#if sourceGraftable || tileEngine || engineKind === "qwen"}
+          {#if sourceGraftable || tileEngine || engineKind === "qwen" || engineKind === "plain"}
             <div class="pcr-up-sliders">
               <div class="pcr-up-slider-row" class:pcr-up-slider-row-ticks={!!scaleSlider.ticks}>
                 <span class="pcr-up-slider-label">Scale</span>
@@ -907,7 +939,7 @@
               {/if}
               {#if sourceGraftable || tileEngine}
                 <!-- qwen has no denoise knob: 1.0 is structural (the
-                     conditioning image is the anchor, not the latent) -->
+                     conditioning image is the anchor, not the latent). -->
                 <div class="pcr-up-slider-row">
                   <span class="pcr-up-slider-label">Denoise</span>
                   <SettingsSlider
