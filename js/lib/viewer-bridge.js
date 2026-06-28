@@ -306,7 +306,15 @@ export async function openViewer(images, startIndex = 0, workflowId = "", onDele
     onInpaintInstallPack: (injectable) => installInpaintPack(injectable),
     onMountPromptEditor: mountPromptEditor,
     onEditPrepare: (entry) => prepareEdit(entry),
-    onEditSave: (prepared, blob, prefix) => saveEditedImage(prepared, blob, prefix),
+    onEditSave: async (prepared, blob, prefix) => {
+      const entry = await saveEditedImage(prepared, blob, prefix);
+      // Opened from a node (e.g. LoadImage) that wants the result wired back.
+      if (entry && typeof opts.onAfterEditSave === "function") {
+        try { await opts.onAfterEditSave(entry); }
+        catch (e) { console.error("[PromptChain] onAfterEditSave failed", e); }
+      }
+      return entry;
+    },
     onInpaintRegion: (data, args) => inpaintRegion(data, args),
     onReposeCaps: () => fetchReposeCaps(),
     onReposeRun: (opts) => runReposeInBackground(opts),

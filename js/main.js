@@ -367,20 +367,6 @@ function setupImagePreviewListeners() {
     // here describe the user's active graph, not that prompt's.
     if (detail.prompt_id && externallyTrackedPrompts.has(detail.prompt_id)) return;
     const nodeId = Number(detail.node);
-    let pcNodes = _outputToPC.get(nodeId);
-    let wfId = _executionWorkflowId;
-    if (!pcNodes?.length) {
-      // The SaveImage didn't map to a PromptChain node via the execution_start
-      // graph scan (trace miss / subgraph / workflow-id drift). Don't silently
-      // drop the generation — diagnose, then attribute it to the active graph's
-      // PromptChain node so the generation panel still catches it.
-      if (!wfId) wfId = getWorkflowId();
-      const fallbackPC = (app.graph?._nodes || []).find((n) => n.comfyClass === NODE_TYPE);
-      console.warn(`[PromptChain][record] unmapped output node=${detail.node}->${nodeId} mapKeys=[${[..._outputToPC.keys()]}] wfId=${wfId} graphNodes=${app.graph?._nodes?.length} rootGraph=${!!app.rootGraph} fallbackPC=${fallbackPC?.id ?? "none"}`);
-      if (!fallbackPC || !wfId) return;
-      pcNodes = [fallbackPC];
-    }
-
     const img = detail.output.images[detail.output.images.length - 1];
     const params = new URLSearchParams({
       filename: img.filename,
@@ -388,6 +374,39 @@ function setupImagePreviewListeners() {
       type: img.type || "output",
     });
     const imageUrl = api.apiURL(`/view?${params}&rand=${Math.random()}`);
+
+    // A PreviewImage emits type "temp" — a transient guide map (e.g. the 3D
+    // Poser depth control map), not a saved render. It still flashes in the
+    // node panel to guide the user, but must never be recorded: the Generated
+    // gallery holds saved outputs (SaveImage → "output") only.
+    const isSavedOutput = (img.type || "output") === "output";
+
+    let pcNodes = _outputToPC.get(nodeId);
+    let wfId = _executionWorkflowId;
+    if (!pcNodes?.length) {
+      // The SaveImage didn't map to a PromptChain node via the execution_start
+      // graph scan (trace miss / subgraph / workflow-id drift). Don't silently
+      // drop the generation — diagnose, then attribute it to the active graph's
+      // PromptChain node so the generation panel still catches it. A side-branch
+      // preview (the pose depth map) is EXPECTED to be unmapped — don't warn.
+      if (!wfId) wfId = getWorkflowId();
+      const fallbackPC = (app.graph?._nodes || []).find((n) => n.comfyClass === NODE_TYPE);
+      if (isSavedOutput) {
+        console.warn(`[PromptChain][record] unmapped output node=${detail.node}->${nodeId} mapKeys=[${[..._outputToPC.keys()]}] wfId=${wfId} graphNodes=${app.graph?._nodes?.length} rootGraph=${!!app.rootGraph} fallbackPC=${fallbackPC?.id ?? "none"}`);
+      }
+      if (!fallbackPC || (isSavedOutput && !wfId)) return;
+      pcNodes = [fallbackPC];
+    }
+
+    // Transient preview (PreviewImage / non-"output"): flash in the panel to
+    // guide the user, then stop — no metadata, no gallery record.
+    if (!isSavedOutput) {
+      for (const pc of pcNodes) {
+        pc._pcrImagePanel?.updateImage(imageUrl, null);
+        pc._pcrImagePanel?.hideProgress();
+      }
+      return;
+    }
 
     // metadata from graph-determined nearest KSampler
     const entry = _saveNodeGraph.get(nodeId);

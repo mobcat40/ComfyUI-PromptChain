@@ -902,6 +902,7 @@
     display: flex; align-items: center; gap: 8px;
     padding: 5px 7px; border-radius: 4px; cursor: pointer;
     background: #1c1c1c; border: 1px solid #2e2e2e;
+    -webkit-user-select: none; user-select: none; /* the name text must not hijack a press-drag */
   }
   .pcr-ed-layer-row.svelte-1ozzqkm:hover { border-color: #3d3d3d; }
   .pcr-ed-layer-row.selected.svelte-1ozzqkm { background: rgba(200, 89, 9, 0.10); border-color: #5a4630; }
@@ -919,6 +920,20 @@
   }
   .pcr-ed-layer-menu.svelte-1ozzqkm button:where(.svelte-1ozzqkm):hover { background: #c85909; color: #fff; }
   .pcr-ed-layer-menu.svelte-1ozzqkm button.danger:where(.svelte-1ozzqkm):hover { background: #b23b3b; }
+  .pcr-ed-menu-sep.svelte-1ozzqkm { height: 1px; margin: 4px 6px; background: #3a3a3a; }
+  /* Mask actions collapse into a hover flyout (CSS-only, no timers). The flyout is
+     a DOM descendant of .pcr-ed-layer-menu so the outside-click dismiss still works. */
+  .pcr-ed-submenu-host.svelte-1ozzqkm { position: relative; display: flex; flex-direction: column; }
+  .pcr-ed-submenu-trigger.svelte-1ozzqkm { display: flex; align-items: center; justify-content: space-between; }
+  .pcr-ed-submenu-caret.svelte-1ozzqkm { color: #888; font-size: 11px; margin-left: 8px; }
+  .pcr-ed-submenu.svelte-1ozzqkm {
+    position: absolute; left: 100%; top: -5px; min-width: 160px;
+    background: #232323; border: 1px solid #444; border-radius: 6px; padding: 4px;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.5); display: none; flex-direction: column; z-index: 1;
+  }
+  .pcr-ed-submenu-host.flip.svelte-1ozzqkm .pcr-ed-submenu:where(.svelte-1ozzqkm) { left: auto; right: 100%; }
+  .pcr-ed-submenu-host.svelte-1ozzqkm:hover .pcr-ed-submenu:where(.svelte-1ozzqkm), .pcr-ed-submenu.svelte-1ozzqkm:hover { display: flex; }
+  .pcr-ed-submenu-host.svelte-1ozzqkm:hover .pcr-ed-submenu-trigger:where(.svelte-1ozzqkm) { background: #c85909; color: #fff; }
   /* (unused) .pcr-ed-layer-bg { cursor: default; opacity: 0.85; }*/
   .pcr-ed-layer-actions.svelte-1ozzqkm { display: flex; gap: 4px; }
   .pcr-ed-layer-btn.svelte-1ozzqkm {
@@ -928,8 +943,8 @@
   .pcr-ed-layer-btn.svelte-1ozzqkm:hover:not(:disabled) { color: #fff; border-color: #555; }
   .pcr-ed-layer-btn.svelte-1ozzqkm:disabled { opacity: 0.4; cursor: default; }
   .pcr-ed-layer-grip.svelte-1ozzqkm {
-    flex: none; width: 12px; text-align: center;
-    font-size: 11px; line-height: 1; color: #555;
+    flex: none; width: 16px; text-align: center;
+    font-size: 12px; line-height: 1; color: #666;
     cursor: grab; user-select: none;
   }
   .pcr-ed-layer-grip.svelte-1ozzqkm:hover { color: #aaa; }
@@ -940,11 +955,19 @@
     user-select: none; color: #ccc;
   }
   .pcr-ed-eye.off.svelte-1ozzqkm { color: #666; }
+  /* Photoshop-style layer-mask thumbnail (shows the mask shape; white glow = active paint target). */
+  .pcr-ed-mask-thumb.svelte-1ozzqkm {
+    flex: none; width: 18px; height: 18px; border-radius: 3px;
+    object-fit: cover; background: #000; border: 1px solid #555; cursor: pointer;
+  }
+  .pcr-ed-mask-thumb.svelte-1ozzqkm:hover { border-color: #888; }
+  .pcr-ed-mask-thumb.editing.svelte-1ozzqkm { border-color: #fff; box-shadow: 0 0 0 1px #fff, 0 0 0 3px rgba(255, 255, 255, 0.30); }
   .pcr-ed-layer-name.svelte-1ozzqkm { flex: 1; font-size: 12px; color: #ddd; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pcr-ed-layer-blendtag.svelte-1ozzqkm { margin-left: 5px; font-size: 10px; color: #8b96a5; }
   .pcr-ed-layer-rename.svelte-1ozzqkm {
     flex: 1; min-width: 0; font-size: 12px; color: #eee;
     background: #1b1b1b; border: 1px solid #c85909; border-radius: 3px; padding: 1px 4px;
+    -webkit-user-select: text; user-select: text; /* stays editable under the row's user-select:none */
   }
   .pcr-ed-blend-select.svelte-1ozzqkm {
     width: 100%; margin: 0 0 4px; padding: 3px 6px; font-size: 12px;
@@ -952,6 +975,13 @@
   }
   .pcr-ed-blend-select.svelte-1ozzqkm:disabled { opacity: 0.45; }
   .pcr-ed-layer-opacity.svelte-1ozzqkm { width: 70px; accent-color: #c85909; }
+  .pcr-ed-group-row.svelte-1ozzqkm { display: flex; align-items: center; gap: 4px; padding: 3px 5px; border: 1px solid #333; border-radius: 4px;
+    background: rgba(120, 130, 150, 0.12); -webkit-user-select: none; user-select: none; }
+  .pcr-ed-group-row.svelte-1ozzqkm .pcr-ed-eye:where(.svelte-1ozzqkm) { cursor: pointer; }
+  .pcr-ed-group-name.svelte-1ozzqkm { flex: 1; font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: default; }
+  .pcr-ed-group-x.svelte-1ozzqkm { background: none; border: none; color: #999; cursor: pointer; font-size: 13px; padding: 0 2px; }
+  .pcr-ed-group-x.svelte-1ozzqkm:hover { color: #fff; }
+  .pcr-ed-layer-row.in-group.svelte-1ozzqkm { margin-left: 14px; }
   .pcr-ed-hist.svelte-1ozzqkm {
     display: flex; flex-direction: column;
     max-height: 170px; overflow-y: auto;

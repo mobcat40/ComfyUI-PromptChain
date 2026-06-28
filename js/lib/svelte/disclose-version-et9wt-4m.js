@@ -4282,9 +4282,9 @@ export {
   untrack as E,
   update as F,
   set_checked as G,
-  autofocus as H,
-  to_array as I,
-  from_svg as J,
+  to_array as H,
+  from_svg as I,
+  autofocus as J,
   noop as K,
   mount as L,
   unmount as M,
@@ -4343,4 +4343,4 @@ export {
   set_text as y,
   index as z
 };
-//# sourceMappingURL=disclose-version-uq4tn5Y6.js.map
+//# sourceMappingURL=disclose-version-et9wt-4m.js.map

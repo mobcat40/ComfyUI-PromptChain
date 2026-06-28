@@ -1816,9 +1816,10 @@ function injectControlNet(pcNode, controlType) {
   if (!graph) return false;
   const LG = window.LiteGraph || graph.constructor?.LiteGraph;
   if (!LG) return false;
-  // "depth-pose" is the depth branch with a Pose Studio figure as the image
-  // source instead of a LoadImage — the rendered figure goes THROUGH
-  // DepthAnything just like an uploaded photo would.
+  // "depth-pose" is the depth branch sourced from a 3D Poser figure instead of a
+  // LoadImage. The Poser renders its OWN true geometric depth, so it wires straight
+  // into Apply ControlNet — no DepthAnything estimator (that exists only for the
+  // uploaded-image branches, which have no scene geometry to read).
   const usePose = controlType === "depth-pose";
   const cfg = CONTROLNET_TYPES[usePose ? "depth" : controlType];
   if (!cfg) return false;
@@ -1838,12 +1839,16 @@ function injectControlNet(pcNode, controlType) {
   if (!posSrc?.node || !negSrc?.node) return false;
 
   // Image source: a shared LoadImage (uploaded reference) reused across stacked
-  // branches — or, for "depth + 3D pose", a Pose Studio node whose rendered figure
-  // feeds the depth preprocessor. Pose nodes aren't shared (one figure per branch).
+  // branches — or, for "depth + 3D pose", a Pose Studio node whose true-depth
+  // render IS the control map. Pose nodes aren't shared (one figure per branch).
   let loadImage = null, newLoadImage = false, poseNode = null;
   if (usePose) {
     poseNode = LG.createNode("PromptChain_PoseStudio");
     if (!poseNode) return false;
+    // Switch the Poser to true geometric depth before its mount seeds the first
+    // capture (read live from pcrOutputMode) — the default disparity curve matches
+    // what the depth ControlNets were trained on.
+    poseNode.properties = { ...(poseNode.properties || {}), pcrOutputMode: "depth", pcrTrueDepth: true };
   } else {
     loadImage = graph._nodes?.find(n => n.comfyClass === "LoadImage" && n.title === "ControlNet Reference");
     newLoadImage = !loadImage;
@@ -1851,12 +1856,13 @@ function injectControlNet(pcNode, controlType) {
   }
   const sourceNode = poseNode || loadImage;
 
-  const preNode = LG.createNode(resolvePre(cfg.pre));
+  // Pose-direct depth needs no preprocessor — the Poser's IMAGE already IS the map.
+  const preNode = usePose ? null : LG.createNode(resolvePre(cfg.pre));
   const loaderNode = LG.createNode("ControlNetLoader");
   const applyNode = LG.createNode("ControlNetApplyAdvanced");
   const setUnion = cfg.unionType ? LG.createNode("SetUnionControlNetType") : null;
   const preview = LG.createNode("PreviewImage");
-  if (!preNode || !loaderNode || !applyNode) return false;
+  if ((!usePose && !preNode) || !loaderNode || !applyNode) return false;
   if (cfg.unionType && !setUnion) return false;
 
   // Layout mirrors the hand-arranged reference (janku-depth-3): the cluster
@@ -1869,7 +1875,7 @@ function injectControlNet(pcNode, controlType) {
   // Loader sits just below the preprocessor, whose height varies a lot by type
   // (pose tallest, scribble shortest) — derive from the live node height so one
   // rule fits all controls. SetUnion is 150 below the loader.
-  const preH = preNode.size?.[1] || 130;
+  const preH = preNode?.size?.[1] || 130;
   const loaderY = preH + 65;
   const setUnionY = loaderY + 150;
   if (poseNode) {
@@ -1882,12 +1888,12 @@ function injectControlNet(pcNode, controlType) {
     graph.add(loadImage);
     loadImage.size = [250, 340];
   }
-  preNode.pos = [baseX - 643, baseY + dy];
+  if (preNode) preNode.pos = [baseX - 643, baseY + dy];
   loaderNode.pos = [baseX - 633, baseY + loaderY + dy];
   if (setUnion) setUnion.pos = [baseX - 633, baseY + setUnionY + dy];
   applyNode.pos = [baseX - 313, baseY + dy];
   if (preview) preview.pos = [baseX - 933, baseY + dy];
-  graph.add(preNode);
+  if (preNode) graph.add(preNode);
   graph.add(loaderNode);
   if (setUnion) graph.add(setUnion);
   graph.add(applyNode);
@@ -1895,7 +1901,7 @@ function injectControlNet(pcNode, controlType) {
   // Sizes set after add so the litegraph size setter runs on a registered node.
   // Preprocessor: fix width, keep its auto height (varies by widget count —
   // canny has more rows than depth).
-  preNode.size = [291, preNode.size?.[1] ?? 130];
+  if (preNode) preNode.size = [291, preNode.size?.[1] ?? 130];
   loaderNode.size = [270, 83];
   if (setUnion) setUnion.size = [270, 83];
   applyNode.size = [270, 240];
@@ -1917,15 +1923,22 @@ function injectControlNet(pcNode, controlType) {
     else if (w.name === "start_percent") { w.value = 0.0; w.callback?.(0.0); }
     else if (w.name === "end_percent") { w.value = cfg.end; w.callback?.(cfg.end); }
   }
-  for (const w of preNode.widgets || []) {
+  for (const w of preNode?.widgets || []) {
     if (w.name === "resolution") { w.value = 1024; w.callback?.(1024); }
     // DWPose ships a toggle specifically for xinsir ControlNet stick scaling.
     else if (w.name === "scale_stick_for_xinsr_cn") { w.value = "enable"; w.callback?.("enable"); }
   }
 
-  sourceNode.connect(0, preNode, preNode.inputs?.findIndex(i => i.name === "image") ?? 0);
-  preNode.connect(0, applyNode, applyNode.inputs?.findIndex(i => i.name === "image") ?? 3);
-  if (preview) preNode.connect(0, preview, 0);  // show the preprocessed map
+  const applyImageIdx = applyNode.inputs?.findIndex(i => i.name === "image") ?? 3;
+  if (preNode) {
+    sourceNode.connect(0, preNode, preNode.inputs?.findIndex(i => i.name === "image") ?? 0);
+    preNode.connect(0, applyNode, applyImageIdx);
+    if (preview) preNode.connect(0, preview, 0);  // show the preprocessed map
+  } else {
+    // Pose-direct: the Poser's true-depth IMAGE is the control map itself.
+    sourceNode.connect(0, applyNode, applyImageIdx);
+    if (preview) sourceNode.connect(0, preview, 0);  // the depth-map flash
+  }
   if (setUnion) {
     loaderNode.connect(0, setUnion, 0);
     setUnion.connect(0, applyNode, applyNode.inputs?.findIndex(i => i.name === "control_net") ?? 2);
@@ -2344,7 +2357,11 @@ function injectFluxControlNet(pcNode, controlType) {
   if (!graph) return false;
   const LG = window.LiteGraph || graph.constructor?.LiteGraph;
   if (!LG) return false;
-  const cfg = FLUX_CONTROLNET_TYPES[controlType];
+  // "depth-pose" = the depth branch sourced from a 3D Poser figure (true geometric
+  // depth) instead of a LoadImage — wired straight into Apply ControlNet.
+  const usePose = controlType === "depth-pose";
+  const baseControl = usePose ? "depth" : controlType;
+  const cfg = FLUX_CONTROLNET_TYPES[baseControl];
   if (!cfg) return false;
 
   const downstream = findDownstreamNodes(pcNode);
@@ -2373,47 +2390,62 @@ function injectFluxControlNet(pcNode, controlType) {
     }
   }
 
-  // Reuse one shared reference image across stacked branches.
-  let loadImage = graph._nodes?.find(n => n.comfyClass === "LoadImage" && n.title === "ControlNet Reference");
-  const newLoadImage = !loadImage;
-  if (!loadImage) loadImage = LG.createNode("LoadImage");
+  // Image source: a 3D Poser figure (depth + 3D pose) whose true-depth render IS
+  // the control map — or a shared LoadImage reference reused across stacked branches.
+  let loadImage = null, newLoadImage = false, poseNode = null;
+  if (usePose) {
+    poseNode = LG.createNode("PromptChain_PoseStudio");
+    if (!poseNode) return false;
+    // True geometric depth, set before its mount seeds the first capture.
+    poseNode.properties = { ...(poseNode.properties || {}), pcrOutputMode: "depth", pcrTrueDepth: true };
+  } else {
+    loadImage = graph._nodes?.find(n => n.comfyClass === "LoadImage" && n.title === "ControlNet Reference");
+    newLoadImage = !loadImage;
+    if (!loadImage) loadImage = LG.createNode("LoadImage");
+  }
+  const sourceNode = poseNode || loadImage;
 
-  const preNode = LG.createNode(resolvePre(cfg.pre));
+  // Pose-direct depth needs no preprocessor — the Poser's IMAGE already IS the map.
+  const preNode = usePose ? null : LG.createNode(resolvePre(cfg.pre));
   const loaderNode = LG.createNode("ControlNetLoader");
   const applyNode = LG.createNode("ControlNetApplyAdvanced");
   const preview = LG.createNode("PreviewImage");
-  if (!preNode || !loaderNode || !applyNode) return false;
+  if ((!usePose && !preNode) || !loaderNode || !applyNode) return false;
 
   // Same left-of-node layout as the SDXL cluster, minus the SetUnion node.
   const existingApplies = downstream.filter(n => n.comfyClass === "ControlNetApplyAdvanced").length;
   const baseX = pcNode.pos?.[0] ?? 0;
   const baseY = pcNode.pos?.[1] ?? 0;
   const dy = existingApplies * 660;
-  const preH = preNode.size?.[1] || 130;
+  const preH = preNode?.size?.[1] || 130;
   const loaderY = preH + 65;
-  if (newLoadImage) {
+  if (poseNode) {
+    poseNode.pos = [baseX - 1383, baseY + dy];
+    graph.add(poseNode);
+    poseNode.size = [360, 470];
+  } else if (newLoadImage) {
     loadImage.title = "ControlNet Reference";
     loadImage.pos = [baseX - 1223, baseY];
     graph.add(loadImage);
     loadImage.size = [250, 340];
   }
-  preNode.pos = [baseX - 643, baseY + dy];
+  if (preNode) preNode.pos = [baseX - 643, baseY + dy];
   loaderNode.pos = [baseX - 633, baseY + loaderY + dy];
   applyNode.pos = [baseX - 313, baseY + dy];
   if (preview) preview.pos = [baseX - 933, baseY + dy];
-  graph.add(preNode);
+  if (preNode) graph.add(preNode);
   graph.add(loaderNode);
   graph.add(applyNode);
   if (preview) graph.add(preview);
-  preNode.size = [291, preNode.size?.[1] ?? 130];
+  if (preNode) preNode.size = [291, preNode.size?.[1] ?? 130];
   loaderNode.size = [270, 83];
   applyNode.size = [270, 240];
   if (preview) preview.size = [250, 360];
 
   // Flux branches carry a "flux-" prefixed control type so their settings
   // sections + recommended markers stay distinct from the SDXL defaults.
-  const settingsType = `flux-${controlType}`;
-  applyNode.title = `ControlNet — ${CN_LABELS[settingsType] || controlType}`;
+  const settingsType = `flux-${baseControl}`;
+  applyNode.title = `ControlNet — ${usePose ? "Depth (pose)" : (CN_LABELS[settingsType] || controlType)}`;
   applyNode.properties = { ...(applyNode.properties || {}), pcrControlType: settingsType };
 
   setControlNetModel(loaderNode, "fluxunion");
@@ -2422,13 +2454,20 @@ function injectFluxControlNet(pcNode, controlType) {
     else if (w.name === "start_percent") { w.value = 0.0; w.callback?.(0.0); }
     else if (w.name === "end_percent") { w.value = cfg.end; w.callback?.(cfg.end); }
   }
-  for (const w of preNode.widgets || []) {
+  for (const w of preNode?.widgets || []) {
     if (w.name === "resolution") { w.value = 1024; w.callback?.(1024); }
   }
 
-  loadImage.connect(0, preNode, preNode.inputs?.findIndex(i => i.name === "image") ?? 0);
-  preNode.connect(0, applyNode, applyNode.inputs?.findIndex(i => i.name === "image") ?? 3);
-  if (preview) preNode.connect(0, preview, 0);
+  const applyImageIdx = applyNode.inputs?.findIndex(i => i.name === "image") ?? 3;
+  if (preNode) {
+    sourceNode.connect(0, preNode, preNode.inputs?.findIndex(i => i.name === "image") ?? 0);
+    preNode.connect(0, applyNode, applyImageIdx);
+    if (preview) preNode.connect(0, preview, 0);
+  } else {
+    // Pose-direct: the Poser's true-depth IMAGE is the control map itself.
+    sourceNode.connect(0, applyNode, applyImageIdx);
+    if (preview) sourceNode.connect(0, preview, 0);
+  }
   loaderNode.connect(0, applyNode, applyNode.inputs?.findIndex(i => i.name === "control_net") ?? 2);
   if (vaeSrc?.node) {
     const vaeIdx = applyNode.inputs?.findIndex(i => i.name === "vae") ?? -1;
@@ -2452,9 +2491,10 @@ function injectZImageControlNet(pcNode, controlType, isBase = false) {
   if (!graph) return false;
   const LG = window.LiteGraph || graph.constructor?.LiteGraph;
   if (!LG) return false;
-  // "depth-pose" = the depth branch driven by a 3D Poser figure instead of a
-  // LoadImage — the rendered figure goes THROUGH the depth preprocessor, and its
-  // MASKS/POSE outputs are what a follow-up Regional inject binds to.
+  // "depth-pose" = the depth branch sourced from a 3D Poser figure instead of a
+  // LoadImage. The Poser emits its own true geometric depth, so it wires straight
+  // into ZImageFunControlnet (no DepthAnything); its MASKS/POSE outputs are what a
+  // follow-up Regional inject binds to.
   const usePose = controlType === "depth-pose";
   const baseControl = usePose ? "depth" : controlType;
   const cfg = ZIMAGE_CONTROLNET_TYPES[baseControl];
@@ -2487,6 +2527,9 @@ function injectZImageControlNet(pcNode, controlType, isBase = false) {
   if (usePose) {
     poseNode = LG.createNode("PromptChain_PoseStudio");
     if (!poseNode) return false;
+    // Poser emits its own true geometric depth → straight into ZImageFunControlnet,
+    // no DepthAnything re-estimation. Set before its mount seeds the first capture.
+    poseNode.properties = { ...(poseNode.properties || {}), pcrOutputMode: "depth", pcrTrueDepth: true };
   } else {
     loadImage = graph._nodes?.find(n => n.comfyClass === "LoadImage" && n.title === "ControlNet Reference");
     newLoadImage = !loadImage;
@@ -2494,17 +2537,18 @@ function injectZImageControlNet(pcNode, controlType, isBase = false) {
   }
   const sourceNode = poseNode || loadImage;
 
-  const preNode = LG.createNode(resolvePre(cfg.pre));
+  // Pose-direct depth needs no preprocessor — the Poser's IMAGE already IS the map.
+  const preNode = usePose ? null : LG.createNode(resolvePre(cfg.pre));
   const patchLoader = LG.createNode("ModelPatchLoader");
   const zcnNode = LG.createNode("ZImageFunControlnet");
   const preview = LG.createNode("PreviewImage");
-  if (!preNode || !patchLoader || !zcnNode) return false;
+  if ((!usePose && !preNode) || !patchLoader || !zcnNode) return false;
 
   const existing = downstream.filter(n => n.comfyClass === "ZImageFunControlnet").length;
   const baseX = pcNode.pos?.[0] ?? 0;
   const baseY = pcNode.pos?.[1] ?? 0;
   const dy = existing * 660;
-  const preH = preNode.size?.[1] || 130;
+  const preH = preNode?.size?.[1] || 130;
   const loaderY = preH + 65;
   if (poseNode) {
     poseNode.pos = [baseX - 1383, baseY + dy];
@@ -2516,15 +2560,15 @@ function injectZImageControlNet(pcNode, controlType, isBase = false) {
     graph.add(loadImage);
     loadImage.size = [250, 340];
   }
-  preNode.pos = [baseX - 643, baseY + dy];
+  if (preNode) preNode.pos = [baseX - 643, baseY + dy];
   patchLoader.pos = [baseX - 633, baseY + loaderY + dy];
   zcnNode.pos = [baseX - 313, baseY + dy];
   if (preview) preview.pos = [baseX - 933, baseY + dy];
-  graph.add(preNode);
+  if (preNode) graph.add(preNode);
   graph.add(patchLoader);
   graph.add(zcnNode);
   if (preview) graph.add(preview);
-  preNode.size = [291, preNode.size?.[1] ?? 130];
+  if (preNode) preNode.size = [291, preNode.size?.[1] ?? 130];
   patchLoader.size = [270, 58];
   zcnNode.size = [270, 130];
   if (preview) preview.size = [250, 360];
@@ -2549,13 +2593,20 @@ function injectZImageControlNet(pcNode, controlType, isBase = false) {
   for (const w of zcnNode.widgets || []) {
     if (w.name === "strength") { w.value = cfg.strength; w.callback?.(cfg.strength); }
   }
-  for (const w of preNode.widgets || []) {
+  for (const w of preNode?.widgets || []) {
     if (w.name === "resolution") { w.value = 1024; w.callback?.(1024); }
   }
 
-  sourceNode.connect(0, preNode, preNode.inputs?.findIndex(i => i.name === "image") ?? 0);
-  preNode.connect(0, zcnNode, zcnNode.inputs?.findIndex(i => i.name === "image") ?? -1);
-  if (preview) preNode.connect(0, preview, 0);
+  const zcnImageIdx = zcnNode.inputs?.findIndex(i => i.name === "image") ?? -1;
+  if (preNode) {
+    sourceNode.connect(0, preNode, preNode.inputs?.findIndex(i => i.name === "image") ?? 0);
+    preNode.connect(0, zcnNode, zcnImageIdx);
+    if (preview) preNode.connect(0, preview, 0);
+  } else {
+    // Pose-direct: the Poser's true-depth IMAGE feeds the Z-Image control patch.
+    sourceNode.connect(0, zcnNode, zcnImageIdx);
+    if (preview) sourceNode.connect(0, preview, 0);
+  }
   patchLoader.connect(0, zcnNode, zcnNode.inputs?.findIndex(i => i.name === "model_patch") ?? 1);
   if (vaeSrc?.node) vaeSrc.node.connect(vaeSrc.slot, zcnNode, zcnNode.inputs?.findIndex(i => i.name === "vae") ?? 2);
   // Model line: source → ZImageFunControlnet → sampler.
@@ -3049,6 +3100,7 @@ export async function showModelModal(pcNode, modelInfo, anchorEl, { tab = null }
           label: "ControlNet",
           children: [
             { label: "Depth", value: "FluxControlNet:depth" },
+            { label: "Depth + 3D pose", value: "FluxControlNet:depth-pose" },
             { label: "Canny", value: "FluxControlNet:canny" },
             { label: "Pose", value: "FluxControlNet:pose" },
             { label: "Soft Edge", value: "FluxControlNet:softedge" },

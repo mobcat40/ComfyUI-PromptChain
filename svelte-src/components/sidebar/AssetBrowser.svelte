@@ -456,7 +456,13 @@
       const item = ctxMenu?.item;
       if (item) {
         const root = scopeRoots[nav.scope] || "";
-        const full = root ? `${root}/${item.path}` : item.path;
+        let full = root ? `${root}/${item.path}` : item.path;
+        // The backend normalizes root/paths to forward slashes for web use; restore
+        // native separators when the path is Windows-rooted (drive letter or UNC) so
+        // it pastes correctly into Explorer and Windows apps.
+        if (/^[a-zA-Z]:[/\\]/.test(full) || full.startsWith("//")) {
+          full = full.replace(/\//g, "\\");
+        }
         await navigator.clipboard.writeText(full);
         toast?.("info", "Path copied to clipboard");
       }

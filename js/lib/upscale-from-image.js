@@ -813,32 +813,57 @@ function ensureDepthBranch(graph, LG, usNode, depthSource, loadNode) {
   const poser = graph._nodes.find((n) => n.comfyClass === "PromptChain_PoseStudio");
   const sourceNode = depthSource === "pose" && poser ? poser : loadNode;
   const sourceSlot = sourceNode === poser ? (poser.outputs?.findIndex((o) => o.name === "IMAGE") ?? 0) : 0;
+  // The Poser feeds its IMAGE straight into Apply ControlNet when it ALREADY renders
+  // true depth — its uploaded control map is the depth map itself, so DepthAnything
+  // is skipped. A legacy clay-mode Poser keeps the estimator: nothing re-captures a
+  // depth render at queue time, so pointing a clay render at a depth net would be wrong.
+  const poseDirect = sourceNode === poser &&
+    (poser.properties?.pcrOutputMode === "depth" || poser.properties?.pcrTrueDepth === true);
 
   const existing = findDepthApply(graph, usNode);
   if (existing) {
-    if (existing.pre) {
+    if (poseDirect) {
+      // Hint the apply straight from the Poser; retire any DepthAnything in between.
+      sourceNode.connect(sourceSlot, existing.apply, inputIdx(existing.apply, "image", 3));
+      if (existing.pre) existing.pre.mode = 4;
+    } else if (existing.pre) {
       const cur = traceInput(graph, existing.pre, "image");
       if (cur?.node !== sourceNode) {
         sourceNode.connect(sourceSlot, existing.pre, inputIdx(existing.pre, "image", 0));
+      }
+    } else {
+      // The apply was built pose-direct (no preprocessor) but the new source isn't
+      // a true-depth render — a clay-mode Poser or an image. Its raw pixels aren't a
+      // depth map, so splice a DepthAnything estimator back in between source and apply.
+      const pre = LG.createNode(resolvePre(CONTROLNET_TYPES.depth.pre));
+      if (pre) {
+        pre.pos = [existing.apply.pos[0] - 340, existing.apply.pos[1]];
+        graph.add(pre);
+        pre.size = [291, pre.size?.[1] ?? 130];
+        const resW = pre.widgets?.find((w) => w.name === "resolution");
+        if (resW) { resW.value = 1024; resW.callback?.(1024); }
+        sourceNode.connect(sourceSlot, pre, inputIdx(pre, "image", 0));
+        pre.connect(0, existing.apply, inputIdx(existing.apply, "image", 3));
       }
     }
     return true;
   }
 
   const cfg = CONTROLNET_TYPES.depth;
-  const pre = LG.createNode(resolvePre(cfg.pre));
+  const pre = poseDirect ? null : LG.createNode(resolvePre(cfg.pre));
   const loader = LG.createNode("ControlNetLoader");
   const setUnion = LG.createNode("SetUnionControlNetType");
   const applyNode = LG.createNode("ControlNetApplyAdvanced");
-  if (!pre || !loader || !setUnion || !applyNode) return false;
+  if ((!poseDirect && !pre) || !loader || !setUnion || !applyNode) return false;
 
   const ax = usNode.pos[0];
   const ay = usNode.pos[1];
-  pre.pos = [ax - 700, ay + 420];
+  if (pre) pre.pos = [ax - 700, ay + 420];
   loader.pos = [ax - 700, ay + 640];
   setUnion.pos = [ax - 700, ay + 780];
   applyNode.pos = [ax - 360, ay + 420];
-  graph.add(pre); graph.add(loader); graph.add(setUnion); graph.add(applyNode);
+  if (pre) graph.add(pre);
+  graph.add(loader); graph.add(setUnion); graph.add(applyNode);
 
   applyNode.title = `ControlNet — Depth${sourceNode === poser ? " (pose)" : ""}`;
   applyNode.properties = { ...(applyNode.properties || {}), pcrControlType: "depth" };
@@ -850,15 +875,20 @@ function ensureDepthBranch(graph, LG, usNode, depthSource, loadNode) {
     else if (w.name === "start_percent") { w.value = 0.0; w.callback?.(0.0); }
     else if (w.name === "end_percent") { w.value = cfg.end; w.callback?.(cfg.end); }
   }
-  const resW = pre.widgets?.find((w) => w.name === "resolution");
+  const resW = pre?.widgets?.find((w) => w.name === "resolution");
   if (resW) { resW.value = 1024; resW.callback?.(1024); }
 
   const posSrc = traceInput(graph, usNode, "positive");
   const negSrc = traceInput(graph, usNode, "negative");
   if (!posSrc?.node || !negSrc?.node) return false;
 
-  sourceNode.connect(sourceSlot, pre, inputIdx(pre, "image", 0));
-  pre.connect(0, applyNode, inputIdx(applyNode, "image", 3));
+  if (pre) {
+    sourceNode.connect(sourceSlot, pre, inputIdx(pre, "image", 0));
+    pre.connect(0, applyNode, inputIdx(applyNode, "image", 3));
+  } else {
+    // Pose-direct: the Poser's true-depth IMAGE is the control map itself.
+    sourceNode.connect(sourceSlot, applyNode, inputIdx(applyNode, "image", 3));
+  }
   loader.connect(0, setUnion, 0);
   setUnion.connect(0, applyNode, inputIdx(applyNode, "control_net", 2));
   posSrc.node.connect(posSrc.slot, applyNode, inputIdx(applyNode, "positive", 0));

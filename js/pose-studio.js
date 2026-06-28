@@ -113,9 +113,13 @@ function installPoseStyles() {
 // Stop pointer/key events from bubbling to LiteGraph (which would drag the node
 // or pop its context menu), but only in the BUBBLE phase — OrbitControls listens
 // on the canvas in the target phase, which runs first, so it still gets to orbit.
+// `mousedown` is isolated too: when the viewport is docked inside the PromptChain
+// fullscreen overlay, that overlay preventDefaults stray mousedowns to keep focus
+// in the editor — which silently suppresses the popup of every native <select>
+// here (foot/hand pose, body pose, shoe pickers), making them open then snap shut.
 function isolateViewportEvents(container) {
   const stop = (event) => event.stopPropagation();
-  for (const type of ["pointerdown", "pointerup", "pointermove", "keydown", "keyup", "contextmenu"]) {
+  for (const type of ["pointerdown", "mousedown", "pointerup", "pointermove", "keydown", "keyup", "contextmenu"]) {
     container.addEventListener(type, stop);
   }
   // LiteGraph captures the pointer on its canvas; release it so a drag here

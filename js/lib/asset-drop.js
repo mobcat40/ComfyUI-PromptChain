@@ -108,12 +108,15 @@ async function handleDrop(e) {
         if (!fetchResponse.ok) throw new Error(`Failed to fetch: ${fetchResponse.status}`);
         const blob = await fetchResponse.blob();
 
-        // upload to ComfyUI's input folder
+        // Upload into the input ROOT, not a subfolder. Stock LoadImage's INPUT_TYPES
+        // only enumerates top-level input files, so a "subfolder/name" combo value is
+        // never in its option list — the node loads flagged/errored even though the
+        // backend's VALIDATE_INPUTS (exists_annotated_filepath) still finds the file
+        // and the graph runs. A bare filename keeps the combo valid.
         const filename = assetData.path.split("/").pop();
         const file = new File([blob], filename, { type: blob.type });
         const formData = new FormData();
         formData.append("image", file);
-        formData.append("subfolder", "promptchain_assets");
         formData.append("type", "input");
         formData.append("overwrite", "true");
         const uploadResponse = await api.fetchApi("/upload/image", { method: "POST", body: formData });

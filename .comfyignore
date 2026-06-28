@@ -7,6 +7,10 @@
 # dev test harnesses
 tests/
 
+# GitHub repo metadata (PR template etc.) — only meaningful on GitHub, not in an
+# installed pack. CONTRIBUTING.md is kept so the contributor terms ship with it.
+.github/
+
 # comfy-node-publish build artifact
 node.zip
 

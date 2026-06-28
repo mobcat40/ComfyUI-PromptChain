@@ -112,6 +112,10 @@ Add the **Prompt Chain** node from the node menu, and onboarding takes it from t
 | Prompt Chain Background Mask (Depth) | Depth-based background mask for bokeh-preserving upscales |
 | Prompt Chain OpenPose / Depth Anything / Canny / Tile / Luminance / Scribble / Soft Edge / Line Art | Bundled, license-clean ControlNet image preprocessors |
 
+## Contributing
+
+Contributions are welcome. By opening a pull request you agree to the terms in [CONTRIBUTING.md](CONTRIBUTING.md), which keep PromptChain on AGPL-3.0 today while preserving the maintainer's option to relicense contributions (for example, to MIT) in the future.
+
 ## License
 
 [AGPL-3.0](LICENSE). © 2026 mobcat40. If you run a modified PromptChain as part of a hosted service, you must offer your users the modified source.

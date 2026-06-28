@@ -1,4 +1,4 @@
-import { ac as to_style } from "./disclose-version-uq4tn5Y6.js";
+import { ac as to_style } from "./disclose-version-et9wt-4m.js";
 function update_styles(dom, prev = {}, next, priority) {
   for (var key in next) {
     var value = next[key];
@@ -36,4 +36,4 @@ function set_style(dom, value, prev_styles, next_styles) {
 export {
   set_style as s
 };
-//# sourceMappingURL=style-Boi27oOu.js.map
+//# sourceMappingURL=style-B3hsaAru.js.map

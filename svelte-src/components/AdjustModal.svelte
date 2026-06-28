@@ -18,7 +18,7 @@
 
   let {
     open,
-    sourceCanvas = null,   // flattened composite to adjust
+    sourceCanvas = null,   // the active layer's pixels to adjust (caller scopes this)
     filename = "",
     onApply = null,        // (ImageData) => void
     onCancel,
@@ -269,6 +269,11 @@
       if (cH && y > 0.75) add += cH * (1 - Math.cos(Math.PI * (y - 0.75) / 0.25)) / 2;
       lut[i] = Math.max(0, Math.min(1, y + 0.25 * add));
     }
+    // Enforce monotonicity: large/opposing parametric bumps can fold the curve back
+    // on itself (output decreasing as input rises), which inverts/solarizes tones.
+    // Clamp any fold to a flat plateau instead — graceful, and keeps full slider
+    // strength wherever the curve is still rising.
+    for (let i = 1; i < N; i++) if (lut[i] < lut[i - 1]) lut[i] = lut[i - 1];
     return lut;
   }
 

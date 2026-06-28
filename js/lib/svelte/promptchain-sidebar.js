@@ -1,11 +1,11 @@
-import { c as proxy, N as effect_root, u as user_effect, d as delegate, p as push, r as event, $ as $window, v as first_child, w as each, f as sibling, i as if_block, g as get, o as bind_this, t as template_effect, j as delegated, k as append, l as pop, s as state, e as set, m as user_derived, n as child, A as from_html, J as from_svg, h as set_class, y as set_text, z as index, q as set_value, x as set_attribute, a as prop, O as getContext, C as tick, D as comment, P as setContext, L as mount, M as unmount } from "./disclose-version-uq4tn5Y6.js";
-import { a as onMount } from "./index-client-iMRCrpBY.js";
-import { s as set_style } from "./style-Boi27oOu.js";
+import { c as proxy, N as effect_root, u as user_effect, d as delegate, p as push, r as event, $ as $window, v as first_child, w as each, f as sibling, i as if_block, g as get, o as bind_this, t as template_effect, j as delegated, k as append, l as pop, s as state, e as set, m as user_derived, n as child, A as from_html, I as from_svg, h as set_class, y as set_text, z as index, q as set_value, x as set_attribute, a as prop, O as getContext, C as tick, D as comment, P as setContext, L as mount, M as unmount } from "./disclose-version-et9wt-4m.js";
+import { a as onMount } from "./index-client-6amB1qrM.js";
+import { s as set_style } from "./style-B3hsaAru.js";
 import { j as justifiedLayout } from "./justified-layout-cyVM7i96.js";
-import { a as action } from "./actions-WPfqiWYB.js";
-import { b as bind_value, c as bind_group } from "./input-DFQhebEz.js";
-import { p as portal, C as ConfirmModal } from "./ConfirmModal-BGcVYndw.js";
-import { s as safeJson, H as HttpError } from "./api-context-BFKo1mCD.js";
+import { a as action } from "./actions-zjmT0mOr.js";
+import { b as bind_value, c as bind_group } from "./input-B9kD0bWJ.js";
+import { p as portal, C as ConfirmModal } from "./ConfirmModal-CtR7InHn.js";
+import { s as safeJson, H as HttpError } from "./api-context-BNqvELYR.js";
 const VIEW_MODES = [
   { id: "grid", label: "Grid" },
   { id: "justified", label: "Justified" },
@@ -3011,7 +3011,10 @@ function AssetBrowser($$anchor, $$props) {
       const item = (_c = get(ctxMenu)) == null ? void 0 : _c.item;
       if (item) {
         const root2 = scopeRoots[nav.scope] || "";
-        const full = root2 ? `${root2}/${item.path}` : item.path;
+        let full = root2 ? `${root2}/${item.path}` : item.path;
+        if (/^[a-zA-Z]:[/\\]/.test(full) || full.startsWith("//")) {
+          full = full.replace(/\//g, "\\");
+        }
         await navigator.clipboard.writeText(full);
         (_d = $$props.toast) == null ? void 0 : _d.call($$props, "info", "Path copied to clipboard");
       }

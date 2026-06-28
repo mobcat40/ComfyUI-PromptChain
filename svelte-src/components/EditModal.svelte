@@ -119,6 +119,8 @@
   let airbrush = $state(true);       // timed dabs while the button is held
   let featherPx = $state(0);         // Select: patch-commit edge feather
   let sampleSize = $state(1);        // Pick: 1 | 3 | 5 px average
+  let sampleMerged = $state(true);   // Pick from the flattened composite (true) or the active layer only (false)
+  let maskEdit = $state(false);      // editing the active layer's MASK (paintCanvas shows it as grayscale) vs its pixels
   let fillTolerance = $state(32);    // Paint bucket: color-match threshold
   let fillContiguous = $state(true); // Paint bucket: flood from click vs all matching pixels
   let hue = $state(0);               // HSV foreground color
@@ -139,8 +141,12 @@
   let activeIndex = $state(0);
   let layerCanvasEls = $state([]);   // per-inactive-layer <canvas> refs (by index) — ABOVE active only
   let belowCanvasEl;                 // everything BELOW active, pre-composited into one buffer
+  let customEl;                      // single-canvas composite used when a custom (non-CSS) blend mode is in play
   let nextLayerNum = 0;
   let selectedIds = $state([]);      // multi-selected layer ids (for merge); always includes the active layer
+  let groups = $state([]);           // lightweight layer groups: { id, name, collapsed, visible, opacity }
+  let nextGroupNum = 0;
+  let renamingGroupId = $state(null);
   let lhTab = $state("layers");      // Layers/History share one tabbed panel (PS-style)
   let layerMenu = $state(null);      // { x, y } right-click context menu
   let renamingId = $state(null);     // layer id being renamed (dblclick)
@@ -161,7 +167,7 @@
   // ── history (Photoshop-style): snapshot AFTER each action, click to jump ──
   // history[0] = "Open" (blank paint layer); undo/redo just move histIndex.
   // Painting while back in time truncates the forward entries (PS semantics).
-  const HIST_MAX = 12;
+  const HIST_MAX = 30; // entries share unchanged layer bitmaps by reference, so a deeper stack is cheap
   let history = $state([{ label: "Open", snap: null }]);
   let histIndex = $state(0);
   let blankSnap = null;
@@ -176,7 +182,7 @@
     editsSaved = false; // a fresh change since the last "Save edits"
     flushActive(); // sync paintCanvas → the active layer's FULL bitmap (offset-aware)
     const head = history.slice(0, histIndex + 1);
-    head.push({ label, layers: [...layers], activeIndex, selectedIds: [...selectedIds], url: sourceUrl, w: width, h: height });
+    head.push({ label, layers: [...layers], groups: [...groups], activeIndex, selectedIds: [...selectedIds], sel: selSnapshot(), url: sourceUrl, w: width, h: height });
     while (head.length > HIST_MAX + 1) head.splice(1, 1); // evict oldest, keep "Open"
     history = head;
     histIndex = history.length - 1;
@@ -196,8 +202,11 @@
     }
     const restore = () => {
       layers = [...h.layers];
+      // collapse is view-only: keep the current expand/collapse state across undo/redo
+      groups = h.groups ? h.groups.map((g) => { const cur = groups.find((x) => x.id === g.id); return cur ? { ...g, collapsed: cur.collapsed } : g; }) : [];
       activeIndex = Math.min(h.activeIndex ?? 0, layers.length - 1);
       selectedIds = h.selectedIds ? [...h.selectedIds] : [layers[activeIndex]?.id].filter((x) => x != null);
+      restoreSelection(h.sel); // bring back the pixel selection that existed at this step
       loadActiveBitmap();
       if (dimsChanged) resetView();
     };
@@ -317,6 +326,31 @@
     recomputeSelBBox();
     selVersion++;
   }
+  // ── selection in history ──
+  // Snapshot the selection mask into each history entry so undo/redo restores the
+  // selection that existed at that step (and a bare select/deselect is undoable).
+  // Cached by selVersion so consecutive edits sharing one selection reference the
+  // SAME ImageData (cheap, like the layer-bitmap sharing) instead of copying it.
+  let _selSnapCache = { version: -1, snap: null };
+  function selSnapshot() {
+    if (!selActive || !selMaskCanvas) return null;
+    if (_selSnapCache.version === selVersion && _selSnapCache.snap) return _selSnapCache.snap;
+    const snap = {
+      mask: selMaskCanvas.getContext("2d").getImageData(0, 0, width, height),
+      bbox: selBBox ? { ...selBBox } : null,
+    };
+    _selSnapCache = { version: selVersion, snap };
+    return snap;
+  }
+  function restoreSelection(sel) {
+    if (!sel || !sel.mask) { selBBox = null; selActive = false; selVersion++; if (selMaskCanvas) selMaskCanvas.getContext("2d").clearRect(0, 0, width, height); return; }
+    ensureSelMask();
+    const ctx = selMaskCanvas.getContext("2d");
+    ctx.clearRect(0, 0, width, height);
+    ctx.putImageData(sel.mask, 0, 0);
+    selBBox = sel.bbox ? { ...sel.bbox } : null;
+    selActive = true; selVersion++;
+  }
   function selectAllRegion() {
     const ctx = ensureSelMask().getContext("2d");
     ctx.clearRect(0, 0, width, height);
@@ -343,7 +377,7 @@
     // histIndex covers committed edits; the per-layer suffix also keys on
     // visibility/opacity/blend/offset so the cache stays correct mid-drag,
     // before an opacity release commits.
-    return `${histIndex}|${activeIndex}|${layers.map((L) => `${L.id}:${L.visible}:${L.opacity}:${L.blend || ""}:${L.ox || 0}:${L.oy || 0}`).join(",")}`;
+    return `${histIndex}|${activeIndex}|${layers.map((L) => `${L.id}:${L.visible}:${L.opacity}:${L.blend || ""}:${L.ox || 0}:${L.oy || 0}:${L.groupId || ""}`).join(",")}|${groups.map((g) => `${g.id}:${g.visible}:${g.opacity}`).join(",")}`;
   }
   async function flattenedBlobCached() {
     const key = flatKey();
@@ -539,13 +573,15 @@
   }
   function selectionBBox() { return selBBox; }
   // Grab the selected pixels of the ACTIVE layer (clipped to the mask).
-  function captureSelection() {
+  function captureSelection(merged = false) {
     if (!selActive || !selBBox) return null;
     const bb = selBBox;
     const c = document.createElement("canvas");
     c.width = bb.w; c.height = bb.h;
     const cx = c.getContext("2d");
-    cx.drawImage(paintCanvas, bb.x, bb.y, bb.w, bb.h, 0, 0, bb.w, bb.h);
+    // merged = the flattened VISIBLE composite (Copy Merged); else the active layer alone.
+    if (merged) drawFlattened(cx, bb.x, bb.y, bb.w, bb.h, 0, 0, bb.w, bb.h);
+    else cx.drawImage(paintCanvas, bb.x, bb.y, bb.w, bb.h, 0, 0, bb.w, bb.h);
     const mask = document.createElement("canvas");
     mask.width = bb.w; mask.height = bb.h;
     const mctx = mask.getContext("2d");
@@ -609,7 +645,7 @@
     lc.getContext("2d").drawImage(srcCanvas, x, y);
     const id = ++nextLayerNum;
     layers = [...layers.slice(0, activeIndex + 1),
-      { id, name: `Layer ${id}`, visible: true, opacity: 1, sourceRect,
+      { id, name: `Layer ${id}`, visible: true, opacity: 1, sourceRect, groupId: layers[activeIndex]?.groupId,
         bitmap: lc.getContext("2d").getImageData(0, 0, width, height) },
       ...layers.slice(activeIndex + 1)];
     activeIndex = activeIndex + 1;
@@ -626,8 +662,8 @@
     if (cut) eraseSelectionFromActive(cap); // active is still the source layer here
     newLayerFromCanvas(cap.canvas, cap.x, cap.y, cut ? "Layer via Cut" : "Layer via Copy", capSourceRect(cap));
   }
-  function copySelection(cut) {
-    const cap = captureSelection();
+  function copySelection(cut, merged = false) {
+    const cap = captureSelection(merged);
     if (!cap) return;
     clipboard = { canvas: cap.canvas, x: cap.x, y: cap.y, sourceRect: capSourceRect(cap) };
     if (cut) { eraseSelectionFromActive(cap); commitAction("Cut"); }
@@ -743,6 +779,7 @@
 
   // Modifier state (for the selection-tool cursor feedback).
   let mods = $state({ shift: false, alt: false, ctrl: false });
+  let spaceDown = $state(false); // hold Space → temporary Hand tool (drag to pan)
   let isSelTool = $derived(tool === "select" || tool === "lasso" || tool === "objsel");
   // Hidden active layer + a paint/move tool → PS not-allowed cursor on hover.
   // Alt is the eyedropper (still allowed), so it keeps the normal cursor.
@@ -758,8 +795,11 @@
   let selBadge = $derived(!isSelTool ? "" : (mods.shift && mods.alt) ? "∩" : mods.shift ? "+" : mods.alt ? "−" : "");
   $effect(() => {
     if (!open) return;
-    const upd = (e) => { mods = { shift: e.shiftKey, alt: e.altKey, ctrl: e.ctrlKey || e.metaKey }; };
-    const clear = () => { mods = { shift: false, alt: false, ctrl: false }; };
+    const upd = (e) => {
+      mods = { shift: e.shiftKey, alt: e.altKey, ctrl: e.ctrlKey || e.metaKey };
+      if (e.code === "Space") spaceDown = e.type === "keydown";
+    };
+    const clear = () => { mods = { shift: false, alt: false, ctrl: false }; spaceDown = false; };
     window.addEventListener("keydown", upd, true);
     window.addEventListener("keyup", upd, true);
     window.addEventListener("blur", clear);
@@ -1142,8 +1182,8 @@
     const uctx = under.getContext("2d");
     for (let j = 0; j < i; j++) {
       const Lj = layers[j];
-      if (!Lj.visible) continue;
-      uctx.globalAlpha = Lj.opacity ?? 1;
+      if (!layerShown(Lj)) continue;
+      uctx.globalAlpha = layerEffOpacity(Lj);
       if (Lj.isBackground && !Lj.bitmap && baseImg) {
         // Canvas-grow epoch: the new Background image element hasn't loaded
         // yet at match time — the caller hands us the decoded ESRGAN render.
@@ -1321,11 +1361,11 @@
       // source. Same clip + placement so the pair lands as one unit.
       featherClip(underCanvas);
       const uid = ++nextLayerNum;
-      inserted.push({ id: uid, name: `UltraSharp ${uid}`, visible: true, opacity: 1,
+      inserted.push({ id: uid, name: `UltraSharp ${uid}`, visible: true, opacity: 1, groupId: layers[activeIndex]?.groupId,
         bitmap: underCanvas.getContext("2d").getImageData(0, 0, width, height) });
     }
     const id = ++nextLayerNum;
-    inserted.push({ id, name: `${label} ${id}`, visible: true, opacity: 1,
+    inserted.push({ id, name: `${label} ${id}`, visible: true, opacity: 1, groupId: layers[activeIndex]?.groupId,
       bitmap: c.getContext("2d").getImageData(0, 0, width, height) });
     layers = [...layers.slice(0, activeIndex + 1), ...inserted, ...layers.slice(activeIndex + 1)];
     activeIndex = activeIndex + inserted.length;
@@ -1573,6 +1613,9 @@
     { id: "eyedrop", label: "Pick",
       icon: `<path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/>` },
   ];
+  // PS single-key tool shortcuts (no modifier) → tool id.
+  const TOOL_KEYS = { v: "move", m: "select", l: "lasso", b: "brush", e: "eraser",
+    g: "bucket", w: "objsel", j: "spot", s: "stamp", c: "crop", i: "eyedrop" };
   const ACTION_ICONS = {
     undo: `<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>`,
     redo: `<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"/>`,
@@ -1704,6 +1747,10 @@
       ctx.clearRect(0, 0, width, height);
       ctx.drawImage(patch.restore, 0, 0);
     }
+    // a Transform on a masked layer baked the mask into the pixels — restore the live mask
+    if (patch?.maskRestore) {
+      layers[activeIndex] = { ...layers[activeIndex], mask: patch.maskRestore.mask, maskUrl: patch.maskRestore.maskUrl };
+    }
     patch = null;
   }
 
@@ -1713,6 +1760,7 @@
   // restores it from patch.restore.
   function beginTransform() {
     if (patch) return true;
+    if (maskEdit) exitMaskEdit(); // transform operates on the layer, not its mask
     if (blockHiddenEdit("transform")) return false;
     if (!paintCanvas || !layers[activeIndex]) return false;
     flushActive();
@@ -1743,12 +1791,28 @@
     const dw = Math.min(width, Math.ceil(bb.x + ox + bb.w)) - dx0;
     const dh = Math.min(height, Math.ceil(bb.y + oy + bb.h)) - dy0;
     if (dw < 2 || dh < 2) { errorMsg = "This layer's content is off-canvas — move it back to transform."; return false; }
+    // A masked layer: bake the mask into the pixels so it transforms WITH the
+    // content — otherwise the un-transformed mask would clip the scaled/rotated
+    // result. cancelPatch restores both the unmasked pixels (from `restore`) and the
+    // live mask. L.mask is content-space; paintCanvas is DOC-space (loadActiveBitmap
+    // draws at +ox/+oy), so the mask must ride the layer's ox/oy offset to align.
+    let maskRestore = null;
+    if (L.mask) {
+      const mc = document.createElement("canvas"); mc.width = width; mc.height = height;
+      mc.getContext("2d").putImageData(L.mask, 0, 0);
+      pctx.globalCompositeOperation = "destination-in";
+      pctx.drawImage(mc, ox, oy);
+      pctx.globalCompositeOperation = "source-over";
+      maskRestore = { mask: L.mask, maskUrl: L.maskUrl };
+      layers[activeIndex] = { ...L, mask: undefined, maskUrl: undefined };
+    }
     const c = document.createElement("canvas");
     c.width = dw; c.height = dh;
     c.getContext("2d").drawImage(paintCanvas, dx0, dy0, dw, dh, 0, 0, dw, dh);
     pctx.clearRect(dx0, dy0, dw, dh); // Background lifts to transparency too (normal layer)
     patch = { canvas: c, raw: c, pts: null, pw: dw, ph: dh,
       x: dx0, y: dy0, w: dw, h: dh, rot: 0, flipH: false, flipV: false, transform: true, restore,
+      maskRestore,
       home: { x: dx0, y: dy0, w: dw, h: dh } };
     return true;
   }
@@ -1874,7 +1938,7 @@
     src.width = bw; src.height = bh;
     const sctx = src.getContext("2d");
     try {
-      drawBackdrop(sctx, bx, by, bw, bh, 0, 0, bw, bh);
+      // Active layer only — smoothing must not pull the backdrop into the layer.
       sctx.drawImage(paintCanvas, bx, by, bw, bh, 0, 0, bw, bh);
     } catch (e) {
       console.warn("[PromptChain] smooth lift failed", e);
@@ -1942,7 +2006,8 @@
     c.width = width; c.height = height;
     const ctx = c.getContext("2d", { willReadFrequently: true });
     try {
-      drawBackdrop(ctx, 0, 0, width, height, 0, 0, width, height);
+      // Active layer only — warp the layer's own pixels, not the backdrop, so the
+      // layer keeps its transparency (same scoping as the Camera Raw fix).
       ctx.drawImage(paintCanvas, 0, 0);
     } catch (e) {
       console.warn("[PromptChain] liquify session failed", e);
@@ -2169,7 +2234,7 @@
         const dx = liqD[gi * 2], dy = liqD[gi * 2 + 1];
         if (dx === 0 && dy === 0) {
           const j = gi * 4;
-          o[idx] = s[j]; o[idx + 1] = s[j + 1]; o[idx + 2] = s[j + 2];
+          o[idx] = s[j]; o[idx + 1] = s[j + 1]; o[idx + 2] = s[j + 2]; o[idx + 3] = s[j + 3];
         } else {
           const fx = Math.min(maxX, Math.max(0, X + dx));
           const fy = Math.min(maxY, Math.max(0, Y + dy));
@@ -2182,11 +2247,13 @@
           o[idx] = s[i00] * w00 + s[i10] * w10 + s[i01] * w01 + s[i11] * w11;
           o[idx + 1] = s[i00 + 1] * w00 + s[i10 + 1] * w10 + s[i01 + 1] * w01 + s[i11 + 1] * w11;
           o[idx + 2] = s[i00 + 2] * w00 + s[i10 + 2] * w10 + s[i01 + 2] * w01 + s[i11 + 2] * w11;
+          // carry the layer's own alpha through the warp (no opaque bake)
+          o[idx + 3] = s[i00 + 3] * w00 + s[i10 + 3] * w10 + s[i01 + 3] * w01 + s[i11 + 3] * w11;
         }
-        o[idx + 3] = 255;
       }
     }
     paintCanvas.getContext("2d").putImageData(img, x0, y0);
+    if (hasCustomBlend) customTick++; // refresh the single-canvas custom-blend composite mid-stroke
   }
 
 
@@ -2218,6 +2285,7 @@
 
   function setTool(id) {
     commitPatch();
+    if (maskEdit && (id === "adjust" || id === "crop" || id === "liquify")) exitMaskEdit(); // these don't operate on a mask
     if (id === "adjust") { openAdjust(); return; } // modal, not a canvas tool
     if (tool === "liquify" && id !== "liquify") dropLiqSession();
     tool = id;
@@ -2232,12 +2300,16 @@
   let adjustSrcCanvas = $state(null);
 
   function openAdjust() {
-    if (blockHiddenEdit("adjust")) return; // Camera Raw writes back to the active layer
+    if (blockHiddenEdit("adjust")) return; // Camera Raw reads + writes the active layer only
     const c = document.createElement("canvas");
     c.width = width; c.height = height;
     const ctx = c.getContext("2d", { willReadFrequently: true });
     try {
-      drawBackdrop(ctx, 0, 0, width, height, 0, 0, width, height);
+      // Scope to the SELECTED layer: feed the modal only the active layer's pixels
+      // (paintCanvas), NOT the backdrop below it. Compositing the backdrop in baked
+      // the under-layers into the result and, because that composite is opaque, the
+      // returned ImageData overwrote the layer's transparency on apply (the layer then
+      // covered everything beneath it). The active layer's own alpha now rides through.
       ctx.drawImage(paintCanvas, 0, 0);
     } catch (e) {
       console.warn("[PromptChain] adjust open failed", e);
@@ -2248,7 +2320,26 @@
   }
 
   function onAdjustApply(imageData) {
-    paintCanvas.getContext("2d").putImageData(imageData, 0, 0);
+    const ctx = paintCanvas.getContext("2d");
+    // Honor an active selection: blend the adjusted pixels with the original by the
+    // selection's (feather-aware) coverage. Camera Raw preserves the layer's alpha,
+    // so a plain RGBA lerp is correct and avoids canvas-composite alpha inflation;
+    // outside the selection (t=0) the pixel stays exactly the original.
+    if (selActive && selMaskCanvas) {
+      const orig = ctx.getImageData(0, 0, width, height).data;
+      const sel = selMaskCanvas.getContext("2d").getImageData(0, 0, width, height).data;
+      const a = imageData.data;
+      for (let i = 0; i < a.length; i += 4) {
+        const t = sel[i + 3] / 255;
+        if (t >= 1) continue;
+        const it = 1 - t;
+        a[i] = a[i] * t + orig[i] * it;
+        a[i + 1] = a[i + 1] * t + orig[i + 1] * it;
+        a[i + 2] = a[i + 2] * t + orig[i + 2] * it;
+        a[i + 3] = a[i + 3] * t + orig[i + 3] * it;
+      }
+    }
+    ctx.putImageData(imageData, 0, 0);
     commitAction("Camera Raw");
     adjustOpen = false;
     adjustSrcCanvas = null;
@@ -2348,6 +2439,7 @@
     const ch = Math.min(height - cy, Math.round(cropBox.h));
     if (cw < 4 || ch < 4) return;
     flushActive(); // sync the live canvas into the active layer before cropping
+    if (selActive) deselect(); // selection mask is in old-document coordinates — invalid after crop
     const sc = document.createElement("canvas");
     sc.width = cw; sc.height = ch;
     try {
@@ -2360,22 +2452,30 @@
     // Crop every layer's bitmap to the new dimensions (uses the OLD width/height
     // for the source, so it must run before width/height are reassigned).
     const ow = width, oh = height;
-    const cropPlane = (data) => {
+    const cropPlane = (data, lox, loy) => {
       if (!data) return undefined;
       const t = document.createElement("canvas");
       t.width = ow; t.height = oh;
       t.getContext("2d").putImageData(data, 0, 0);
+      // Bake the layer's non-destructive move offset into doc space so the crop
+      // reads the region the user actually SEES (bitmap + mask share the offset).
+      const doc = document.createElement("canvas");
+      doc.width = ow; doc.height = oh;
+      doc.getContext("2d").drawImage(t, lox, loy);
       const cc = document.createElement("canvas");
       cc.width = cw; cc.height = ch;
-      cc.getContext("2d").drawImage(t, cx, cy, cw, ch, 0, 0, cw, ch);
+      cc.getContext("2d").drawImage(doc, cx, cy, cw, ch, 0, 0, cw, ch);
       return cc;
     };
     const newLayers = layers.map((L) => {
       const next = { ...L };
-      const bc = cropPlane(L.bitmap);
+      const lox = L.ox || 0, loy = L.oy || 0;
+      const bc = cropPlane(L.bitmap, lox, loy);
       if (bc) next.bitmap = bc.getContext("2d").getImageData(0, 0, cw, ch);
-      const mc = cropPlane(L.mask);
+      const mc = cropPlane(L.mask, lox, loy);
       if (mc) { next.mask = mc.getContext("2d").getImageData(0, 0, cw, ch); next.maskUrl = mc.toDataURL(); }
+      // crop establishes a new coordinate system — offsets are now baked into pixels
+      next.ox = 0; next.oy = 0;
       return next;
     });
     sourceUrl = newUrl; width = cw; height = ch;
@@ -2479,6 +2579,9 @@
       saving = false;
       errorMsg = "";
       tool = "brush";
+      maskEdit = false;
+      groups = [];
+      renamingGroupId = null;
       sourceUrl = srcUrlProp;
       width = widthProp;
       height = heightProp;
@@ -2522,9 +2625,12 @@
         e.preventDefault();
         e.stopPropagation();
         redo();
-      } else if ((e.ctrlKey || e.metaKey) && (e.key === "j" || e.key === "J") && selActive) {
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === "j" || e.key === "J")) {
         e.preventDefault(); e.stopPropagation();
-        layerViaCopy(e.shiftKey); // Ctrl+J copy, Ctrl+Shift+J cut → new layer
+        if (selActive) layerViaCopy(e.shiftKey); // Ctrl+J copy / Ctrl+Shift+J cut → new layer
+        else if (!e.shiftKey) duplicateLayer(activeIndex); // no selection → duplicate the whole layer (PS)
+      } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "c" || e.key === "C") && selActive) {
+        e.preventDefault(); e.stopPropagation(); copySelection(false, true); // Copy Merged (visible composite)
       } else if ((e.ctrlKey || e.metaKey) && (e.key === "c" || e.key === "C") && selActive) {
         e.preventDefault(); e.stopPropagation(); copySelection(false);
       } else if ((e.ctrlKey || e.metaKey) && (e.key === "x" || e.key === "X") && selActive) {
@@ -2534,12 +2640,18 @@
       } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "n" || e.key === "N")) {
         e.preventDefault(); e.stopPropagation();
         addLayer(); // new layer above the active one
+      } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "g" || e.key === "G")) {
+        e.preventDefault(); e.stopPropagation();
+        const g = groupById(layers[activeIndex]?.groupId); if (g) ungroup(g.id);
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === "g" || e.key === "G")) {
+        e.preventDefault(); e.stopPropagation();
+        if (selectedIds.length) groupSelected();
       } else if ((e.ctrlKey || e.metaKey) && (e.key === "a" || e.key === "A")) {
         e.preventDefault(); e.stopPropagation();
-        selectAllRegion(); // select whole canvas
+        selectAllRegion(); commitAction("Select All"); // select whole canvas
       } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "i" || e.key === "I") && selActive) {
         e.preventDefault(); e.stopPropagation();
-        selectInverse(); // Photoshop's Ctrl+Shift+I
+        selectInverse(); commitAction("Select Inverse"); // Photoshop's Ctrl+Shift+I
       } else if (e.key === "Backspace" && (e.altKey || e.ctrlKey || e.metaKey)) {
         e.preventDefault(); e.stopPropagation();
         fillWith(e.altKey ? rgb : bgRgb); // Alt+Backspace = foreground, Ctrl+Backspace = background
@@ -2551,7 +2663,31 @@
         e.preventDefault(); e.stopPropagation();
         deleteSelectedLayers();
       } else if ((e.ctrlKey || e.metaKey) && (e.key === "d" || e.key === "D") && selActive) {
-        e.preventDefault(); e.stopPropagation(); deselect();
+        e.preventDefault(); e.stopPropagation(); deselect(); commitAction("Deselect");
+      } else if ((e.ctrlKey || e.metaKey) && e.key === "0") {
+        e.preventDefault(); e.stopPropagation(); resetView(); // fit to window
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === "=" || e.key === "+")) {
+        e.preventDefault(); e.stopPropagation(); zoomBy(1.25);
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === "-" || e.key === "_")) {
+        e.preventDefault(); e.stopPropagation(); zoomBy(1 / 1.25);
+      } else if (!e.ctrlKey && !e.metaKey && !e.altKey && (e.key === "[" || e.key === "]")) {
+        e.preventDefault(); e.stopPropagation();
+        const dir = e.key === "]" ? 1 : -1; // PS brush-size step grows with size
+        const step = brushSize < 10 ? 1 : brushSize < 50 ? 2 : brushSize < 100 ? 5 : 10;
+        brushSize = Math.max(1, Math.min(1024, brushSize + dir * step));
+      } else if (!e.ctrlKey && !e.metaKey && !e.altKey && !colorPopout && (e.key === "x" || e.key === "X")) {
+        e.preventDefault(); e.stopPropagation();
+        const fg = rgb; [hue, sat, val] = rgbToHsv(bgRgb[0], bgRgb[1], bgRgb[2]); bgRgb = fg; // swap foreground/background
+      } else if (!e.ctrlKey && !e.metaKey && !e.altKey && !colorPopout && (e.key === "d" || e.key === "D")) {
+        e.preventDefault(); e.stopPropagation();
+        hue = 0; sat = 0; val = 0; bgRgb = [255, 255, 255]; // default colors: black foreground / white background
+      } else if (!e.ctrlKey && !e.metaKey && !e.altKey && !patch && !colorPopout && TOOL_KEYS[(e.key || "").toLowerCase()]) {
+        e.preventDefault(); e.stopPropagation();
+        setTool(TOOL_KEYS[e.key.toLowerCase()]); // single-key tool switch (setTool commits any float first)
+      } else if (e.key === " ") {
+        // Hold Space to pan (Hand tool). spaceDown is tracked by the mods listener;
+        // swallow the default so the page can't scroll or click a focused button.
+        e.preventDefault(); e.stopPropagation();
       } else if ((e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "ArrowLeft" || e.key === "ArrowRight")
                  && !e.ctrlKey && !e.metaKey && !e.altKey && !patch && !colorPopout && !healDialog && tool !== "crop") {
         // A selection nudges its OUTLINE 1px (10px with Shift), PS-style; with no
@@ -2584,7 +2720,7 @@
         e.stopPropagation();
         if (colorPopout) cancelColorPop();  // Esc = cancel, reverts the color
         else if (patch) cancelPatch();      // first Esc drops the patch, second closes
-        else if (selActive) deselect();      // first Esc drops the selection
+        else if (selActive) { deselect(); commitAction("Deselect"); }  // first Esc drops the selection
         else if (tool === "crop" && cropBox && !cropBoxIsFull()) resetCropBox();
         else close();
       }
@@ -2736,6 +2872,18 @@
     panY = (rect.height - height * zoom) / 2;
   }
 
+  // Keyboard zoom (Ctrl +/-): scale around the viewport center, mirroring onWheel.
+  function zoomBy(factor) {
+    if (!viewportEl) return;
+    const rect = viewportEl.getBoundingClientRect();
+    const cx = rect.width / 2, cy = rect.height / 2;
+    const newZoom = Math.max(0.05, Math.min(12, zoom * factor));
+    panX = cx - ((cx - panX) / zoom) * newZoom;
+    panY = cy - ((cy - panY) / zoom) * newZoom;
+    zoom = newZoom;
+    fitMode = false;
+  }
+
   function toImageCoords(e) {
     const rect = viewportEl.getBoundingClientRect();
     return {
@@ -2758,9 +2906,9 @@
   }
 
   // ── brush engine ──
-  // The stroke accumulates in a FLOAT coverage buffer, and painted pixels are
-  // written as OPAQUE final colors: brush×cov + background×(1−cov) computed in
-  // float against the source image, dithered and rounded exactly once. Two
+  // The stroke accumulates in a FLOAT coverage buffer; painted pixels are written
+  // once in the active layer's OWN straight-alpha space (Porter-Duff per tool) and
+  // dithered/rounded a single time (no opaque bake of the backdrop). Two
   // quantization mechanisms ring otherwise: (1) compositing dabs straight onto
   // the 8-bit canvas rounds after EVERY dab, so a held airbrush converges each
   // pixel to a quantized equilibrium terrace; (2) a semi-transparent paint
@@ -2911,7 +3059,8 @@
       for (let x = 0; x < bw; x++) {
         const i = y * bw + x;
         const gi = (y0 + y) * width + x0 + x;
-        const cov = Math.min(1, strokeCov[gi]);
+        let cov = Math.min(1, strokeCov[gi]);
+        if (selStrokeData) cov *= selStrokeData[gi * 4 + 3] / 255; // clip heal to the selection shape
         const o = i * 4, j = gi * 4;
         if (cov <= 0) {
           px[o] = pd[j]; px[o + 1] = pd[j + 1]; px[o + 2] = pd[j + 2]; px[o + 3] = pd[j + 3];
@@ -2923,7 +3072,7 @@
           const target = cov * healed + (1 - cov) * dest[i * 3 + ch];
           px[o + ch] = Math.max(0, Math.min(255, Math.round(target + d)));
         }
-        px[o + 3] = 255;
+        px[o + 3] = pd[j + 3]; // heal re-textures; keep the layer's own alpha (no opaque bake)
       }
     }
     paintCanvas.getContext("2d").putImageData(img, x0, y0);
@@ -3026,9 +3175,10 @@
 
   // Re-derive the batch region from pre-stroke state + cumulative coverage —
   // identical inputs render identical pixels (stable dither), so re-rendering
-  // an already-painted region is idempotent. Touched pixels store the FINAL
-  // display color, opaque; cov hits 0 exactly where the color reaches the
-  // pre-stroke composite, so the cutoff to untouched pixels is seamless.
+  // an already-painted region is idempotent. Pixels are written in the ACTIVE
+  // layer's OWN straight-alpha space (Porter-Duff per tool), so transparency is
+  // preserved; cov ≤ 0 restores pd verbatim, so the cutoff to untouched pixels
+  // is seamless.
   function renderStrokeBatch() {
     if (!batchBox) return;
     const { x0, y0, x1, y1 } = batchBox;
@@ -3045,7 +3195,6 @@
     const img = new ImageData(bw, bh);
     const px = img.data;
     const pd = preStroke.data;
-    const sd = sourceData.data;
     for (let y = 0; y < bh; y++) {
       const row = (y0 + y) * width + x0;
       for (let x = 0; x < bw; x++) {
@@ -3065,24 +3214,33 @@
             + Math.max(0, Math.min(width - 1, x0 + x + odx))) * 4
           : 0;
         const spa = stampMode ? pd[sj + 3] / 255 : 0;
-        // pre-stroke composite (paint over source) in float, then blend:
-        // brush pulls toward the color, eraser pulls back toward the source,
-        // stamp pulls toward the source-offset composite
+        // Work in the ACTIVE layer's OWN straight-alpha pixels (pd), never the
+        // backdrop, so a layer keeps its transparency and lower layers are not
+        // baked in. Porter-Duff source-over per tool; alpha is set per-pixel, not
+        // forced to 255. On a flat Background (pa = 1) this reduces to the old
+        // opaque blend. (Stamp samples the layer's own offset pixels.)
+        const se = spa * cov; // stamp: effective source coverage
+        const na = healMode ? pa            // heal preview re-textures; alpha unchanged
+          : erase ? pa * (1 - cov)          // eraser = destination-out on own alpha
+          : stampMode ? se + pa * (1 - se)  // clone source-over
+          : cov + pa * (1 - cov);           // brush source-over
+        const naInv = na > 0 ? 1 / na : 0;
         for (let ch = 0; ch < 3; ch++) {
-          const comp = pd[j + ch] * pa + sd[j + ch] * (1 - pa);
+          const lc = pd[j + ch]; // the layer's own pre-stroke color
           const target = healMode
-            ? comp * (1 - cov * 0.4) + 200 * cov * 0.4
-            : stampMode
-              ? (pd[sj + ch] * spa + sd[sj + ch] * (1 - spa)) * cov + comp * (1 - cov)
-              : erase
-                ? comp * (1 - cov) + sd[j + ch] * cov
-                : (ch === 0 ? cr : ch === 1 ? cg : cb) * cov + comp * (1 - cov);
-          px[i + ch] = Math.max(0, Math.min(255, Math.round(target + d)));
+            ? lc * (1 - cov * 0.4) + 200 * cov * 0.4
+            : erase
+              ? lc // RGB stays; alpha carries the erase
+              : stampMode
+                ? (pd[sj + ch] * se + lc * pa * (1 - se)) * naInv
+                : ((ch === 0 ? cr : ch === 1 ? cg : cb) * cov + lc * pa * (1 - cov)) * naInv;
+          px[i + ch] = erase ? lc : Math.max(0, Math.min(255, Math.round(target + d)));
         }
-        px[i + 3] = 255;
+        px[i + 3] = Math.max(0, Math.min(255, Math.round(na * 255)));
       }
     }
     paintCanvas.getContext("2d").putImageData(img, x0, y0);
+    if (hasCustomBlend) customTick++; // refresh the single-canvas custom-blend composite mid-stroke
   }
 
   // Stamp every ~15% of radius along the segment; the residual carries across
@@ -3293,6 +3451,61 @@
 
   // ── layer helpers ──
   const activeLayer = () => layers[activeIndex] || layers[0];
+  // Lightweight layer groups: a layer's groupId points at a groups[] entry; the
+  // group's visibility/opacity fold into each member's effective render. Members
+  // are kept contiguous in the flat array so the panel can show them under a header.
+  const groupById = (gid) => (gid ? groups.find((g) => g.id === gid) : null);
+  const layerShown = (L) => !!L?.visible && groupById(L?.groupId)?.visible !== false;
+  const layerEffOpacity = (L) => (L?.opacity ?? 1) * (groupById(L?.groupId)?.opacity ?? 1);
+  // Panel display rows, top-to-bottom: a group header before its members; a
+  // collapsed group hides its member rows. Ungrouped layers pass through.
+  let panelRows = $derived.by(() => {
+    const rows = [];
+    const seen = new Set();
+    for (let i = layers.length - 1; i >= 0; i--) {
+      const L = layers[i];
+      const g = groupById(L.groupId);
+      if (g && !seen.has(g.id)) { seen.add(g.id); rows.push({ type: "group", group: g }); }
+      if (g && g.collapsed) continue;
+      rows.push({ type: "layer", L, i, inGroup: !!g });
+    }
+    return rows;
+  });
+  function groupSelected() {
+    const ids = selectedIds.filter((id) => { const L = layers.find((x) => x.id === id); return L && !L.isBackground; });
+    if (!ids.length) return;
+    flushActive();
+    const gid = ++nextGroupNum;
+    const members = layers.filter((L) => ids.includes(L.id)).map((L) => ({ ...L, groupId: gid }));
+    const rest = layers.filter((L) => !ids.includes(L.id));
+    const topSelIdx = Math.max(...layers.map((L, i) => (ids.includes(L.id) ? i : -1)));
+    let insertAt = 0;
+    for (let i = 0; i < topSelIdx; i++) if (!ids.includes(layers[i].id)) insertAt++;
+    const activeId = layers[activeIndex]?.id;
+    groups = [...groups, { id: gid, name: `Group ${gid}`, collapsed: false, visible: true, opacity: 1 }];
+    layers = [...rest.slice(0, insertAt), ...members, ...rest.slice(insertAt)];
+    activeIndex = Math.max(0, layers.findIndex((L) => L.id === activeId));
+    selectedIds = members.map((L) => L.id);
+    loadActiveBitmap();
+    commitAction("Group Layers");
+  }
+  function ungroup(gid) {
+    if (!groups.some((g) => g.id === gid)) return;
+    flushActive();
+    layers = layers.map((L) => (L.groupId === gid ? { ...L, groupId: undefined } : L));
+    groups = groups.filter((g) => g.id !== gid);
+    commitAction("Ungroup");
+  }
+  function toggleGroupCollapsed(gid) { groups = groups.map((g) => (g.id === gid ? { ...g, collapsed: !g.collapsed } : g)); } // view-only, no history
+  function setGroupVisible(gid, v) { groups = groups.map((g) => (g.id === gid ? { ...g, visible: v } : g)); commitAction("Group Visibility"); }
+  function setGroupOpacity(gid, o) { groups = groups.map((g) => (g.id === gid ? { ...g, opacity: o } : g)); } // commit on release (slider onchange)
+  function startGroupRename(g) { renamingGroupId = g.id; renameText = g.name; }
+  function commitGroupRename() {
+    if (renamingGroupId == null) return;
+    const gid = renamingGroupId; renamingGroupId = null;
+    const name = renameText.trim();
+    if (name) { groups = groups.map((g) => (g.id === gid ? { ...g, name } : g)); commitAction("Rename Group"); }
+  }
 
   // Photoshop refuses to edit a hidden layer — you'd be changing pixels you
   // can't see (the active layer's canvas is display:none while hidden). On a
@@ -3328,6 +3541,10 @@
   // view); the paintCanvas itself stays raw so editing under the mask works.
   function activeMaskedCanvas() {
     const L = activeLayer();
+    // In mask-edit, paintCanvas holds the grayscale MASK, not the layer's pixels.
+    // Composite/flatten/save/merge must render from the stored bitmap+mask instead,
+    // or the gray would bake into the output. Callers flushActive() first, so L is current.
+    if (maskEdit && L?.mask) return maskedRenderCanvas(L);
     if (!L?.mask) return paintCanvas;
     const t = document.createElement("canvas");
     t.width = width; t.height = height;
@@ -3406,6 +3623,18 @@
     if (!paintCanvas || !layers[activeIndex]) return;
     const L = layers[activeIndex];
     const ox = L.ox || 0, oy = L.oy || 0;
+    if (maskEdit) {
+      if (!L.mask) return;
+      // Content-space gray = existing mask, with the on-canvas window replaced by
+      // the freshly-painted paintCanvas (un-offset). Mirrors the bitmap offset path.
+      const gray = document.createElement("canvas"); gray.width = width; gray.height = height;
+      const gx = gray.getContext("2d");
+      gx.drawImage(maskToGrayCanvas(L.mask), 0, 0);
+      gx.clearRect(-ox, -oy, width, height);
+      gx.drawImage(paintCanvas, -ox, -oy);
+      writeLayerMask(activeIndex, grayToMaskImageData(gx.getImageData(0, 0, width, height)));
+      return;
+    }
     if (!ox && !oy) {
       layers[activeIndex] = { ...L, bitmap: paintCanvas.getContext("2d").getImageData(0, 0, width, height) };
       return;
@@ -3426,20 +3655,43 @@
   function loadActiveBitmap() {
     const ctx = paintCanvas?.getContext("2d");
     if (!ctx) return;
-    ctx.clearRect(0, 0, width, height);
     const L = layers[activeIndex];
-    if (L) drawLayerRaw(ctx, L, 0, 0, width, height, 0, 0, width, height);
+    if (maskEdit && !L?.mask) maskEdit = false; // active layer has no mask → leave mask-edit (safety net)
+    ctx.clearRect(0, 0, width, height);
+    if (!L) return;
+    if (maskEdit && L.mask) { ctx.drawImage(maskToGrayCanvas(L.mask), L.ox || 0, L.oy || 0); return; }
+    drawLayerRaw(ctx, L, 0, 0, width, height, 0, 0, width, height);
   }
   function selectLayer(i) {
     if (i < 0 || i >= layers.length || painting) return;
-    if (i !== activeIndex) { flushActive(); activeIndex = i; loadActiveBitmap(); }
+    if (i === activeIndex) return;
+    if (maskEdit) exitMaskEdit(); // clicking another layer targets its pixels, not a mask
+    // Resolve a live Free-Transform/patch float onto its OWN (still-current) layer
+    // before switching, matching Photoshop's auto-apply — otherwise the float would
+    // bake into the wrong layer and the source layer commits erased (data loss).
+    commitPatch();
+    flushActive();
+    activeIndex = i;
+    loadActiveBitmap();
   }
   // Click a layer row, honoring Ctrl (toggle into the multi-selection) and
   // Shift (range). Plain click = single. The clicked layer becomes active.
   function clickLayer(i, e) {
     const id = layers[i].id;
     if ((e.ctrlKey || e.metaKey) && selectedIds.length) {
-      selectedIds = selectedIds.includes(id) ? selectedIds : [...selectedIds, id];
+      if (selectedIds.includes(id)) {
+        // Ctrl-click an already-selected layer toggles it OFF (PS) — but never empty
+        // the selection; if it was the active layer, hand active to a survivor.
+        if (selectedIds.length > 1) {
+          selectedIds = selectedIds.filter((x) => x !== id);
+          if (id === layers[activeIndex]?.id) {
+            const s = layers.findIndex((L) => selectedIds.includes(L.id));
+            if (s >= 0) selectLayer(s);
+          }
+        }
+        return; // the ctrl-clicked (now-deselected) layer does not become active
+      }
+      selectedIds = [...selectedIds, id];
     } else if (e.shiftKey && selectedIds.length) {
       const lo = Math.min(activeIndex, i), hi = Math.max(activeIndex, i);
       selectedIds = layers.slice(lo, hi + 1).map((L) => L.id);
@@ -3456,11 +3708,12 @@
     flushActive();
     const id = ++nextLayerNum;
     layers = [...layers.slice(0, at + 1),
-      { id, name: `Layer ${id}`, visible: true, opacity: 1, bitmap: null },
+      { id, name: `Layer ${id}`, visible: true, opacity: 1, bitmap: null, groupId: layers[at]?.groupId },
       ...layers.slice(at + 1)];
     activeIndex = at + 1;
     selectedIds = [id];
     loadActiveBitmap(); // empty
+    commitAction("New Layer"); // discrete undoable step; keeps history in sync with the live layers
   }
   // True when the multi-selection has at least one deletable (non-Background) layer.
   function canDeleteSelected() {
@@ -3478,6 +3731,7 @@
     for (let k = 0; k < activeIndex; k++) if (!doomedIds.has(layers[k].id)) na++; // survivors below the old active
     const survivors = layers.filter((L) => !doomedIds.has(L.id));
     layers = survivors;
+    groups = groups.filter((g) => layers.some((L) => L.groupId === g.id));
     activeIndex = Math.min(na, survivors.length - 1);
     selectedIds = [layers[activeIndex]?.id].filter((x) => x != null);
     loadActiveBitmap();
@@ -3495,7 +3749,7 @@
       bitmap = c.getContext("2d").getImageData(0, 0, width, height);
     }
     layers = [...layers.slice(0, i + 1),
-      { id, name: `${src.name} copy`, visible: true, opacity: src.opacity, blend: src.blend, ox: src.ox, oy: src.oy, mask: src.mask, maskUrl: src.maskUrl, sourceRect: src.sourceRect, bitmap },
+      { id, name: `${src.name} copy`, visible: true, opacity: src.opacity, blend: src.blend, ox: src.ox, oy: src.oy, mask: src.mask, maskUrl: src.maskUrl, sourceRect: src.sourceRect, groupId: src.groupId, bitmap },
       ...layers.slice(i + 1)];
     activeIndex = i + 1;
     selectedIds = [id];
@@ -3516,11 +3770,44 @@
     ["normal", "Normal"], ["multiply", "Multiply"], ["screen", "Screen"],
     ["overlay", "Overlay"], ["darken", "Darken"], ["lighten", "Lighten"],
     ["color-dodge", "Color Dodge"], ["color-burn", "Color Burn"],
+    ["linear-dodge", "Linear Dodge (Add)"], ["subtract", "Subtract"], ["divide", "Divide"],
     ["hard-light", "Hard Light"], ["soft-light", "Soft Light"],
+    ["vivid-light", "Vivid Light"], ["linear-light", "Linear Light"], ["pin-light", "Pin Light"], ["hard-mix", "Hard Mix"],
     ["difference", "Difference"], ["exclusion", "Exclusion"],
     ["hue", "Hue"], ["saturation", "Saturation"], ["color", "Color"], ["luminosity", "Luminosity"],
+    ["darker-color", "Darker Color"], ["lighter-color", "Lighter Color"],
   ];
-  const layerBlendCss = (L) => (L?.blend && L.blend !== "normal" ? L.blend : null);
+  // Modes the browser supports in BOTH CSS mix-blend-mode and canvas
+  // globalCompositeOperation render via the fast DOM-stacked path. The rest
+  // (Photoshop modes the web APIs lack) need a hand-written per-pixel blend and
+  // are composited through a single canvas (see drawFlattened / the customEl effect).
+  const CUSTOM_BLENDS = new Set(["linear-dodge", "subtract", "divide", "vivid-light", "linear-light", "pin-light", "hard-mix", "darker-color", "lighter-color"]);
+  const isCustomBlend = (b) => CUSTOM_BLENDS.has(b);
+  // Custom path is active only when a VISIBLE layer actually uses a custom mode —
+  // native-mode editing keeps the fast DOM-stacked compositing untouched.
+  let hasCustomBlend = $derived(layers.some((L) => layerShown(L) && isCustomBlend(L.blend)));
+  let customTick = $state(0); // bumped after a paint dab so the single-canvas composite refreshes live
+  // Per-channel blend math (b = base, s = source, 0..1). darker/lighter-color are
+  // non-separable and handled in the pixel loop.
+  function blendChannel(mode, b, s) {
+    switch (mode) {
+      case "linear-dodge": return Math.min(1, b + s);
+      case "subtract": return Math.max(0, b - s);
+      case "divide": return s <= 0 ? 1 : Math.min(1, b / s);
+      case "linear-light": return Math.max(0, Math.min(1, b + 2 * s - 1));
+      case "pin-light": return s <= 0.5 ? Math.min(b, 2 * s) : Math.max(b, 2 * s - 1);
+      case "vivid-light":
+        if (s <= 0.5) { const d = 2 * s; return d <= 0 ? 0 : Math.max(0, 1 - (1 - b) / d); }
+        { const d = 2 * (1 - s); return d <= 0 ? 1 : Math.min(1, b / d); }
+      case "hard-mix": {
+        let v; if (s <= 0.5) { const d = 2 * s; v = d <= 0 ? 0 : Math.max(0, 1 - (1 - b) / d); }
+        else { const d = 2 * (1 - s); v = d <= 0 ? 1 : Math.min(1, b / d); }
+        return v < 0.5 ? 0 : 1;
+      }
+      default: return s;
+    }
+  }
+  const layerBlendCss = (L) => (L?.blend && L.blend !== "normal" && !isCustomBlend(L.blend) ? L.blend : null);
   function setLayerBlend(i, blend) {
     layers[i] = { ...layers[i], blend: blend === "normal" ? undefined : blend };
     commitAction("Blend Mode");
@@ -3565,8 +3852,73 @@
   }
   function deleteLayerMask(i) {
     if (!layers[i]?.mask) return;
+    if (maskEdit && i === activeIndex) maskEdit = false;
     layers[i] = { ...layers[i], mask: undefined, maskUrl: undefined };
+    if (i === activeIndex) loadActiveBitmap();
     commitAction("Delete Layer Mask");
+  }
+
+  // ── editing a layer mask by painting (#3) ──
+  // The mask is stored white-RGB / alpha=visibility. To reuse the whole brush
+  // engine, mask-edit mode shows the mask on paintCanvas as opaque GRAYSCALE
+  // (white = revealed) and routes flushActive/loadActiveBitmap to the mask; the
+  // brush/eraser/fill/smooth then "just work" (paint white to reveal, black to
+  // hide). Conversions are content-space; the doc-space offset rides ox/oy.
+  function maskToGrayCanvas(mask) {
+    const c = document.createElement("canvas"); c.width = width; c.height = height;
+    const ctx = c.getContext("2d");
+    if (mask) {
+      const g = new ImageData(width, height), d = g.data, m = mask.data;
+      for (let i = 0; i < d.length; i += 4) { const v = m[i + 3]; d[i] = v; d[i + 1] = v; d[i + 2] = v; d[i + 3] = 255; }
+      ctx.putImageData(g, 0, 0);
+    } else { ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, width, height); }
+    return c;
+  }
+  function grayToMaskImageData(gray) {
+    const s = gray.data, out = new ImageData(width, height), d = out.data;
+    for (let i = 0; i < s.length; i += 4) {
+      const lum = s[i] * 0.299 + s[i + 1] * 0.587 + s[i + 2] * 0.114;
+      d[i] = 255; d[i + 1] = 255; d[i + 2] = 255;
+      d[i + 3] = Math.round(lum * (s[i + 3] / 255)); // erased (alpha 0) → hidden; white → revealed
+    }
+    return out;
+  }
+  function writeLayerMask(i, maskId) {
+    const mc = document.createElement("canvas"); mc.width = width; mc.height = height;
+    mc.getContext("2d").putImageData(maskId, 0, 0);
+    layers[i] = { ...layers[i], mask: maskId, maskUrl: mc.toDataURL() };
+  }
+  function enterMaskEdit(i = activeIndex) {
+    if (i !== activeIndex) selectLayer(i);
+    if (!layers[activeIndex]?.mask || maskEdit || painting) return;
+    flushActive();          // maskEdit false here → saves the layer's pixels
+    maskEdit = true;
+    hue = 0; sat = 0; val = 1; // default to white = reveal (X/D still work)
+    loadActiveBitmap();     // maskEdit true → loads the mask as grayscale
+  }
+  function exitMaskEdit() {
+    if (!maskEdit) return;
+    flushActive();          // maskEdit true → saves the grayscale back as the mask
+    maskEdit = false;
+    loadActiveBitmap();     // loads the layer's pixels
+  }
+  function toggleMaskEdit(i) { if (maskEdit && i === activeIndex) exitMaskEdit(); else enterMaskEdit(i); }
+  function invertLayerMask(i) {
+    if (!layers[i]?.mask) return;
+    if (maskEdit && i === activeIndex) flushActive(); // pull live paint into the mask first
+    const m = layers[i].mask, inv = new ImageData(width, height), d = inv.data, s = m.data;
+    for (let k = 0; k < d.length; k += 4) { d[k] = 255; d[k + 1] = 255; d[k + 2] = 255; d[k + 3] = 255 - s[k + 3]; }
+    writeLayerMask(i, inv);
+    if (maskEdit && i === activeIndex) loadActiveBitmap();
+    commitAction("Invert Mask");
+  }
+  function fillLayerMask(i, vis) { // vis 255 = Reveal All, 0 = Hide All
+    if (!layers[i]?.mask) return;
+    const fill = new ImageData(width, height), d = fill.data;
+    for (let k = 0; k < d.length; k += 4) { d[k] = 255; d[k + 1] = 255; d[k + 2] = 255; d[k + 3] = vis; }
+    writeLayerMask(i, fill);
+    if (maskEdit && i === activeIndex) loadActiveBitmap();
+    commitAction(vis ? "Reveal All" : "Hide All");
   }
 
   function startRename(L) { renamingId = L.id; renameText = L.name; }
@@ -3592,13 +3944,58 @@
     // topmost row lands at the very top.
     let at = ti < 0 ? rest.length : ti + 1;
     if (at < 1) at = 1; // never below Background
-    rest.splice(at, 0, moved);
+    // Dropping onto a row inside a group joins that group; otherwise the layer
+    // leaves any group it was in. Then drop any group left with no members.
+    const targetGroupId = rest[ti]?.groupId;
+    rest.splice(at, 0, { ...moved, groupId: targetGroupId });
     layers = rest;
+    groups = groups.filter((g) => layers.some((L) => L.groupId === g.id));
     activeIndex = layers.findIndex((L) => L.id === activeId);
     dragId = null;
     commitAction("Reorder Layers");
   }
 
+  // Hand-written per-pixel composite of srcCanvas onto ctx using a Photoshop
+  // blend the web APIs lack (CSS mix-blend-mode + canvas globalCompositeOperation
+  // both miss these). Shared by every full-frame composite path so live preview,
+  // merge, flatten and export all blend identically. Uses the W3C
+  // source-over-with-blend formula (Cs' = (1-αb)·Cs + αb·B(Cb,Cs)) so a custom
+  // layer over a transparent/partial backdrop shows the source, not black.
+  function blendLayerFull(ctx, srcCanvas, mode, eff) {
+    const baseImg = ctx.getImageData(0, 0, width, height);
+    const srcImg = srcCanvas.getContext("2d").getImageData(0, 0, width, height);
+    const bd = baseImg.data, sd = srcImg.data;
+    const sep = mode !== "darker-color" && mode !== "lighter-color";
+    for (let p = 0; p < bd.length; p += 4) {
+      const sa = (sd[p + 3] / 255) * eff;
+      if (sa <= 0) continue;
+      const br = bd[p] / 255, bg = bd[p + 1] / 255, bb = bd[p + 2] / 255;
+      const sr = sd[p] / 255, sg = sd[p + 1] / 255, sbb = sd[p + 2] / 255;
+      let rr, rg, rb;
+      if (sep) { rr = blendChannel(mode, br, sr); rg = blendChannel(mode, bg, sg); rb = blendChannel(mode, bb, sbb); }
+      else {
+        const lb = 0.299 * br + 0.587 * bg + 0.114 * bb, ls = 0.299 * sr + 0.587 * sg + 0.114 * sbb;
+        const keepBase = mode === "darker-color" ? lb <= ls : lb >= ls;
+        rr = keepBase ? br : sr; rg = keepBase ? bg : sg; rb = keepBase ? bb : sbb;
+      }
+      const ba = bd[p + 3] / 255, oa = sa + ba * (1 - sa), inv = oa > 0 ? 1 / oa : 0;
+      const cr = (1 - ba) * sr + ba * rr, cg = (1 - ba) * sg + ba * rg, cb2 = (1 - ba) * sbb + ba * rb;
+      bd[p] = Math.round((cr * sa + br * ba * (1 - sa)) * inv * 255);
+      bd[p + 1] = Math.round((cg * sa + bg * ba * (1 - sa)) * inv * 255);
+      bd[p + 2] = Math.round((cb2 * sa + bb * ba * (1 - sa)) * inv * 255);
+      bd[p + 3] = Math.round(oa * 255);
+    }
+    ctx.putImageData(baseImg, 0, 0);
+  }
+  // Render the active or an inactive layer's full-frame pixels onto a fresh
+  // canvas (active rides the live paintCanvas + mask). Source for blendLayerFull.
+  function layerFullCanvas(L, isActive) {
+    const tmp = document.createElement("canvas");
+    tmp.width = width; tmp.height = height;
+    if (isActive) tmp.getContext("2d").drawImage(activeMaskedCanvas(), 0, 0);
+    else drawLayerContent(tmp.getContext("2d"), L, 0, 0, width, height, 0, 0, width, height);
+    return tmp;
+  }
   // Composite a set of layer indices (z-order) into one ImageData.
   function compositeLayers(idxs) {
     const c = document.createElement("canvas");
@@ -3606,8 +4003,13 @@
     const ctx = c.getContext("2d");
     for (const i of idxs) {
       const L = layers[i];
-      if (!L.visible) continue;
-      ctx.globalAlpha = L.opacity;
+      if (!layerShown(L)) continue;
+      const eff = layerEffOpacity(L);
+      if (isCustomBlend(L.blend)) {
+        blendLayerFull(ctx, layerFullCanvas(L, i === activeIndex), L.blend, eff);
+        continue;
+      }
+      ctx.globalAlpha = eff;
       ctx.globalCompositeOperation = layerBlendCss(L) || "source-over";
       if (i === activeIndex) ctx.drawImage(activeMaskedCanvas(), 0, 0);
       else drawLayerContent(ctx, L, 0, 0, width, height, 0, 0, width, height);
@@ -3626,12 +4028,15 @@
     const lo = idxs[0];
     const hasBg = idxs.some((i) => layers[i].isBackground);
     const bitmap = compositeLayers(idxs);
+    // Keep the merged layer in its group when all merged layers shared one.
+    const grp = !hasBg && layers[lo].groupId && idxs.every((i) => layers[i].groupId === layers[lo].groupId) ? layers[lo].groupId : undefined;
     const merged = { id: hasBg ? 0 : ++nextLayerNum, name: hasBg ? "Background" : layers[lo].name,
-      visible: true, opacity: 1, bitmap, isBackground: hasBg || undefined };
+      visible: true, opacity: 1, bitmap, isBackground: hasBg || undefined, groupId: grp };
     const keptBelow = layers.filter((L, i) => i < lo && !idxs.includes(i)).length;
     const rest = layers.filter((_, i) => !idxs.includes(i));
     rest.splice(keptBelow, 0, merged);
     layers = rest;
+    groups = groups.filter((g) => layers.some((L) => L.groupId === g.id));
     activeIndex = layers.findIndex((L) => L.id === merged.id);
     selectedIds = [merged.id];
     loadActiveBitmap();
@@ -3649,6 +4054,7 @@
     c.width = width; c.height = height;
     drawFlattened(c.getContext("2d"), 0, 0, width, height, 0, 0, width, height);
     layers = [{ id: 0, name: "Background", visible: true, opacity: 1, bitmap: c.getContext("2d").getImageData(0, 0, width, height), isBackground: true }];
+    groups = [];
     activeIndex = 0; selectedIds = [0];
     loadActiveBitmap();
     commitAction("Flatten Image");
@@ -3669,8 +4075,8 @@
   function drawBackdrop(ctx, sx, sy, sw, sh, dx, dy, dw, dh) {
     for (let k = 0; k < activeIndex; k++) {
       const L = layers[k];
-      if (!L.visible) continue;
-      ctx.globalAlpha = L.opacity;
+      if (!layerShown(L)) continue;
+      ctx.globalAlpha = layerEffOpacity(L);
       ctx.globalCompositeOperation = layerBlendCss(L) || "source-over";
       drawLayerContent(ctx, L, sx, sy, sw, sh, dx, dy, dw, dh);
       ctx.globalAlpha = 1;
@@ -3680,10 +4086,27 @@
   // Draw the FULL flattened composite (Background + every visible layer, active
   // from the live canvas) — used by the eyedropper so it samples what's shown.
   function drawFlattened(ctx, sx, sy, sw, sh, dx, dy, dw, dh) {
+    const fullFrame = sx === 0 && sy === 0 && dx === 0 && dy === 0 && sw === width && sh === height && dw === width && dh === height;
+    // Custom blend modes only resolve in a whole-canvas composite (blendLayerFull works on the full
+    // pixel buffer). For sub-rect requests — crop/upscale/i2i/Copy-Merged/eyedropper handoffs — flatten
+    // the entire doc once (the fullFrame branch routes custom layers through blendLayerFull), then copy
+    // the requested window out, so exported/handed-off output matches the on-screen preview.
+    if (!fullFrame && layers.some((L) => layerShown(L) && isCustomBlend(L.blend))) {
+      const full = document.createElement("canvas");
+      full.width = width; full.height = height;
+      drawFlattened(full.getContext("2d"), 0, 0, width, height, 0, 0, width, height);
+      ctx.drawImage(full, sx, sy, sw, sh, dx, dy, dw, dh);
+      return;
+    }
     for (let k = 0; k < layers.length; k++) {
       const L = layers[k];
-      if (!L.visible) continue;
-      ctx.globalAlpha = L.opacity;
+      if (!layerShown(L)) continue;
+      const eff = layerEffOpacity(L);
+      if (fullFrame && isCustomBlend(L.blend)) {
+        blendLayerFull(ctx, layerFullCanvas(L, k === activeIndex), L.blend, eff);
+        continue;
+      }
+      ctx.globalAlpha = eff;
       ctx.globalCompositeOperation = layerBlendCss(L) || "source-over";
       if (k === activeIndex) ctx.drawImage(activeMaskedCanvas(), sx, sy, sw, sh, dx, dy, dw, dh);
       else drawLayerContent(ctx, L, sx, sy, sw, sh, dx, dy, dw, dh);
@@ -3729,6 +4152,20 @@
     }
   });
 
+  // Single-canvas composite for custom (non-CSS) blend modes. Only renders when
+  // such a mode is in use (else the DOM-stacked path above shows the image). It
+  // depends on layers/groups (reactive) and customTick (bumped after each paint
+  // dab, since painting writes paintCanvas imperatively, not reactively).
+  $effect(() => {
+    customTick; imgLoadTick;
+    if (!hasCustomBlend || !customEl) return;
+    if (customEl.width !== width) customEl.width = width;
+    if (customEl.height !== height) customEl.height = height;
+    const ctx = customEl.getContext("2d");
+    ctx.clearRect(0, 0, width, height);
+    drawFlattened(ctx, 0, 0, width, height, 0, 0, width, height);
+  });
+
   function clearAll() {
     if (histIndex === 0 && history.length === 1) return;
     patch = null;
@@ -3752,7 +4189,12 @@
     }
     try {
       sampleCtx.clearRect(0, 0, s, s);
-      drawFlattened(sampleCtx, x, y, s, s, 0, 0, s, s);
+      // Merged sample = the on-screen composite. With a custom blend live, customEl already
+      // holds the full-frame composite — read that window directly instead of recompositing
+      // the whole doc per pointer-move (drawFlattened's sub-rect path would do that).
+      if (sampleMerged && hasCustomBlend && customEl) sampleCtx.drawImage(customEl, x, y, s, s, 0, 0, s, s);
+      else if (sampleMerged) drawFlattened(sampleCtx, x, y, s, s, 0, 0, s, s);
+      else sampleCtx.drawImage(paintCanvas, x, y, s, s, 0, 0, s, s); // current layer only
       const d = sampleCtx.getImageData(0, 0, s, s).data;
       const sum = [0, 0, 0];
       for (let i = 0; i < s * s; i++) {
@@ -3786,7 +4228,7 @@
   // ── pointer handling ──
   function onPointerDown(e) {
     if (e.button > 2) return;
-    if (e.button === 1 || e.button === 2 || (e.shiftKey && !isSelTool && !transforming)) { // Shift adds to a selection / snaps a transform rotation — doesn't pan
+    if (e.button === 1 || e.button === 2 || (spaceDown && e.button === 0) || (e.shiftKey && !isSelTool && !transforming)) { // middle/right or Space-drag pans; Shift adds to a selection / snaps a transform rotation
       panning = true;
       lastPt = { x: e.clientX, y: e.clientY };
       e.preventDefault();
@@ -4025,11 +4467,14 @@
     }
     if (selecting) {
       selecting = false;
+      const had = selActive;
       // Compose the marquee into the selection mask (replace / add / subtract).
       if (selRect && selRect.w >= 1 && selRect.h >= 1) {
         applySelectionShape({ type: "rect", x: selRect.x, y: selRect.y, w: selRect.w, h: selRect.h }, selOp);
+        commitAction("Select");
       } else if (selOp === "replace") {
         deselect(); // a click with no drag clears the selection
+        if (had) commitAction("Deselect");
       }
       selRect = null;
       return;
@@ -4037,8 +4482,9 @@
     if (lassoing) {
       lassoing = false;
       if (tool === "lasso") {
-        if (lassoPts && lassoPts.length >= 3) applySelectionShape({ type: "lasso", pts: lassoPts }, selOp);
-        else if (selOp === "replace") deselect();
+        const had = selActive;
+        if (lassoPts && lassoPts.length >= 3) { applySelectionShape({ type: "lasso", pts: lassoPts }, selOp); commitAction("Select"); }
+        else if (selOp === "replace") { deselect(); if (had) commitAction("Deselect"); }
       } else if (lassoPts && lassoPts.length >= 3) {
         applySmooth(lassoPts); // smooth tool still applies immediately
       }
@@ -4389,6 +4835,13 @@
                 <option value={5}>5×5 average</option>
               </select>
             </div>
+            <div class="pcr-ed-opt pcr-ed-opt-narrow">
+              <span class="pcr-ed-label">From</span>
+              <select class="pcr-ed-opt-select" bind:value={sampleMerged}>
+                <option value={true}>All layers</option>
+                <option value={false}>Current layer</option>
+              </select>
+            </div>
             <span class="pcr-ed-opt-hint">click the image to pick a color · hold to preview · Screen pick grabs from anywhere</span>
           {/if}
         </div>
@@ -4458,7 +4911,7 @@
             class:transform-mode={transforming}
             class:no-edit={hiddenEditBlocked}
             class:drag-over={dragActive}
-            style:cursor={transforming && overRotateZone ? ROTATE_CURSOR : null}
+            style:cursor={spaceDown ? "grab" : (transforming && overRotateZone ? ROTATE_CURSOR : null)}
             bind:this={viewportEl}
             ondragover={onCanvasDragOver}
             ondragleave={() => { dragActive = false; }}
@@ -4474,6 +4927,14 @@
             ondragstart={(e) => e.preventDefault()}
             onselectstart={(e) => e.preventDefault()}
           >
+            {#if maskEdit}
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <div style="position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:30; background:rgba(20,20,24,0.92); color:#fff; padding:5px 12px; border-radius:6px; font-size:12px; display:flex; gap:10px; align-items:center; box-shadow:0 2px 8px rgba(0,0,0,.4);"
+                onpointerdown={(e) => e.stopPropagation()}>
+                <span>✎ Editing layer mask — paint <b>white</b> to reveal, <b>black</b> to hide</span>
+                <button class="pcr-ed-tool-btn" onclick={exitMaskEdit}>Done</button>
+              </div>
+            {/if}
             <div class="pcr-ed-stage" style="transform: translate({panX}px, {panY}px) scale({zoom}); width:{width}px; height:{height}px;">
               <!-- Source image is a hidden pixel-source; the Background LAYER renders it. -->
               <img bind:this={imgEl} src={sourceUrl} alt="" draggable="false" width={width} height={height}
@@ -4485,23 +4946,26 @@
                    premultiplied-alpha resample doesn't commute per-layer); compositing
                    first then scaling once is seam-free. Visibility/opacity/blend are
                    baked in by drawBackdrop, so this canvas needs no per-layer CSS. -->
-              <canvas bind:this={belowCanvasEl} width={width} height={height}></canvas>
+              <canvas bind:this={belowCanvasEl} width={width} height={height} style:display={hasCustomBlend ? "none" : null}></canvas>
               <!-- Active layer = the single live paint canvas all tools write to.
-                   A layer mask applies as a CSS mask so the canvas pixels stay raw. -->
+                   A layer mask applies as a CSS mask so the canvas pixels stay raw.
+                   Hidden (but still painted on) when the custom-blend composite is shown. -->
               <canvas bind:this={paintCanvas} width={width} height={height}
-                style:display={activeLayer()?.visible ? null : "none"} style:opacity={activeLayer()?.opacity ?? 1}
-                style:mix-blend-mode={layerBlendCss(activeLayer())}
-                style:mask-image={activeLayer()?.maskUrl ? `url(${activeLayer().maskUrl})` : null}
+                style:display={hasCustomBlend || !layerShown(activeLayer()) ? "none" : null} style:opacity={layerEffOpacity(activeLayer())}
+                style:mix-blend-mode={maskEdit ? null : layerBlendCss(activeLayer())}
+                style:mask-image={!maskEdit && activeLayer()?.maskUrl ? `url(${activeLayer().maskUrl})` : null}
                 style:mask-repeat="no-repeat"
                 style:mask-position={`${activeLayer()?.ox || 0}px ${activeLayer()?.oy || 0}px`}></canvas>
               <!-- Inactive layers ABOVE the active one. -->
               {#each layers as L, i (L.id)}
                 {#if i > activeIndex}
                   <canvas bind:this={layerCanvasEls[i]} width={width} height={height}
-                    style:display={L.visible ? null : "none"} style:opacity={L.opacity}
+                    style:display={hasCustomBlend || !layerShown(L) ? "none" : null} style:opacity={layerEffOpacity(L)}
                     style:mix-blend-mode={layerBlendCss(L)}></canvas>
                 {/if}
               {/each}
+              <!-- Single-canvas composite, shown only when a custom (non-CSS) blend mode is active. -->
+              <canvas bind:this={customEl} width={width} height={height} style:display={hasCustomBlend ? null : "none"}></canvas>
               {#if (tool === "heal" || tool === "stamp") && healSource && !healPaintingUi}
                 <div class="pcr-ed-heal-src"
                   style="left:{healSource.x}px; top:{healSource.y}px; width:{18 / zoom}px; height:{18 / zoom}px; border-width:{1.5 / zoom}px;"></div>
@@ -4704,48 +5168,83 @@
               {/each}
             </select>
             <div class="pcr-ed-layers">
-              {#each [...layers].reverse() as L (L.id)}
-                {@const i = layers.indexOf(L)}
-                <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
-                <!-- Reorder drags start ONLY from the grip — a draggable row
-                     hijacked horizontal drags on the opacity slider. The row
-                     stays the drop target. -->
-                <div class="pcr-ed-layer-row"
-                  class:active={i === activeIndex}
-                  class:selected={selectedIds.includes(L.id)}
-                  class:dragover={dragOverId === L.id}
-                  onclick={(e) => clickLayer(i, e)}
-                  oncontextmenu={(e) => { e.preventDefault(); if (!selectedIds.includes(L.id)) clickLayer(i, e); layerMenu = { x: e.clientX, y: e.clientY, i }; }}
-                  ondragover={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; dragOverId = L.id; }}
-                  ondragleave={() => { if (dragOverId === L.id) dragOverId = null; }}
-                  ondrop={(e) => { e.preventDefault(); dropLayer(L.id); }}>
-                  <span class="pcr-ed-layer-grip" class:hidden={L.isBackground}
-                    draggable={!L.isBackground} title="Drag to reorder"
-                    ondragstart={(e) => { dragId = L.id; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(L.id)); }}
-                    ondragend={() => { dragId = null; dragOverId = null; }}>⠿</span>
-                  <span class="pcr-ed-eye" class:off={!L.visible} title="Toggle visibility"
-                    onclick={(e) => { e.stopPropagation(); setLayerVisible(i, !L.visible); }}>{L.visible ? "👁" : "—"}</span>
-                  {#if renamingId === L.id}
-                    <!-- svelte-ignore a11y_autofocus -->
-                    <input class="pcr-ed-layer-rename" type="text" autofocus bind:value={renameText}
-                      onclick={(e) => e.stopPropagation()}
-                      onkeydown={(e) => {
-                        e.stopPropagation();
-                        if (e.key === "Enter") commitRename();
-                        else if (e.key === "Escape") renamingId = null;
-                      }}
-                      onblur={commitRename} />
-                  {:else}
-                    <span class="pcr-ed-layer-name" title="Double-click to rename"
-                      ondblclick={(e) => { e.stopPropagation(); startRename(L); }}>{L.name}{#if L.mask}<span class="pcr-ed-layer-blendtag" title="Has a layer mask">▦</span>{/if}{#if layerBlendCss(L)}<span class="pcr-ed-layer-blendtag">{L.blend}</span>{/if}</span>
-                  {/if}
-                  <input class="pcr-ed-layer-opacity" type="range" min="0" max="1" step="0.05"
-                    value={L.opacity}
-                    onpointerdown={() => { opacityDragStart = L.opacity; }}
-                    oninput={(e) => setLayerOpacity(i, +e.currentTarget.value)}
-                    onchange={(e) => { if (opacityDragStart === null || +e.currentTarget.value !== opacityDragStart) commitAction("Opacity"); opacityDragStart = null; }}
-                    onclick={(e) => e.stopPropagation()} title="Opacity" />
-                </div>
+              {#each panelRows as row (row.type === "group" ? "g" + row.group.id : row.L.id)}
+                {#if row.type === "group"}
+                  {@const g = row.group}
+                  <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
+                  <div class="pcr-ed-group-row">
+                    <span class="pcr-ed-eye" title="Collapse / expand" onclick={() => toggleGroupCollapsed(g.id)}>{g.collapsed ? "▸" : "▾"}</span>
+                    <span class="pcr-ed-eye" class:off={!g.visible} title="Toggle group visibility"
+                      onclick={() => setGroupVisible(g.id, !g.visible)}>{g.visible ? "👁" : "—"}</span>
+                    {#if renamingGroupId === g.id}
+                      <!-- svelte-ignore a11y_autofocus -->
+                      <input class="pcr-ed-layer-rename" type="text" autofocus bind:value={renameText}
+                        onclick={(e) => e.stopPropagation()}
+                        onkeydown={(e) => { e.stopPropagation(); if (e.key === "Enter") commitGroupRename(); else if (e.key === "Escape") renamingGroupId = null; }}
+                        onblur={commitGroupRename} />
+                    {:else}
+                      <span class="pcr-ed-group-name" title="Double-click to rename"
+                        ondblclick={(e) => { e.stopPropagation(); startGroupRename(g); }}>📁 {g.name}</span>
+                    {/if}
+                    <input class="pcr-ed-layer-opacity" type="range" min="0" max="1" step="0.05" value={g.opacity}
+                      onpointerdown={() => { opacityDragStart = g.opacity; }}
+                      oninput={(e) => setGroupOpacity(g.id, +e.currentTarget.value)}
+                      onchange={(e) => { if (opacityDragStart === null || +e.currentTarget.value !== opacityDragStart) commitAction("Group Opacity"); opacityDragStart = null; }}
+                      onclick={(e) => e.stopPropagation()} title="Group opacity" />
+                    <button class="pcr-ed-group-x" title="Ungroup" onclick={() => ungroup(g.id)}>⊟</button>
+                  </div>
+                {:else}
+                  {@const L = row.L}
+                  {@const i = row.i}
+                  <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
+                  <!-- Reorder drags start ONLY from the grip — a draggable row
+                       hijacked horizontal drags on the opacity slider. The row
+                       stays the drop target. -->
+                  <div class="pcr-ed-layer-row"
+                    class:active={i === activeIndex}
+                    class:selected={selectedIds.includes(L.id)}
+                    class:dragover={dragOverId === L.id}
+                    class:in-group={row.inGroup}
+                    onclick={(e) => clickLayer(i, e)}
+                    oncontextmenu={(e) => { e.preventDefault(); if (!selectedIds.includes(L.id)) clickLayer(i, e); layerMenu = { x: e.clientX, y: e.clientY, i, flip: e.clientX > window.innerWidth - 340 }; }}
+                    ondragover={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; dragOverId = L.id; }}
+                    ondragleave={() => { if (dragOverId === L.id) dragOverId = null; }}
+                    ondrop={(e) => { e.preventDefault(); dropLayer(L.id); }}>
+                    <span class="pcr-ed-layer-grip" class:hidden={L.isBackground}
+                      draggable={!L.isBackground} title="Drag to reorder"
+                      ondragstart={(e) => { dragId = L.id; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(L.id)); }}
+                      ondragend={() => { dragId = null; dragOverId = null; }}>⠿</span>
+                    <span class="pcr-ed-eye" class:off={!L.visible} title="Toggle visibility"
+                      onclick={(e) => { e.stopPropagation(); setLayerVisible(i, !L.visible); }}>{L.visible ? "👁" : "—"}</span>
+                    {#if L.mask}
+                      <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
+                      <img class="pcr-ed-mask-thumb" class:editing={maskEdit && i === activeIndex}
+                        src={L.maskUrl} alt="" draggable="false"
+                        title={maskEdit && i === activeIndex ? "Editing layer mask — click the layer to edit pixels" : "Click to edit layer mask"}
+                        onclick={(e) => { e.stopPropagation(); toggleMaskEdit(i); }} />
+                    {/if}
+                    {#if renamingId === L.id}
+                      <!-- svelte-ignore a11y_autofocus -->
+                      <input class="pcr-ed-layer-rename" type="text" autofocus bind:value={renameText}
+                        onclick={(e) => e.stopPropagation()}
+                        onkeydown={(e) => {
+                          e.stopPropagation();
+                          if (e.key === "Enter") commitRename();
+                          else if (e.key === "Escape") renamingId = null;
+                        }}
+                        onblur={commitRename} />
+                    {:else}
+                      <span class="pcr-ed-layer-name" title="Double-click to rename"
+                        ondblclick={(e) => { e.stopPropagation(); startRename(L); }}>{L.name}{#if L.blend && L.blend !== "normal"}<span class="pcr-ed-layer-blendtag" title={`Blend: ${L.blend}`}>{L.blend}</span>{/if}</span>
+                    {/if}
+                    <input class="pcr-ed-layer-opacity" type="range" min="0" max="1" step="0.05"
+                      value={L.opacity}
+                      onpointerdown={() => { opacityDragStart = L.opacity; }}
+                      oninput={(e) => setLayerOpacity(i, +e.currentTarget.value)}
+                      onchange={(e) => { if (opacityDragStart === null || +e.currentTarget.value !== opacityDragStart) commitAction("Opacity"); opacityDragStart = null; }}
+                      onclick={(e) => e.stopPropagation()} title="Opacity" />
+                  </div>
+                {/if}
               {/each}
             </div>
           {:else}
@@ -4760,23 +5259,19 @@
           </div>
           {#if layerMenu}
             <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
+            {@const Lm = layers[layerMenu.i]}
+            {@const multi = selectedIds.length > 1}
+            {@const groupable = selectedIds.filter((id) => !layers.find((ly) => ly.id === id)?.isBackground).length}
             <div class="pcr-ed-layer-menu" style="left:{layerMenu.x}px; top:{layerMenu.y}px;">
+              <!-- Layer -->
               <button onclick={() => { addLayer(layerMenu.i); layerMenu = null; }}>New Layer</button>
-              {#if selectedIds.length > 1}
+              <button onclick={() => { duplicateLayer(layerMenu.i); layerMenu = null; }}>Duplicate Layer</button>
+              {#if multi}
                 <button onclick={() => { mergeSelected(); layerMenu = null; }}>Merge Layers</button>
               {:else if layerMenu.i > 0}
                 <button onclick={() => { mergeDown(layerMenu.i); layerMenu = null; }}>Merge Down</button>
               {/if}
-              <button onclick={() => { duplicateLayer(layerMenu.i); layerMenu = null; }}>Duplicate Layer</button>
-              {#if !layers[layerMenu.i]?.isBackground}
-                {#if !layers[layerMenu.i]?.mask}
-                  <button onclick={() => { addLayerMask(layerMenu.i); layerMenu = null; }}>Add Layer Mask{selActive ? " (Reveal Selection)" : ""}</button>
-                {:else}
-                  <button onclick={() => { applyLayerMask(layerMenu.i); layerMenu = null; }}>Apply Layer Mask</button>
-                  <button onclick={() => { deleteLayerMask(layerMenu.i); layerMenu = null; }}>Delete Layer Mask</button>
-                {/if}
-              {/if}
-              {#if layerMenu.i > 0 && layers[layerMenu.i]?.bitmap}
+              {#if layerMenu.i > 0 && Lm?.bitmap}
                 <button onclick={() => {
                   const i = layerMenu.i; layerMenu = null;
                   if (i === activeIndex) flushActive();
@@ -4784,9 +5279,45 @@
                   else errorMsg = "No usable edge band — the layer's feathered edge must overlap solid content below.";
                 }}>Match Colors to Below</button>
               {/if}
+
+              <!-- Arrange -->
+              {#if groupable || Lm?.groupId}
+                <div class="pcr-ed-menu-sep"></div>
+                {#if groupable}
+                  <button onclick={() => { groupSelected(); layerMenu = null; }}>Group {multi ? "Layers" : "Layer"}</button>
+                {/if}
+                {#if Lm?.groupId}
+                  <button onclick={() => { ungroup(Lm.groupId); layerMenu = null; }}>Ungroup</button>
+                {/if}
+              {/if}
+
+              <!-- Mask -->
+              {#if !Lm?.isBackground}
+                <div class="pcr-ed-menu-sep"></div>
+                {#if !Lm?.mask}
+                  <button onclick={() => { addLayerMask(layerMenu.i); layerMenu = null; }}>Add Layer Mask{selActive ? " (Reveal Selection)" : ""}</button>
+                {:else}
+                  <!-- svelte-ignore a11y_no_static_element_interactions -->
+                  <div class="pcr-ed-submenu-host" class:flip={layerMenu.flip}>
+                    <button class="pcr-ed-submenu-trigger">Layer Mask<span class="pcr-ed-submenu-caret">▸</span></button>
+                    <div class="pcr-ed-submenu">
+                      <button onclick={() => { toggleMaskEdit(layerMenu.i); layerMenu = null; }}>{maskEdit && layerMenu.i === activeIndex ? "Done Editing Mask" : "Edit Mask (paint)"}</button>
+                      <button onclick={() => { invertLayerMask(layerMenu.i); layerMenu = null; }}>Invert Mask</button>
+                      <button onclick={() => { fillLayerMask(layerMenu.i, 255); layerMenu = null; }}>Reveal All</button>
+                      <button onclick={() => { fillLayerMask(layerMenu.i, 0); layerMenu = null; }}>Hide All</button>
+                      <div class="pcr-ed-menu-sep"></div>
+                      <button onclick={() => { applyLayerMask(layerMenu.i); layerMenu = null; }}>Apply Layer Mask</button>
+                      <button class="danger" onclick={() => { deleteLayerMask(layerMenu.i); layerMenu = null; }}>Delete Layer Mask</button>
+                    </div>
+                  </div>
+                {/if}
+              {/if}
+
+              <!-- Image-wide / destructive -->
+              <div class="pcr-ed-menu-sep"></div>
               <button onclick={() => { flattenImage(); layerMenu = null; }}>Flatten Image</button>
               {#if canDeleteSelected()}
-                <button class="danger" onclick={() => { deleteSelectedLayers(); layerMenu = null; }}>{selectedIds.length > 1 ? "Delete Layers" : "Delete Layer"}</button>
+                <button class="danger" onclick={() => { deleteSelectedLayers(); layerMenu = null; }}>{multi ? "Delete Layers" : "Delete Layer"}</button>
               {/if}
             </div>
           {/if}
@@ -4795,11 +5326,11 @@
             <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
             <div class="pcr-ed-layer-menu" style="left:{canvasMenu.x}px; top:{canvasMenu.y}px;">
               {#if selActive}
-                <button onclick={() => { deselect(); canvasMenu = null; }}>Deselect</button>
-                <button onclick={() => { selectInverse(); canvasMenu = null; }}>Select Inverse</button>
+                <button onclick={() => { deselect(); commitAction("Deselect"); canvasMenu = null; }}>Deselect</button>
+                <button onclick={() => { selectInverse(); commitAction("Select Inverse"); canvasMenu = null; }}>Select Inverse</button>
               {/if}
               <button onclick={() => { canvasMenu = null; beginTransform(); }}>{selActive ? "Free Transform Selection" : "Free Transform Layer"}</button>
-              <button onclick={() => { selectAllRegion(); canvasMenu = null; }}>Select All</button>
+              <button onclick={() => { selectAllRegion(); commitAction("Select All"); canvasMenu = null; }}>Select All</button>
               <button disabled={subjectBusy} onclick={() => { canvasMenu = null; selectSubject(); }}>
                 {subjectBusy ? "Selecting Subject…" : "Select Subject"}</button>
               {#if selActive}
@@ -4938,6 +5469,7 @@
     display: flex; align-items: center; gap: 8px;
     padding: 5px 7px; border-radius: 4px; cursor: pointer;
     background: #1c1c1c; border: 1px solid #2e2e2e;
+    -webkit-user-select: none; user-select: none; /* the name text must not hijack a press-drag */
   }
   .pcr-ed-layer-row:hover { border-color: #3d3d3d; }
   .pcr-ed-layer-row.selected { background: rgba(200, 89, 9, 0.10); border-color: #5a4630; }
@@ -4955,6 +5487,20 @@
   }
   .pcr-ed-layer-menu button:hover { background: #c85909; color: #fff; }
   .pcr-ed-layer-menu button.danger:hover { background: #b23b3b; }
+  .pcr-ed-menu-sep { height: 1px; margin: 4px 6px; background: #3a3a3a; }
+  /* Mask actions collapse into a hover flyout (CSS-only, no timers). The flyout is
+     a DOM descendant of .pcr-ed-layer-menu so the outside-click dismiss still works. */
+  .pcr-ed-submenu-host { position: relative; display: flex; flex-direction: column; }
+  .pcr-ed-submenu-trigger { display: flex; align-items: center; justify-content: space-between; }
+  .pcr-ed-submenu-caret { color: #888; font-size: 11px; margin-left: 8px; }
+  .pcr-ed-submenu {
+    position: absolute; left: 100%; top: -5px; min-width: 160px;
+    background: #232323; border: 1px solid #444; border-radius: 6px; padding: 4px;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.5); display: none; flex-direction: column; z-index: 1;
+  }
+  .pcr-ed-submenu-host.flip .pcr-ed-submenu { left: auto; right: 100%; }
+  .pcr-ed-submenu-host:hover .pcr-ed-submenu, .pcr-ed-submenu:hover { display: flex; }
+  .pcr-ed-submenu-host:hover .pcr-ed-submenu-trigger { background: #c85909; color: #fff; }
   .pcr-ed-layer-bg { cursor: default; opacity: 0.85; }
   .pcr-ed-layer-actions { display: flex; gap: 4px; }
   .pcr-ed-layer-btn {
@@ -4964,8 +5510,8 @@
   .pcr-ed-layer-btn:hover:not(:disabled) { color: #fff; border-color: #555; }
   .pcr-ed-layer-btn:disabled { opacity: 0.4; cursor: default; }
   .pcr-ed-layer-grip {
-    flex: none; width: 12px; text-align: center;
-    font-size: 11px; line-height: 1; color: #555;
+    flex: none; width: 16px; text-align: center;
+    font-size: 12px; line-height: 1; color: #666;
     cursor: grab; user-select: none;
   }
   .pcr-ed-layer-grip:hover { color: #aaa; }
@@ -4976,11 +5522,19 @@
     user-select: none; color: #ccc;
   }
   .pcr-ed-eye.off { color: #666; }
+  /* Photoshop-style layer-mask thumbnail (shows the mask shape; white glow = active paint target). */
+  .pcr-ed-mask-thumb {
+    flex: none; width: 18px; height: 18px; border-radius: 3px;
+    object-fit: cover; background: #000; border: 1px solid #555; cursor: pointer;
+  }
+  .pcr-ed-mask-thumb:hover { border-color: #888; }
+  .pcr-ed-mask-thumb.editing { border-color: #fff; box-shadow: 0 0 0 1px #fff, 0 0 0 3px rgba(255, 255, 255, 0.30); }
   .pcr-ed-layer-name { flex: 1; font-size: 12px; color: #ddd; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pcr-ed-layer-blendtag { margin-left: 5px; font-size: 10px; color: #8b96a5; }
   .pcr-ed-layer-rename {
     flex: 1; min-width: 0; font-size: 12px; color: #eee;
     background: #1b1b1b; border: 1px solid #c85909; border-radius: 3px; padding: 1px 4px;
+    -webkit-user-select: text; user-select: text; /* stays editable under the row's user-select:none */
   }
   .pcr-ed-blend-select {
     width: 100%; margin: 0 0 4px; padding: 3px 6px; font-size: 12px;
@@ -4988,6 +5542,13 @@
   }
   .pcr-ed-blend-select:disabled { opacity: 0.45; }
   .pcr-ed-layer-opacity { width: 70px; accent-color: #c85909; }
+  .pcr-ed-group-row { display: flex; align-items: center; gap: 4px; padding: 3px 5px; border: 1px solid #333; border-radius: 4px;
+    background: rgba(120, 130, 150, 0.12); -webkit-user-select: none; user-select: none; }
+  .pcr-ed-group-row .pcr-ed-eye { cursor: pointer; }
+  .pcr-ed-group-name { flex: 1; font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: default; }
+  .pcr-ed-group-x { background: none; border: none; color: #999; cursor: pointer; font-size: 13px; padding: 0 2px; }
+  .pcr-ed-group-x:hover { color: #fff; }
+  .pcr-ed-layer-row.in-group { margin-left: 14px; }
   .pcr-ed-hist {
     display: flex; flex-direction: column;
     max-height: 170px; overflow-y: auto;
