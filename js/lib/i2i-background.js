@@ -253,7 +253,9 @@ export function buildI2IEngineKrea2(data, options) {
   }
   const { ksId } = attachI2ITail(graph, add, {
     inputRef: data.input_ref, modelRef, clipRef: [clipId, 0], vaeRef: [vaeId, 0], options,
-    clown: realism,
+    // Realism defaults to the author's Clown sampler, but the user can pick a
+    // normal sampler in the modal to override it — then run a plain KSampler.
+    clown: realism && (!options.sampler || /clownshar/i.test(options.sampler)),
     steps: numOr(options.steps, raw ? 40 : 8),
     cfg: numOr(options.cfg, raw ? 3.5 : 1.0),
     sampler: options.sampler || (raw ? "er_sde" : "euler"),

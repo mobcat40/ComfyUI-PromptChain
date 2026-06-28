@@ -4519,7 +4519,7 @@ function I2IModal($$anchor, $$props) {
   }
   let recSampler = user_derived(() => {
     var _a;
-    return get(engineEntry) ? engineRecipe(get(engineEntry)).sampler : (_a = caps()) == null ? void 0 : _a.recommendedSampler;
+    return get(realism) ? "ClownsharKSampler_Beta" : get(engineEntry) ? engineRecipe(get(engineEntry)).sampler : (_a = caps()) == null ? void 0 : _a.recommendedSampler;
   });
   let recScheduler = user_derived(() => {
     var _a;
@@ -4527,9 +4527,18 @@ function I2IModal($$anchor, $$props) {
   });
   let recSteps = user_derived(() => engineRecipe(get(engineEntry)).steps);
   let recCfg = user_derived(() => engineRecipe(get(engineEntry)).cfg);
+  let samplerOptions = user_derived(() => {
+    var _a, _b;
+    return get(realism) ? ["ClownsharKSampler_Beta", ...((_a = caps()) == null ? void 0 : _a.samplerOptions) || []] : ((_b = caps()) == null ? void 0 : _b.samplerOptions) || [];
+  });
   function pickEngine(value) {
     var _a, _b, _c, _d;
     set(engineSel, value, true);
+    set(
+      realism,
+      false
+      // an engine switch resets the Realism preset (re-tick after)
+    );
     const entry = ((_b = (_a = caps()) == null ? void 0 : _a.engineModels) == null ? void 0 : _b.find((m) => m.hash === value)) || null;
     const r = engineRecipe(entry);
     if (entry) {
@@ -4542,6 +4551,15 @@ function I2IModal($$anchor, $$props) {
     set(steps, r.steps, true);
     set(cfg, r.cfg, true);
     set(denoise, r.denoise, true);
+  }
+  function setRealism(on) {
+    set(realism, on, true);
+    if (on) {
+      set(sampler, "ClownsharKSampler_Beta");
+      set(steps, 8);
+      set(cfg, 1);
+      set(denoise, 0.6);
+    } else pickEngine(get(engineSel));
   }
   function editorModelInfo() {
     var _a;
@@ -5007,7 +5025,8 @@ function I2IModal($$anchor, $$props) {
             var consequent_12 = ($$anchor4) => {
               var label = root_17$3();
               var input = child(label);
-              bind_checked(input, () => get(realism), ($$value) => set(realism, $$value));
+              template_effect(() => set_checked(input, get(realism)));
+              delegated("change", input, (e) => setRealism(e.currentTarget.checked));
               append($$anchor4, label);
             };
             if_block(node_12, ($$render) => {
@@ -5084,7 +5103,7 @@ function I2IModal($$anchor, $$props) {
           var div_33 = child(div_32);
           var select = sibling(child(div_33), 2);
           let classes_4;
-          each(select, 21, () => caps().samplerOptions, index, ($$anchor4, opt) => {
+          each(select, 21, () => get(samplerOptions), index, ($$anchor4, opt) => {
             var option = root_23$2();
             let styles_1;
             var text_4 = child(option);
@@ -5126,8 +5145,7 @@ function I2IModal($$anchor, $$props) {
           append($$anchor3, div_32);
         };
         if_block(node_17, ($$render) => {
-          var _a, _b;
-          if ((_b = (_a = caps()) == null ? void 0 : _a.samplerOptions) == null ? void 0 : _b.length) $$render(consequent_16);
+          if (get(samplerOptions).length) $$render(consequent_16);
         });
       }
       var div_35 = sibling(node_17, 2);
@@ -5269,7 +5287,8 @@ delegate([
   "pointerdown",
   "pointermove",
   "pointerup",
-  "contextmenu"
+  "contextmenu",
+  "change"
 ]);
 var root_4$6 = from_html(`<div class="pcr-adj-slider svelte-k7hhb3"><span class="pcr-adj-label svelte-k7hhb3"> </span> <!></div>`);
 var root_3$6 = from_html(`<div class="pcr-adj-group-body svelte-k7hhb3"></div>`);

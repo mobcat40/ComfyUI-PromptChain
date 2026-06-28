@@ -100,18 +100,30 @@
     const r = entry.i2i || {};
     return { steps: r.steps ?? 0, cfg: r.cfg ?? 0, denoise: r.denoise ?? caps?.defaultDenoise ?? 0.55, sampler: r.sampler || "", scheduler: r.scheduler || "" };
   }
-  let recSampler = $derived(engineEntry ? engineRecipe(engineEntry).sampler : caps?.recommendedSampler);
+  let recSampler = $derived(realism ? "ClownsharKSampler_Beta" : (engineEntry ? engineRecipe(engineEntry).sampler : caps?.recommendedSampler));
   let recScheduler = $derived(engineEntry ? engineRecipe(engineEntry).scheduler : caps?.recommendedScheduler);
   let recSteps = $derived(engineRecipe(engineEntry).steps);
   let recCfg = $derived(engineRecipe(engineEntry).cfg);
+  // Realism adds the author's ClownsharKSampler as a sampler option (its default);
+  // pick any normal sampler to override it ("guide it away").
+  let samplerOptions = $derived(realism ? ["ClownsharKSampler_Beta", ...(caps?.samplerOptions || [])] : (caps?.samplerOptions || []));
 
   function pickEngine(value) {
     engineSel = value;
+    realism = false; // an engine switch resets the Realism preset (re-tick after)
     const entry = caps?.engineModels?.find((m) => m.hash === value) || null;
     const r = engineRecipe(entry);
     if (entry) { sampler = r.sampler; scheduler = r.scheduler; }
     else { sampler = caps?.defaultSampler || ""; scheduler = caps?.defaultScheduler || ""; }
     steps = r.steps; cfg = r.cfg; denoise = r.denoise;
+  }
+
+  // Realism is a preset — exactly like picking an engine: ticking it drops the
+  // recipe into the dials (adjust after); unticking restores the engine's recipe.
+  function setRealism(on) {
+    realism = on;
+    if (on) { sampler = "ClownsharKSampler_Beta"; steps = 8; cfg = 1; denoise = 0.6; }
+    else pickEngine(engineSel);
   }
 
   // Model identity for the prompt editor's templates/autocomplete: the picked
@@ -455,7 +467,7 @@
               {/if}
               {#if realismAvailable}
                 <label class="pcr-ip-hint" style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-top:6px;">
-                  <input type="checkbox" bind:checked={realism} />
+                  <input type="checkbox" checked={realism} onchange={(e) => setRealism(e.currentTarget.checked)} />
                   Realism — abliterated encoder + wan VAE + realism/bypass LoRAs (NSFW-capable)
                 </label>
               {/if}
@@ -487,12 +499,12 @@
               <SettingsSlider min={0.05} max={1} step={0.01} value={denoise}
                 savedValue={engineRecipe(engineEntry).denoise} onChange={(v) => { denoise = v; }} />
             </div>
-            {#if caps?.samplerOptions?.length}
+            {#if samplerOptions.length}
               <div class="pcr-ip-combos">
                 <div class="pcr-ip-combo">
                   <label class="pcr-ip-label" for="pcr-i2i-sampler">Sampler</label>
                   <select id="pcr-i2i-sampler" class="pcr-ip-select" class:at-rec={sampler === recSampler} bind:value={sampler}>
-                    {#each caps.samplerOptions as opt}
+                    {#each samplerOptions as opt}
                       <option value={opt} style:color={opt === recSampler ? "#5ed357" : "#999"}>{opt}{opt === recSampler ? "  ●" : ""}</option>
                     {/each}
                   </select>
