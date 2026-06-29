@@ -232,6 +232,14 @@
   let charactersTotal = $state(0);
   let charactersLoading = $state(false);
   let charactersSearchHandle = null;
+  // Infinite-scroll paging for the character rail: the backend returns the top
+  // 60 by post_count per page; loadMoreCharacters appends the next page as the
+  // user scrolls, so a narrowed category (e.g. anime, video_game) is fully
+  // browsable instead of capped at the first 60.
+  let charactersPage = 1;
+  let charactersQuery = "";
+  let charactersCategory = "";
+  let charactersLoadingMore = $state(false);
   // Set of character tags that have a thumb on disk (served from
   // /thumb/characters/<tag>). Loaded once on mount.
   let characterThumbs = $state(new Set());
@@ -885,18 +893,25 @@
     styleSpawned = false;
   }
 
+  async function fetchCharacterPage(page) {
+    // Sort by post_count for relevance — popular characters surface first.
+    const params = new URLSearchParams({ page: String(page), per_page: "60", sort: "post_count" });
+    if (charactersQuery) params.set("search", charactersQuery);
+    if (charactersCategory) params.set("category", charactersCategory);
+    // Only show characters whose natlangs have been curated.
+    params.set("natlang_status", "normalized");
+    const res = await fetch(`/promptchain/tag-builder/characters?${params}`);
+    if (!res.ok) throw new Error("character fetch failed");
+    return res.json();
+  }
+
   async function loadCharacters(query, category) {
+    charactersQuery = query || "";
+    charactersCategory = category || "";
+    charactersPage = 1;
     charactersLoading = true;
     try {
-      // Sort by post_count for relevance — popular characters surface first.
-      const params = new URLSearchParams({ page: "1", per_page: "60", sort: "post_count" });
-      if (query) params.set("search", query);
-      if (category) params.set("category", category);
-      // Only show characters whose natlangs have been curated.
-      params.set("natlang_status", "normalized");
-      const res = await fetch(`/promptchain/tag-builder/characters?${params}`);
-      if (!res.ok) throw new Error("character fetch failed");
-      const data = await res.json();
+      const data = await fetchCharacterPage(1);
       characters = data.characters || [];
       charactersTotal = data.total || 0;
     } catch (e) {
@@ -905,6 +920,39 @@
       charactersTotal = 0;
     }
     charactersLoading = false;
+  }
+
+  // Append the next character page (infinite scroll). Re-entry guarded; stops
+  // once every matching row is loaded. Dedups by tag in case pages overlap.
+  async function loadMoreCharacters() {
+    if (charactersLoadingMore || charactersLoading) return;
+    if (characters.length >= charactersTotal) return;
+    charactersLoadingMore = true;
+    try {
+      const data = await fetchCharacterPage(charactersPage + 1);
+      const more = data.characters || [];
+      if (more.length) {
+        const seen = new Set(characters.map(c => c.tag));
+        characters = [...characters, ...more.filter(c => !seen.has(c.tag))];
+        charactersPage += 1;
+      }
+      charactersTotal = data.total ?? charactersTotal;
+    } catch (e) {
+      console.error("[TagBuilder2] character load-more failed", e);
+    }
+    charactersLoadingMore = false;
+  }
+
+  // Svelte action: load the next character page when this sentinel scrolls
+  // near the bottom of the browser pane, so the rail fills on scroll (and
+  // auto-fills the next page when the first doesn't fill the viewport).
+  function characterLoadMore(node) {
+    const root = node.closest(".pcr-atb2-browser");
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) loadMoreCharacters();
+    }, { root: root || null, rootMargin: "300px" });
+    io.observe(node);
+    return { destroy() { io.disconnect(); } };
   }
 
   function loadCast(group) {
@@ -5188,7 +5236,11 @@
                 {/each}
               </div>
               {#if charactersTotal > characters.length}
-                <div class="pcr-atb2-empty">Showing top {characters.length} of {charactersTotal} — narrow your search to find more.</div>
+                <div class="pcr-atb2-empty" use:characterLoadMore>
+                  {charactersLoadingMore
+                    ? "Loading more…"
+                    : `Showing ${characters.length} of ${charactersTotal.toLocaleString()} — scroll for more`}
+                </div>
               {/if}
             {/if}
           {:else}

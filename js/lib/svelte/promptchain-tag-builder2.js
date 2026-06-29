@@ -1938,6 +1938,10 @@ function TagBuilder2($$anchor, $$props) {
   let charactersTotal = state(0);
   let charactersLoading = state(false);
   let charactersSearchHandle = null;
+  let charactersPage = 1;
+  let charactersQuery = "";
+  let charactersCategory = "";
+  let charactersLoadingMore = state(false);
   let characterThumbs = state(proxy(/* @__PURE__ */ new Set()));
   const CARD_MIN_PX_KEY = "pcr-atb2-card-min-px";
   const CARD_MIN_PX_MIN = 60;
@@ -2434,16 +2438,22 @@ function TagBuilder2($$anchor, $$props) {
     set(activeStyle, null);
     set(styleSpawned, false);
   }
+  async function fetchCharacterPage(page) {
+    const params = new URLSearchParams({ page: String(page), per_page: "60", sort: "post_count" });
+    if (charactersQuery) params.set("search", charactersQuery);
+    if (charactersCategory) params.set("category", charactersCategory);
+    params.set("natlang_status", "normalized");
+    const res = await fetch(`/promptchain/tag-builder/characters?${params}`);
+    if (!res.ok) throw new Error("character fetch failed");
+    return res.json();
+  }
   async function loadCharacters(query, category) {
+    charactersQuery = query || "";
+    charactersCategory = category || "";
+    charactersPage = 1;
     set(charactersLoading, true);
     try {
-      const params = new URLSearchParams({ page: "1", per_page: "60", sort: "post_count" });
-      if (query) params.set("search", query);
-      if (category) params.set("category", category);
-      params.set("natlang_status", "normalized");
-      const res = await fetch(`/promptchain/tag-builder/characters?${params}`);
-      if (!res.ok) throw new Error("character fetch failed");
-      const data = await res.json();
+      const data = await fetchCharacterPage(1);
       set(characters, data.characters || [], true);
       set(charactersTotal, data.total || 0, true);
     } catch (e) {
@@ -2452,6 +2462,46 @@ function TagBuilder2($$anchor, $$props) {
       set(charactersTotal, 0);
     }
     set(charactersLoading, false);
+  }
+  async function loadMoreCharacters() {
+    if (get(charactersLoadingMore) || get(charactersLoading)) return;
+    if (get(characters).length >= get(charactersTotal)) return;
+    set(charactersLoadingMore, true);
+    try {
+      const data = await fetchCharacterPage(charactersPage + 1);
+      const more = data.characters || [];
+      if (more.length) {
+        const seen = new Set(get(characters).map((c) => c.tag));
+        set(
+          characters,
+          [
+            ...get(characters),
+            ...more.filter((c) => !seen.has(c.tag))
+          ],
+          true
+        );
+        charactersPage += 1;
+      }
+      set(charactersTotal, data.total ?? get(charactersTotal), true);
+    } catch (e) {
+      console.error("[TagBuilder2] character load-more failed", e);
+    }
+    set(charactersLoadingMore, false);
+  }
+  function characterLoadMore(node) {
+    const root2 = node.closest(".pcr-atb2-browser");
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) loadMoreCharacters();
+      },
+      { root: root2 || null, rootMargin: "300px" }
+    );
+    io.observe(node);
+    return {
+      destroy() {
+        io.disconnect();
+      }
+    };
   }
   function loadCast(group) {
     var _a2;
@@ -6274,7 +6324,10 @@ ${filtered}` : filtered;
                 var consequent_27 = ($$anchor5) => {
                   var div_35 = root_40();
                   var text_28 = child(div_35);
-                  template_effect(() => set_text(text_28, `Showing top ${get(characters).length ?? ""} of ${get(charactersTotal) ?? ""} — narrow your search to find more.`));
+                  action(div_35, ($$node) => characterLoadMore == null ? void 0 : characterLoadMore($$node));
+                  template_effect(($0) => set_text(text_28, $0), [
+                    () => get(charactersLoadingMore) ? "Loading more…" : `Showing ${get(characters).length} of ${get(charactersTotal).toLocaleString()} — scroll for more`
+                  ]);
                   append($$anchor5, div_35);
                 };
                 if_block(node_25, ($$render) => {
