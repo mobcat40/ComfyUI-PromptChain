@@ -3298,10 +3298,10 @@ def _safe_thumb_segment(value: str) -> bool:
         return False
     if "/" in value or "\\" in value:
         return False
-    # A ':' lets a Windows drive-letter token (e.g. "C:") reset the Path join
-    # and escape THUMBS_ROOT.
-    if ":" in value:
-        return False
+    # ":" is intentionally allowed: character tags legitimately contain it
+    # (e.g. "2b_(nier:automata)") and the on-disk lookup goes through
+    # _sanitize_thumb_stem (":" -> "_", drive tokens neutralised) before any
+    # filesystem join, so a raw ":" segment never reaches THUMBS_ROOT.
     if ".." in value or value.startswith("."):
         return False
     return True
@@ -3375,12 +3375,14 @@ def _sanitize_thumb_stem(item_tag: str) -> str:
 def _thumb_filename_variants(item_tag: str) -> list[str]:
     # Emoticon expression tags (":D", ">_<", ">:(") and ":"-bearing character
     # tags can't be filenames verbatim; on disk they use the sanitized stem.
-    # The frontend keeps using the canonical tag in URLs, so try both.
-    variants = [item_tag]
+    # When sanitization changes the tag we use ONLY the sanitized stem as the
+    # path segment — feeding the raw tag to the filesystem join would let a
+    # Windows drive token (e.g. "C:") escape THUMBS_ROOT. The on-disk file is
+    # always the sanitized name, so the raw variant would never match anyway.
     sanitized = _sanitize_thumb_stem(item_tag)
-    if sanitized != item_tag:
-        variants.append(sanitized)
-    return variants
+    if sanitized == item_tag:
+        return [item_tag]
+    return [sanitized]
 
 
 @routes.get("/promptchain/tag-builder/thumb/{bucket}/{item_tag}")
