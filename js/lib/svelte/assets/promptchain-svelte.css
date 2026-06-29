@@ -5756,6 +5756,14 @@
     flex-direction: column;
     gap: 6px;
     position: relative;
+    /* The "all" view mounts thousands of cards but only ~30-50 are ever on
+       screen. content-visibility defers layout/paint of off-screen cards until
+       they near the viewport — they stay in the DOM (queryable, scrollable,
+       find-in-page), so behaviour is unchanged but the initial open is cheap.
+       The auto intrinsic size remembers each card's real height after first
+       paint, keeping scroll height stable. */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 150px;
   }
   .pcr-atb2-card-mod-dot.svelte-ibd6yj {
     display: inline-block;
