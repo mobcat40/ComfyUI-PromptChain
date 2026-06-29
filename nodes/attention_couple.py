@@ -71,15 +71,17 @@ def patch_model_regional(model, base_cond, regions, base_weight: float):
     weights = torch.stack(weight_maps, dim=0)        # [num_conds, 1, H, W]
     weights = weights / weights.sum(dim=0, keepdim=True)  # per-pixel sum == 1
 
-    state = {"device": None}
+    state = {"device": None, "dtype": None}
 
     def _to(device, dtype):
-        if state["device"] == device:
+        if state["device"] == device and state["dtype"] == dtype:
             return
         state["conds"] = [c.to(device, dtype=dtype) for c in cond_embeds]
         # collapse the singleton channel so the mask is [num_conds, H, W]
         state["weights"] = weights.squeeze(1).to(device, dtype=dtype)
         state["device"] = device
+        state["dtype"] = dtype
+        state["region_kv_lcm"] = None  # invalidate cached region K/V (rebuilt below)
 
     def attn2_patch(q, k, v, extra_options):
         _to(q.device, q.dtype)
@@ -105,11 +107,16 @@ def patch_model_regional(model, base_cond, regions, base_weight: float):
                 full_lcm = full_lcm * t // math.gcd(full_lcm, t)
 
         # text-embedding stack for one image: each region prompt repeated along
-        # the token axis to the common LCM length, then over the batch.
-        region_kv = torch.cat(
-            [c.repeat(1, full_lcm // token_counts[i], 1) for i, c in enumerate(conds)],
-            dim=0,
-        )  # [num_conds, full_lcm, ctx]
+        # the token axis to the common LCM length. Constant across every
+        # attention layer and step of a render, so build once per (device, dtype,
+        # lcm) and reuse — only the per-batch interleave below varies.
+        if state.get("region_kv_lcm") != full_lcm:
+            state["region_kv"] = torch.cat(
+                [c.repeat(1, full_lcm // token_counts[i], 1) for i, c in enumerate(conds)],
+                dim=0,
+            )  # [num_conds, full_lcm, ctx]
+            state["region_kv_lcm"] = full_lcm
+        region_kv = state["region_kv"]
 
         out_q, out_kv = [], []
         for i, kind in enumerate(chunk_kinds):
@@ -241,10 +248,17 @@ class AttentionCoupleNode(io.ComfyNode):
         for n, (r, idx) in enumerate(zip(region_list, region_figure_indices(region_list, pose))):
             if orphans[n]:
                 continue
+            # Empty $block → fall back to the global prompt inside that figure
+            # (matches RegionalConditioning / ZImageRegionalCouple). Otherwise the
+            # empty CLIP encode competes with the global at weight 1.0 and starves
+            # the figure of ~2/3 of its guidance.
+            text = (r.get("text") or "").strip()
+            if not text:
+                continue
             idx = min(max(idx, 0), num_masks - 1)
             mask = _dilate(masks[idx:idx + 1], mask_dilation)
             regions_for_patch.append(
-                {"cond": encode(r.get("text", "")), "mask": mask, "weight": 1.0})
+                {"cond": encode(text), "mask": mask, "weight": 1.0})
 
         # Every region was an orphan -> no regional split; just the global cond.
         if not regions_for_patch:

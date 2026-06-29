@@ -330,7 +330,7 @@
 
     <!-- prompt output tab -->
     {#if activeTab === "prompt"}
-      <PromptOutput compiledOutput={shared.compiledOutput} compiledNegOutput={shared.compiledNegOutput} />
+      <PromptOutput compiledOutput={shared.compiledOutput} compiledNegOutput={shared.compiledNegOutput} compiledRegions={shared.compiledRegions} />
     {/if}
 
     <!-- console log tab — kept mounted to preserve log history across tab switches -->

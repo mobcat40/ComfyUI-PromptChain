@@ -1160,6 +1160,30 @@ function deleteSupersededSet(previousRef, newBase) {
   }).catch((e) => console.warn("[PoseStudio] superseded-set delete failed", e));
 }
 
+// Pin a content-addressed capture set so a later re-pose's superseded-delete
+// can't remove it (the delete route honours <base>.keep). Fire-and-forget.
+function pinCaptureSet(ref) {
+  const name = ref?.split("/").pop()?.replace(/ \[\w+\]$/, "") || "";
+  const base = name.endsWith(".png") ? name.slice(0, -4) : null;
+  if (!base || !/^promptchain_pose_[0-9a-f]{12}$/.test(base)) return;
+  api.fetchApi("/promptchain/pose-files/pin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ base }),
+  }).catch((e) => console.warn("[PoseStudio] pin failed", e));
+}
+
+// Before a prompt is enqueued, pin every live Poser's current control map so a
+// re-pose while that render waits in a busy queue can't GC the set it
+// references (execute() also pins, but only once the render actually starts).
+function pinLivePoserSets() {
+  for (const n of poseRegistry.all()) {
+    if (!n._pcrAlive) continue;
+    const ref = n.widgets?.find((w) => w.name === "control_map")?.value;
+    if (ref) pinCaptureSet(ref);
+  }
+}
+
 async function captureAndUpload(node) {
   const ps = node._pcrPose;
   if (!ps || !node._pcrAlive) return; // bail if torn down (renderer may be disposed)
@@ -1885,6 +1909,16 @@ async function mountViewport(node, container) {
     return;
   }
   if (!node._pcrAlive) return; // node was removed during the async load
+  // Re-mount safety: drop a prior mount's global capture listeners before
+  // building a new scene — node._pcrPose is overwritten at the end of this
+  // function, so without this a re-mount would leak the previous keydown/
+  // pointerdown/contextmenu handlers (a duplicate global Ctrl+Z over a dead scene).
+  const _priorPose = node._pcrPose;
+  if (_priorPose) {
+    if (_priorPose.onKey) window.removeEventListener("keydown", _priorPose.onKey, true);
+    if (_priorPose.onWinPointerDown) window.removeEventListener("pointerdown", _priorPose.onWinPointerDown, true);
+    if (_priorPose.onContextMenu) window.removeEventListener("contextmenu", _priorPose.onContextMenu, true);
+  }
   const { THREE, OrbitControls, TransformControls, GLTFLoader, OBJLoader } = lib;
 
   const scene = new THREE.Scene();
@@ -3398,6 +3432,7 @@ async function mountViewport(node, container) {
   // stay depth dressing). Uses the live materials so skinning/pose is preserved;
   // isolates by visibility, so it survives overlaps a screen-space split can't.
   let maskTarget = null;
+  let maskOverrideMat = null; // shared silhouette override — built once, disposed in disposeCapture (not per capture)
   let captureBusy = false; // blocks renderFrame from clobbering renderer state mid-capture
   const captureRegionMasks = async () => {
     // Mask-row order = entity order: figures first (so heads[] / detailer face
@@ -3464,7 +3499,8 @@ async function mountViewport(node, container) {
       // with the normal lit materials bakes shading into the mask (~0.6 gray),
       // which downstream consumers multiply by — the regional detailer's
       // re-render strength was silently capped at that gray level.
-      scene.overrideMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      if (!maskOverrideMat) maskOverrideMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      scene.overrideMaterial = maskOverrideMat;
       for (let i = 0; i < entities.length; i++) {
         const ent = entities[i];
         figures.forEach((f) => { f.root.visible = ent.kind === "figure" && f === ent.o; });
@@ -3506,7 +3542,7 @@ async function mountViewport(node, container) {
     return out;
   };
   const disposeCapture = () => {
-    captureTarget?.dispose(); maskTarget?.dispose();
+    captureTarget?.dispose(); maskTarget?.dispose(); maskOverrideMat?.dispose();
     depthOutTarget?.dispose(); depthLinearGeo.dispose(); depthLinearMat.dispose();
     outlineTarget?.dispose(); outlineQuadGeo.dispose();
     outlineQuadMat.dispose(); outlineDepthMat.dispose(); outlineSelMat.dispose(); outlineActMat.dispose();
@@ -5943,7 +5979,12 @@ async function mountViewport(node, container) {
   const MAX_FOLD = 0.95; // rad (~54°) max bend at any single joint — generous enough for tight corkscrews, tight enough to stop the inside-out kink / tangent-flip singularity
   const COS_HALF_FOLD = Math.cos(MAX_FOLD / 2); // min next-nearest distance = (len[i]+len[i+1]) * this
   const chainRopeStep = () => {
-    if (!chainDrag.active || !chainDrag.prop || !propsGroup.children.includes(chainDrag.prop)) { chainDrag.settling = false; return; }
+    // Liveness guard FIRST: a node torn down mid chain-drag (Ctrl+Z rebuild,
+    // workflow switch) never fires pointerup, so chainDrag.active stays true and
+    // the prop stays in propsGroup — without this the rAF loop re-arms forever on
+    // disposed three.js objects. No cancelAnimationFrame exists, so the loop must
+    // self-terminate on the teardown flag.
+    if (!node._pcrAlive || !chainDrag.active || !chainDrag.prop || !propsGroup.children.includes(chainDrag.prop)) { chainDrag.settling = false; return; }
     const prop = chainDrag.prop, rope = chainDrag.rope, lens = chainDrag.ropeLens;
     const n = rope.length - 1, pin = chainDrag.pinIdx, grab = chainDrag.driveCount;
     const pinTarget = chainPinTarget(prop, _ropeTmp).clone();
@@ -11134,6 +11175,20 @@ export async function mountDetachedPoser(parentEl, { width = 832, height = 1216,
 
 app.registerExtension({
   name: "PromptChain.PoseStudio",
+  setup() {
+    // Pin-on-enqueue: wrap the queue action once so a busy-queue re-pose can't
+    // GC a capture set whose render is still pending (execute() pins only when
+    // the render actually starts). Event-driven — reacts to the queue action,
+    // never polls — and always delegates to the original.
+    if (!app._pcrPoseQueueHook && typeof app.queuePrompt === "function") {
+      app._pcrPoseQueueHook = true;
+      const origQueue = app.queuePrompt.bind(app);
+      app.queuePrompt = function (...args) {
+        try { pinLivePoserSets(); } catch (e) { console.warn("[PoseStudio] pin-on-queue failed", e); }
+        return origQueue(...args);
+      };
+    }
+  },
   async nodeCreated(node) {
     if (node.comfyClass !== NODE_TYPE) return;
     setupPoseStudio(node);

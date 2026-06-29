@@ -1701,12 +1701,14 @@ app.registerExtension({
           if (!this.properties) this.properties = {};
           this.properties.pcrCompiledOutput = message.text[0];
           this.properties.pcrCompiledNegOutput = message.neg_text?.[0] || "";
+          this.properties.pcrCompiledRegions = message.regions?.[0] || "";
           this._pcrOutputText = message.text[0];
           this._pcrNegOutputText = message.neg_text?.[0] || "";
           this._pcrRegionsText = message.regions?.[0] || "";
           if (shared) {
             shared.compiledOutput = message.text[0];
             shared.compiledNegOutput = message.neg_text?.[0] || "";
+            shared.compiledRegions = message.regions?.[0] || "";
           }
           updateInputLabels(this);
           requestAnimationFrame(() => attachSlotClickHandlers(this));

@@ -17,7 +17,7 @@ _HASHED_BASE_RE = re.compile(r"^promptchain_pose_[0-9a-f]{12}$")
 
 
 class PoseStudioNode(io.ComfyNode):
-    """Posable 3D figure -> control map (depth / openpose).
+    """Posable 3D figure -> control map (clay render / white pose-anchor / depth).
 
     The figure is posed in a Three.js viewport rendered in the node body.
     On every pose change the viewport renders the chosen control map, uploads
@@ -85,11 +85,17 @@ class PoseStudioNode(io.ComfyNode):
         # silhouette intersection. Content-addressed sets upload masks right
         # after their map and can't go stale, so they pass this untouched.
         if paths and control_map_path and os.path.exists(control_map_path):
-            map_mtime = os.path.getmtime(control_map_path)
-            if max(os.path.getmtime(p) for p in paths) < map_mtime - 5:
-                print(f"[PoseStudio] ignoring {len(paths)} stale mask file(s) "
-                      "(older than the control map — different scene)")
-                paths = []
+            try:
+                map_mtime = os.path.getmtime(control_map_path)
+                if max(os.path.getmtime(p) for p in paths) < map_mtime - 5:
+                    print(f"[PoseStudio] ignoring {len(paths)} stale mask file(s) "
+                          "(older than the control map — different scene)")
+                    paths = []
+            except OSError:
+                # A concurrent delete/overwrite (legacy in-place set) between the
+                # glob and these stats — skip the staleness check rather than 500;
+                # the per-file read loop below already tolerates missing files.
+                pass
 
         def mask_index(p):
             m = re.search(r"_mask(\d+)\.png$", p)
@@ -186,10 +192,15 @@ class PoseStudioNode(io.ComfyNode):
         if control_map and control_map.strip():
             path = folder_paths.get_annotated_filepath(control_map)
             if os.path.exists(path):
-                m = hashlib.sha256()
-                with open(path, "rb") as f:
-                    m.update(f.read())
-                m.update(pose_state.encode("utf-8"))
-                m.update(dims.encode("utf-8"))
-                return m.digest().hex()
+                try:
+                    m = hashlib.sha256()
+                    with open(path, "rb") as f:
+                        m.update(f.read())
+                    m.update(pose_state.encode("utf-8"))
+                    m.update(dims.encode("utf-8"))
+                    return m.digest().hex()
+                except OSError:
+                    # File vanished between exists() and open (re-pose / GC race) —
+                    # fall through to the no-file fingerprint rather than crashing.
+                    pass
         return pose_state + dims

@@ -279,8 +279,8 @@ class ZImageRegionalCoupleNode(io.ComfyNode):
     @classmethod
     def execute(cls, model, clip, regions: str = "", masks: torch.Tensor = None,
                 base_weight: float = 1.0, mask_dilation: int = 22,
-                region_strength: float = 8.0, figure_isolation: float = 6.0,
-                end_percent: float = 0.55, pose: str = "") -> io.NodeOutput:
+                region_strength: float = 1.0, figure_isolation: float = 4.0,
+                end_percent: float = 0.7, pose: str = "") -> io.NodeOutput:
 
         def encode_raw(text):
             tokens = clip.tokenize(text or "")

@@ -69,6 +69,35 @@ async def delete_pose_files(request):
     return ok_response({"deleted": deleted})
 
 
+@routes.post("/promptchain/pose-files/pin")
+async def pin_pose_files(request):
+    """Mark a content-addressed capture set permanent (write <base>.keep).
+
+    Called when a prompt referencing the set is ENQUEUED, closing the window
+    between queue and the node's execute() (which also pins): during a busy
+    queue, a re-pose would otherwise fire the superseded-delete on a set whose
+    render is still waiting, losing its map + the only copy of its region masks.
+    The delete route already refuses any base carrying a .keep.
+    """
+    data, err = await parse_json(request)
+    if err:
+        return err
+    base = data.get("base", "")
+    if not _is_hashed(base):
+        return error_response("not a content-addressed pose base")
+    pose_dir = _pose_dir()
+    # Only pin a set whose map is actually on disk — don't litter markers.
+    if not os.path.exists(os.path.join(pose_dir, base + ".png")):
+        return ok_response({"pinned": False})
+    marker = os.path.join(pose_dir, base + ".keep")
+    if not os.path.exists(marker):
+        try:
+            open(marker, "w").close()
+        except OSError as e:
+            return error_response(f"could not pin: {e}")
+    return ok_response({"pinned": True})
+
+
 # ── imported meshes (.glb/.obj props) ────────────────────────────────────────
 
 _MESH_EXTS = {".glb", ".gltf", ".obj"}
@@ -111,12 +140,14 @@ async def upload_pose_mesh(request):
             return error_response(f"mesh exceeds {_MESH_MAX_BYTES // (1024 * 1024)}MB")
     if not data:
         return error_response("empty upload")
-    name = hashlib.sha256(bytes(data)).hexdigest()[:16] + ext
+    name = hashlib.sha256(data).hexdigest()[:16] + ext  # hash the bytearray directly — no full copy
     mesh_dir = _mesh_dir()
     os.makedirs(mesh_dir, exist_ok=True)
     path = os.path.join(mesh_dir, name)
     if not os.path.exists(path):
-        tmp = path + ".part"
+        # Unique temp so two concurrent uploads of the same content (same path)
+        # don't write/replace each other's .part mid-flight.
+        tmp = f"{path}.part-{os.getpid()}-{os.urandom(4).hex()}"
         with open(tmp, "wb") as f:
             f.write(data)
         os.replace(tmp, path)
@@ -242,9 +273,14 @@ async def save_pose_preset(request):
 async def delete_pose_preset(request):
     name = request.match_info["name"]
     path = os.path.join(_pose_presets_dir(), _pose_preset_slug(name) + ".json")
-    if not os.path.isfile(path):
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        # Already gone (e.g. a second tab deleted it) — the user's intent is
+        # satisfied; report 404 rather than 500ing on the lost race.
         return error_response("not found", status=404)
-    os.remove(path)
+    except OSError as e:
+        return error_response(f"could not delete: {e}")
     return ok_response()
 
 

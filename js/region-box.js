@@ -328,7 +328,9 @@ function setupRegionBox(node) {
   }
   function uniqueName() {
     let n = 1;
-    const have = new Set(boxes.map((b) => b.name));
+    // Case-insensitive: the backend lowercases entity names, so 'Hero'/'hero'
+    // collide to one mask — match that here so names stay unambiguous.
+    const have = new Set(boxes.map((b) => b.name.toLowerCase()));
     while (have.has("region" + n)) n++;
     return "region" + n;
   }
@@ -541,7 +543,9 @@ function setupRegionBox(node) {
     if (i < 0) return;
     const next = sanitize(raw);
     if (!next || next === boxes[i].name) { renderList(); return; }
-    if (boxes.some((b, j) => j !== i && b.name === next)) { renderList(); return; } // keep unique
+    // Case-insensitive uniqueness — the backend lowercases names, so 'Hero' and
+    // 'hero' would otherwise pass here then collide to one mask row.
+    if (boxes.some((b, j) => j !== i && b.name.toLowerCase() === next.toLowerCase())) { renderList(); return; }
     const old = boxes[i].name;
     boxes[i].name = next;
     persist();

@@ -74,8 +74,48 @@ def strip_comments(text: str) -> str:
 # =============================================================================
 # A `$name { body }` group pins `body` to the mannequin identified by `name`
 # (e.g. $mannequin1). Anything OUTSIDE every group is the shared/global prompt.
-# Non-greedy body so adjacent groups don't merge; DOTALL so a group spans lines.
-MANNEQUIN_RE = re.compile(r"\$(\w+)\s*\{(.*?)\}", re.DOTALL)
+# The close brace is matched by DEPTH (not the first `}`) so a wildcard or
+# <SCRIPT> brace inside a body ({a|b}) doesn't truncate the region and leak the
+# rest into the global prompt.
+_REGION_OPEN_RE = re.compile(r"\$(\w+)\s*\{")
+
+
+def _iter_region_spans(text: str):
+    """Yield (name, body, start, end) for each `$name{ ... }` group, matching the
+    close brace by depth so nested braces survive. start..end spans the whole
+    `$name{...}` (braces included) for removing it from the global remainder."""
+    if not text or "$" not in text:
+        return
+    pos = 0
+    while True:
+        m = _REGION_OPEN_RE.search(text, pos)
+        if not m:
+            return
+        depth, i = 1, m.end()
+        while i < len(text) and depth > 0:
+            c = text[i]
+            if c == "{":
+                depth += 1
+            elif c == "}":
+                depth -= 1
+            i += 1
+        if depth != 0:
+            # Unbalanced (no matching close): take the rest as the body rather
+            # than loop forever, matching the old regex's graceful give-up.
+            yield m.group(1), text[m.end():], m.start(), len(text)
+            return
+        yield m.group(1), text[m.end():i - 1], m.start(), i
+        pos = i
+
+
+def _remove_region_spans(text: str, spans) -> str:
+    """`text` with each (.., start, end) span removed (for the global remainder)."""
+    parts, cursor = [], 0
+    for *_meta, start, end in spans:
+        parts.append(text[cursor:start])
+        cursor = end
+    parts.append(text[cursor:])
+    return "".join(parts)
 
 
 def strip_region_markers(text: str) -> str:
@@ -87,7 +127,16 @@ def strip_region_markers(text: str) -> str:
     """
     if not text or "$" not in text:
         return text
-    return MANNEQUIN_RE.sub(lambda m: m.group(2), text)
+    spans = list(_iter_region_spans(text))
+    if not spans:
+        return text
+    parts, cursor = [], 0
+    for _name, body, start, end in spans:
+        parts.append(text[cursor:start])
+        parts.append(body)
+        cursor = end
+    parts.append(text[cursor:])
+    return "".join(parts)
 
 
 def compile_regions(text: str, **compile_kwargs) -> dict:
@@ -98,12 +147,22 @@ def compile_regions(text: str, **compile_kwargs) -> dict:
     existing feature. `id` is the trailing integer of the name ($mannequin1 -> 1)
     for positional figure binding; falls back to 1-based order if name has none.
     """
-    groups = [(m.group(1), m.group(2)) for m in MANNEQUIN_RE.finditer(text or "")]
-    global_text = MANNEQUIN_RE.sub("", text or "")
+    # Strip comments FIRST so example $name{} blocks in the // help scaffold
+    # (e.g. "//   $alice{ red dress }") aren't extracted as real regions — that
+    # turned a 2-region prompt into a 5-region mess and broke binding.
+    text = strip_comments(text or "")
+    spans = list(_iter_region_spans(text))
+    groups = [(name, body) for name, body, _s, _e in spans]
+    global_text = _remove_region_spans(text, spans) if spans else text
     g_pos, g_neg, _ = compile_prompt(global_text, **compile_kwargs)
 
     regions = []
     for name, body in groups:
+        # A region is ONE figure's description — a continuous phrase, not a lazy
+        # tag-stack. So its line breaks collapse to spaces (a wildcard or phrase
+        # spread across lines reads naturally) instead of the global's
+        # newline→comma. Commas the user types still separate.
+        body = re.sub(r"\s*\n\s*", " ", body)
         r_pos, _, _ = compile_prompt(body, **compile_kwargs)
         num = re.search(r"(\d+)$", name)
         rid = int(num.group(1)) if num else len(regions) + 1
@@ -127,6 +186,8 @@ def _pose_entity_index(pose_json: str = "") -> tuple[list[str], int | None]:
         pose = json.loads(pose_json)
     except (json.JSONDecodeError, TypeError, AttributeError):
         return [], None
+    if not isinstance(pose, dict):
+        return [], None  # json.loads accepts scalars/arrays/null — .get would crash
     ents = pose.get("regionEntities")
     if isinstance(ents, list) and ents:
         names = [str((e.get("name") if isinstance(e, dict) else None) or "").lower()
@@ -577,7 +638,11 @@ def _resolve_braces(text: str) -> str:
         match = re.search(r"\{([^{}]+)\}", text)
         if not match:
             break
-        options = [opt.strip() for opt in match.group(1).split("|") if opt.strip()]
+        # Strip whitespace AND leading/trailing commas off each option. Lines are
+        # comma-joined before braces resolve, so a multi-line wildcard can hand us
+        # ", red" or "blue,"; internal commas (a multi-tag option like "a, b") are
+        # kept so {a⏎b|c⏎d} resolves to "a, b" / "c, d".
+        options = [o for o in (opt.strip(" \t\r\n,") for opt in match.group(1).split("|")) if o]
         replacement = random.choice(options) if options else ""
         text = text[:match.start()] + replacement + text[match.end():]
     return text.strip()

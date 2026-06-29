@@ -24,7 +24,8 @@ class TEDDetector:
     def from_pretrained(cls, pretrained_model_or_path=BDS_MODEL_NAME, filename="7_model.pth", subfolder="Annotators"):
         model_path = custom_hf_download(pretrained_model_or_path, filename, subfolder=subfolder)
         model = TED()
-        model.load_state_dict(torch.load(model_path, map_location='cpu'))
+        # weights_only: pure state_dict — refuse the code-executing legacy pickle path.
+        model.load_state_dict(torch.load(model_path, map_location='cpu', weights_only=True))
         model.eval()
         return cls(model)
 

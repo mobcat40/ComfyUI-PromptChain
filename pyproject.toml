@@ -5,7 +5,7 @@
 
 [project]
 name = "comfyui-promptchain"
-version = "0.1.9"
+version = "0.1.10"
 description = "Prompt-authoring and image-iteration suite for ComfyUI: structured prompts, 3D posing, model awareness, regional control, and layered editing."
 license = { file = "LICENSE" }
 requires-python = ">=3.10"

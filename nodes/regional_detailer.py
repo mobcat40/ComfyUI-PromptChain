@@ -17,6 +17,7 @@ from comfy_api.latest import io
 
 from ..core.compiler import (figure_entity_names, region_figure_count,
                              region_figure_indices, region_orphans)
+from ..core.crop_windows import crop_hint_to_window as _crop_hint_to_window
 
 log = logging.getLogger("promptchain.regional_detailer")
 
@@ -203,17 +204,6 @@ def _crop_noise_mask(crop_h: int, crop_w: int, face_rect, feather: int,
     return box * m.view(crop_h, crop_w)
 
 
-def _crop_hint_to_window(t, win, img_h, img_w, sh, sw):
-    """Resize a (...,H,W) hint to canvas, crop the detail window, resize to the
-    sampled crop dims — the per-crop remap the tiled upscaler does."""
-    cx1, cy1, cx2, cy2 = win
-    t = t.float()
-    if t.shape[-2:] != (img_h, img_w):
-        t = F.interpolate(t, size=(img_h, img_w), mode="bilinear", align_corners=False)
-    t = t[..., cy1:cy2, cx1:cx2]
-    return F.interpolate(t, size=(sh, sw), mode="bilinear", align_corners=False)
-
-
 def _crop_cond_to_window(cond, mask_win, ctrl_win, img_h: int, img_w: int, sh: int, sw: int):
     """Crop every region mask AND ControlNet hint in a conditioning to the
     detail window and rescale to the sampled crop dims, so RegionalConditioning's
@@ -245,24 +235,31 @@ def _crop_cond_to_window(cond, mask_win, ctrl_win, img_h: int, img_w: int, sh: i
             mm = m.float()
             if mm.dim() == 2:
                 mm = mm.unsqueeze(0)
-            new_meta["mask"] = _crop_hint_to_window(mm.unsqueeze(1), mask_win, img_h, img_w, sh, sw).squeeze(1)
+            new_meta["mask"] = _crop_hint_to_window(
+                mm.unsqueeze(1), mask_win, img_h, img_w, sh, sw, mode="nearest-exact").squeeze(1)
         if ctrl is not None:
-            # Walk the ControlNet chain, cropping each hint — mirrors the
-            # tiled upscaler's crop_controlnet. Best-effort: a control object
-            # whose internals differ just keeps its (misaligned) hint rather
-            # than 500ing the whole inpaint, so depth degrades, never breaks.
+            # Walk the ControlNet chain, cropping each hint — mirrors the tiled
+            # upscaler's crop_controlnet. Per-link best-effort: a link with no
+            # hint (or an odd internal layout) is left as-is so it degrades only
+            # itself, instead of one bad link reverting the WHOLE chain to the
+            # uncropped/misaligned hint. The outer guard keeps a catastrophic
+            # copy failure from 500ing the inpaint — depth degrades, never breaks.
             try:
                 new_ctrl = ctrl.copy()
                 new_meta["control"] = new_ctrl
                 c, nc = ctrl, new_ctrl
                 while c is not None:
-                    nc.cond_hint_original = _crop_hint_to_window(
-                        nc.cond_hint_original, ctrl_win, img_h, img_w, sh, sw)
+                    try:
+                        if nc.cond_hint_original is not None:
+                            nc.cond_hint_original = _crop_hint_to_window(
+                                nc.cond_hint_original, ctrl_win, img_h, img_w, sh, sw)
+                    except Exception as e:  # noqa: BLE001 — one link only
+                        log.warning("control-hint crop failed for one link (%s); leaving it uncropped", e)
                     c = c.previous_controlnet
                     nc.set_previous_controlnet(c.copy() if c is not None else None)
                     nc = nc.previous_controlnet
-            except Exception as e:  # noqa: BLE001 — diagnostic, never fatal
-                log.warning("control-hint crop failed (%s); leaving hint uncropped", e)
+            except Exception as e:  # noqa: BLE001 — chain copy failed; never fatal
+                log.warning("control-hint chain copy failed (%s); leaving hint uncropped", e)
                 new_meta["control"] = ctrl
         out.append([emb, new_meta])
     return out

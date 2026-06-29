@@ -3640,6 +3640,7 @@
   /* {@html} content — needs :global */
   .pcr-output-panel-label-pos { color: #4fc3f7; font-weight: 600; }
   .pcr-output-panel-label-neg { color: #e74c3c; font-weight: 600; }
+  .pcr-output-panel-label-region { color: #ffb74d; font-weight: 600; }
   .pcr-output-panel-placeholder {
     color: rgba(255, 255, 255, 0.4);
     font-style: italic;

@@ -1968,14 +1968,25 @@ function injectRegional(pcNode, modelConfig) {
   if (!LG) return false;
 
   const downstream = findDownstreamNodes(pcNode);
-  const ksNode = downstream.find(n => n.comfyClass === "KSampler" || n.comfyClass === "KSamplerAdvanced");
+  // Samplers that expose positive/negative/model directly so the reroute below
+  // can trace them. Custom/RES4LYF recipes (e.g. krea2 realism's
+  // ClownsharKSampler_Beta) were silently unsupported before — Regional bailed
+  // with a mislabeled "no attachment point" toast.
+  const REGIONAL_SAMPLERS = ["KSampler", "KSamplerAdvanced", "SamplerCustom", "ClownsharKSampler_Beta"];
+  const ksNode = downstream.find(n => REGIONAL_SAMPLERS.includes(n.comfyClass));
   if (!ksNode) return false;
 
-  const poseNode = (graph._nodes || []).find(n => n.comfyClass === "PromptChain_PoseStudio");
+  // Mask producer: a 3D Poser (preferred — richer scene) OR a Region Box. Both
+  // expose the same MASKS + POSE_JSON contract, so either can drive Regional;
+  // previously only a Poser was accepted, so a Region-Box-only graph couldn't
+  // use the one-click path despite region-box.js documenting parity.
+  const nodes = graph._nodes || [];
+  const poseNode = nodes.find(n => n.comfyClass === "PromptChain_PoseStudio")
+    || nodes.find(n => n.comfyClass === "PromptChain_RegionBox");
   if (!poseNode) {
     app.extensionManager?.toast?.add({
-      severity: "warn", summary: "Add a 3D pose first",
-      detail: "Regional needs a PromptChain 3D Poser in the graph — add 'Depth + 3D pose', pose your figures, then add Regional.",
+      severity: "warn", summary: "Add a pose or region box first",
+      detail: "Regional needs a PromptChain 3D Poser or Region Box in the graph — add one, place your figures/boxes, then add Regional.",
       life: 7000,
     });
     return false;
@@ -2042,7 +2053,9 @@ function injectRegional(pcNode, modelConfig) {
   // $blocks cohere into ONE scene). Other DiTs (Flux/SD3/…) have no ported couple yet, so
   // they fall back to ComfyUI-native masked conditioning here.
   const arch = modelConfig?.architecture || "";
-  const NATIVE_REGIONAL_ARCH = new Set(["flux", "flux2", "sd3", "hidream", "qwen_image", "qwen_edit", "krea2"]);
+  // krea2 deliberately excluded: native cond-mask regional doesn't localize on
+  // Flux-based DiT (GPU-tested — regions smear onto the subject).
+  const NATIVE_REGIONAL_ARCH = new Set(["flux", "flux2", "sd3", "hidream", "qwen_image", "qwen_edit"]);
   if (NATIVE_REGIONAL_ARCH.has(arch)) {
     const rc = LG.createNode("PromptChain_RegionalConditioning");
     if (!rc) return false;
@@ -3108,17 +3121,12 @@ export async function showModelModal(pcNode, modelInfo, anchorEl, { tab = null }
           ],
         });
       }
-      // Krea 2 has no published ControlNet (and ComfyUI's krea2 model class exposes
-      // no control hook), but native cond-mask regional works — PromptChain_RegionalConditioning
-      // is model-agnostic. Offer Regional only.
-      if (arch === "krea2") {
-        items.push({
-          label: "ControlNet",
-          children: [
-            { label: "Regional", value: "ControlNet:regional" },
-          ],
-        });
-      }
+      // Krea 2 has no working regional path: it's a Flux.1-dev finetune, and
+      // Flux/DiT models don't honour ComfyUI's native cond-area masks (the only
+      // regional engine available to krea2). GPU-tested — "a cat"/"a dog" boxes
+      // smeared onto the main subject instead of separating. A real krea2
+      // regional would need a Flux attention-couple node (like ZImageRegionalCouple),
+      // which doesn't exist; until then Regional is intentionally NOT offered.
       // Z-Image ControlNet (DiffSynth model-patch path; core nodes + aux
       // preprocessors). The control model is family-specific: Turbo's is
       // step-distilled, base's isn't, and they're NOT cross-compatible — so a

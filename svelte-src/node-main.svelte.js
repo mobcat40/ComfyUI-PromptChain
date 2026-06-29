@@ -39,6 +39,7 @@ export class SharedState {
   // execution output
   compiledOutput = $state("");
   compiledNegOutput = $state("");
+  compiledRegions = $state("");  // regions JSON for the region-aware output panel
 
   // image preview
   imageUrl = $state(null);
@@ -65,6 +66,7 @@ export class SharedState {
     this.regionPanelVisible = !!p.pcrRegionPanel;
     this.compiledOutput = p.pcrCompiledOutput || "";
     this.compiledNegOutput = p.pcrCompiledNegOutput || "";
+    this.compiledRegions = p.pcrCompiledRegions || "";
   }
 }
 

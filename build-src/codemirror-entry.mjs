@@ -783,15 +783,26 @@ function formatRegionInner(inner) {
 }
 
 function formatWithRegions(text) {
-  const OPEN = /\$[A-Za-z]\w*\s*\{/g;
+  const OPEN = /\$\w+\s*\{/g;  // \w+ to match the compiler/binding rule (digit-leading names too)
   let result = "";
   let last = 0;
   let m;
   while ((m = OPEN.exec(text)) !== null) {
     const openBrace = m.index + m[0].length - 1;
-    const close = text.indexOf("}", openBrace + 1);
-    if (close === -1) continue; // unterminated — leave it for the linter to flag
-    const name = m[0].match(/^\$[A-Za-z]\w*/)[0];
+    // Find the region's close by brace DEPTH, not the first `}` — otherwise a
+    // wildcard brace ({a|b}) inside the body ends the region early, spilling the
+    // rest into the wildcard formatter and splitting a phrase across lines (which
+    // the newline→comma rule then turns into an unwanted comma).
+    let depth = 1, j = openBrace + 1;
+    while (j < text.length && depth > 0) {
+      const ch = text[j];
+      if (ch === "{") depth++;
+      else if (ch === "}") depth--;
+      j++;
+    }
+    if (depth !== 0) continue; // unterminated — leave it for the linter to flag
+    const close = j - 1;
+    const name = m[0].match(/^\$\w+/)[0];
     const before = text.slice(last, m.index);
     if (before.trim()) result += formatPromptText(before).trim() + "\n\n";
     const inner = text.slice(openBrace + 1, close);

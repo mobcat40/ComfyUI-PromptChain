@@ -9,53 +9,121 @@ from comfy_api.latest import io
 logger = logging.getLogger("promptchain.ideogram_caption")
 
 
+# Non-photographic media. If the prompt names one, the style_description must use
+# the art_style path (aesthetics,lighting,medium,art_style) instead of the photo
+# path (aesthetics,lighting,photo,medium) — Ideogram's caption verifier requires
+# exactly one of photo|art_style.
+# Most specific first so e.g. "watercolor illustration" resolves to "watercolor",
+# not the generic "illustration"/"render" which sit last as catch-alls.
+_ART_MEDIA = ("watercolor", "oil painting", "3d render", "concept art", "pixel art",
+              "line art", "cel shaded", "digital art", "gouache", "acrylic",
+              "woodcut", "lithograph", "manga", "anime", "comic", "cartoon",
+              "painting", "drawing", "sketch", "vector", "illustration", "render")
+
+
+def _medium_word(text: str) -> str:
+    """The rendering medium named in the prompt, or 'photograph' by default."""
+    t = (text or "").lower()
+    return next((m for m in _ART_MEDIA if m in t), "photograph")
+
+
+def _clean(text: str) -> str:
+    """Tidy the lazily-joined global prompt: a region/line join can leave 'focus., x'
+    or doubled commas/spaces. Cosmetic, but it lands verbatim in background/aesthetics."""
+    t = re.sub(r"\s*\.\s*,", ", ", text or "")
+    t = re.sub(r"\s*,\s*,", ", ", t)
+    return re.sub(r"\s+", " ", t).strip(" ,")
+
+
+def _first_clause(text: str, max_words: int) -> str:
+    """First sentence/line of `text`, word-capped — for a terse style/summary line."""
+    t = (text or "").strip()
+    for sep in (". ", ".\n", "\n"):
+        if sep in t:
+            t = t.split(sep, 1)[0]
+            break
+    words = t.strip().rstrip(".").split()
+    return " ".join(words[:max_words])
+
+
+def _short_subject(desc: str) -> str:
+    """A subject's first comma-clause, word-capped — its brief mention in the HLD
+    (the full description still lives in the element's `desc`)."""
+    first = (desc or "").strip().split(",")[0].strip()
+    return " ".join(first.split()[:8])
+
+
+def _human_join(items: list[str]) -> str:
+    items = [i for i in items if i]
+    if len(items) <= 1:
+        return items[0] if items else ""
+    if len(items) == 2:
+        return f"{items[0]} and {items[1]}"
+    return ", ".join(items[:-1]) + f", and {items[-1]}"
+
+
+def _style_block(text: str) -> dict:
+    """An Ideogram `style_description` object in the verifier's strict key order.
+
+    Photographic by default; switches to the art_style path when the prompt names
+    a non-photo medium. Omitting style_description samples outside the model's
+    training distribution and (per Ideogram) raises the safety false-positive
+    rate, so we always emit a conforming one; its shared aesthetics/lighting also
+    bind multiple regions into a single coherent scene instead of a collage."""
+    medium = _medium_word(text)
+    aesthetics = _first_clause(text, 16) or "natural and true to life"
+    if medium != "photograph":
+        return {"aesthetics": aesthetics, "lighting": "soft, even lighting",
+                "medium": "digital art", "art_style": medium}
+    return {"aesthetics": aesthetics, "lighting": "natural light",
+            "photo": "sharp focus, realistic detail", "medium": "photograph"}
+
+
 def _caption(text: str) -> str:
-    """Wrap a plain PromptChain prompt in a COMPLETE Ideogram JSON caption.
+    """Wrap a plain (region-less) PromptChain prompt in a COMPLETE Ideogram caption.
 
     Ideogram 4 was trained on structured JSON captions and its built-in safety
-    *false-positive* rate is far higher for non-conforming prompts (official:
-    "false positive rates ... higher for non-json like prompts"). Empirically,
-    on flagged content (e.g. a swimsuit/rear-pose character): plain text AND a
-    JSON wrapper with an EMPTY `elements` array both block ~100% across seeds,
-    while a COMPLETE caption — high_level_description + background + at least one
-    real `element` — passes ~100% regardless of where the content sits (HLD,
-    background, or element). So the whole prompt goes into one element's `desc`
-    under a benign summary: that completeness is what makes the model read it as
-    a conforming caption rather than falling back to the non-JSON safety path.
-    """
-    t = (text or "").strip()
-    # The element bbox must be an INSET subregion: empirically a full-frame
-    # [0,0,1000,1000] bbox AND omitting bbox both block ~100% on flagged content,
-    # while an inset region passes (the model reads it as "an object placed in a
-    # scene" rather than "the whole image IS this object"). Centred, with margins
-    # on all sides; the desc still drives the full composition.
+    *false-positive* rate is higher for non-conforming prompts (official:
+    "false positive rates ... higher for non-json like prompts"). The single
+    documented lever to reduce refusals is a conforming caption, so we emit all
+    three top-level keys (high_level_description, style_description,
+    compositional_deconstruction) with one bbox'd element — a boxless element
+    re-trips the safety gray screen (ideogram4 issue #13)."""
+    t = _clean(text)
+    hld = (_first_clause(t, 40) or "A high-quality, detailed image.").rstrip(".") + "."
     return json.dumps({
-        "high_level_description": "A high-quality, detailed image.",
+        "high_level_description": hld,
+        "style_description": _style_block(t),
         "compositional_deconstruction": {
-            "background": "a fitting background that suits the subject",
-            "elements": [{"type": "obj", "bbox": [60, 250, 990, 770], "desc": t}],
+            "background": "a setting that suits the subject",
+            "elements": [{"type": "obj", "bbox": list(_FULL_FRAME_INSET),
+                          "desc": t or "the subject"}],
         },
     }, separators=(",", ":"), ensure_ascii=False)
 
 
-# Ideogram bbox is [y_min, x_min, y_max, x_max] on a 0-1000 grid, top-left origin.
-_FULL_FRAME_INSET = [60, 250, 990, 770]  # the proven single-element box
+# Ideogram bbox is [y_min, x_min, y_max, x_max] on a 0-1000 grid, top-left origin
+# (verified against ideogram4's shipped caption_verifier.py). Used as the fallback
+# box for a region the user gave no Region Box — an element with NO bbox re-trips
+# the safety gray screen (ideogram4 issue #13), so every element gets one.
+_FULL_FRAME_INSET = [60, 250, 990, 770]
 
 
-def _inset_bbox(bbox) -> list[int]:
-    """Clamp a box to 0-1000 and guarantee it is an INSET (never full-frame).
+def _clamp_bbox(bbox) -> list[int]:
+    """Clamp a user-drawn box to the 0-1000 grid (y-first, y0<y1 / x0<x1).
 
-    A full-frame element re-trips the safety false-positive (the model reads it
-    as "the whole image IS this object"). A user-drawn box is normally inset
-    already; this only rescues an edge-to-edge box."""
+    A drawn box is kept AS DRAWN — Ideogram bboxes are soft placement hints that
+    are meant to overlap and nest (the canonical multi-subject examples do), so
+    forcing a large box to a fixed inset only mis-places the subject. Only a
+    degenerate (zero-area) box falls back to the centred box, purely to keep the
+    safety-required bbox presence."""
     try:
         y0, x0, y1, x1 = (int(round(v)) for v in bbox)
     except (TypeError, ValueError):
         return list(_FULL_FRAME_INSET)
     y0, y1 = sorted((max(0, min(1000, y0)), max(0, min(1000, y1))))
     x0, x1 = sorted((max(0, min(1000, x0)), max(0, min(1000, x1))))
-    # Degenerate or effectively full-frame -> fall back to the proven inset.
-    if x1 - x0 < 10 or y1 - y0 < 10 or (x1 - x0 >= 990 and y1 - y0 >= 990):
+    if x1 - x0 < 10 or y1 - y0 < 10:
         return list(_FULL_FRAME_INSET)
     return [y0, x0, y1, x1]
 
@@ -74,14 +142,17 @@ def _load(obj):
 # A leading quoted literal ('...' or "...") in a `$name{}` region's BODY marks a
 # TEXT element — Ideogram renders that exact string (its headline feature). This
 # is a property of a real scope (the region body), never of a comment.
-_LITERAL_RE = re.compile(r"""^\s*['"](.+?)['"]\s*(.*)$""", re.DOTALL)
+# The closing quote must be the SAME character that opened (\1 backreference),
+# so a double-quoted literal containing an apostrophe ("Mom's Diner") isn't
+# truncated at the apostrophe.
+_LITERAL_RE = re.compile(r"""^\s*(['"])(.+?)\1\s*(.*)$""", re.DOTALL)
 
 
 def _split_literal(s: str):
     """('LITERAL', rest-as-desc) if s starts with a quoted literal, else (None, s)."""
     m = _LITERAL_RE.match(s or "")
     if m:
-        return m.group(1).strip(), m.group(2).strip()
+        return m.group(2).strip(), m.group(3).strip()
     return None, (s or "").strip()
 
 
@@ -104,36 +175,33 @@ def _mk_text(e: dict) -> dict:
     return o
 
 
-def _pos_word(bbox) -> str:
-    """A rough placement word from a 0-1000 [y0,x0,y1,x1] box, for the HLD."""
-    if not (isinstance(bbox, (list, tuple)) and len(bbox) == 4):
-        return ""
-    xc = (bbox[1] + bbox[3]) / 2.0
-    yc = (bbox[0] + bbox[2]) / 2.0
-    h = "left" if xc < 400 else "right" if xc > 600 else ""
-    v = "top" if yc < 350 else "bottom" if yc > 650 else ""
-    if h and v:
-        return f"{v} {h}"
-    return h or v or "centre"
-
-
 def _build_caption(prompt_text: str, region_list: list, box_by_name: dict,
                    background_text: str = "") -> str | None:
     """Build a conforming Ideogram caption from the prompt text + `$name{}` regions.
 
     Comments are NOT parsed — `prompt_text` is the already comment-stripped prompt
-    (minus the regions). Structure comes ONLY from real scopes: the reserved
-    `$background{ ... }` region -> the `background` field; each other `$name{}`
-    region -> one element placed at its drawn box (bbox optional, matched by name);
-    a region whose body starts with a quoted literal `"..."` -> a `type:"text"`
-    element (Ideogram renders that exact string). The remaining prompt text ->
-    high_level_description. A complete caption (HLD + background + >=1 INSET-bbox
-    element) keeps the safety bypass, so we anchor one element (preferring a
-    subject) with the proven inset when no drawn box supplied one. Returns None
-    when there's nothing to build.
+    (minus the regions). Structure maps onto Ideogram's real schema (three keys in
+    order: high_level_description, style_description, compositional_deconstruction):
+
+      - each non-reserved `$name{}` region -> ONE element placed at its drawn box
+        (kept as drawn; bbox optional, matched by name). A region body that starts
+        with a quoted literal `"..."` -> a `type:"text"` element.
+      - the SCENE goes in `background`: the reserved `$background{ ... }` region if
+        present, else the leftover global prompt. Ideogram composes the subjects
+        INTO the background — without a real one it stages them as separate framed
+        photos (the collage failure), so we never emit a vague placeholder.
+      - `high_level_description` is a TERSE summary that names the subjects in prose
+        (the per-subject detail stays in each element's `desc`, not duplicated into
+        the HLD — over-stuffing the HLD over-weights the dominant subject and
+        invites a duplicate in the other box).
+      - `style_description` is always emitted; its shared style binds the regions
+        into one image and lowers the safety false-positive rate.
+
+    Returns None when there's nothing to build.
     """
     raw_obj: list[dict] = []
     raw_text: list[dict] = []
+    subjects: list[str] = []
     for r in region_list:
         name = str(r.get("name", "")).lower()
         box = box_by_name.get(name)
@@ -142,51 +210,46 @@ def _build_caption(prompt_text: str, region_list: list, box_by_name: dict,
             if box is None:
                 continue                        # nothing to place; the HLD covers it
             d = name or "subject"               # box drawn but no text: keep the placement
-        bbox = _inset_bbox(box) if box is not None else None
+        bbox = _clamp_bbox(box) if box is not None else None
         lit, rest = _split_literal(d)
-        e = {"text": lit, "desc": rest} if lit is not None else {"desc": d}
+        if lit is not None:
+            e = {"text": lit, "desc": rest}
+            subjects.append(f'a sign reading "{lit}"')
+            target = raw_text
+        else:
+            e = {"desc": d}
+            subjects.append(_short_subject(d))
+            target = raw_obj
         if bbox is not None:
             e["bbox"] = bbox
-        (raw_text if lit is not None else raw_obj).append(e)
+        target.append(e)
 
-    prompt_text = (prompt_text or "").strip()
-    if raw_obj or raw_text:
-        # Ideogram leans HARD on the high_level_description; a STYLE-ONLY HLD lets
-        # it free-compose (e.g. a whole wedding party instead of one woman + one
-        # man). Weave the subjects + their box positions into the summary so the
-        # count and placement actually stick.
-        phrases = []
-        for e in raw_obj + raw_text:
-            d = (e.get("desc") or e.get("text") or "").strip()
-            if not d:
-                continue
-            pos = _pos_word(e.get("bbox"))
-            phrases.append(f"{d} on the {pos}" if pos else d)
-        summary = ", and ".join(phrases)
-        if summary and prompt_text:
-            hld = f"{prompt_text.rstrip(' .')}, showing {summary}."
-        elif summary:
-            hld = summary[:1].upper() + summary[1:] + "."
-        else:
-            hld = prompt_text or "A high-quality, detailed image."
-    else:
+    prompt_text = _clean(prompt_text)
+    if not (raw_obj or raw_text):
         if not prompt_text:
             return None
         raw_obj = [{"desc": prompt_text}]      # no regions: the prompt is the subject
-        hld = "A high-quality, detailed image."
+        subjects = []
 
-    # safety: guarantee >=1 element carries an inset bbox (a boxless / full-frame
-    # caption re-trips the safety false-positive). Prefer anchoring a subject.
+    # >=1 element must carry a bbox — a boxless caption re-trips the safety gray
+    # screen (ideogram4 issue #13). Anchor a subject with the centred fallback.
     if not any("bbox" in e for e in raw_obj + raw_text):
         (raw_obj[0] if raw_obj else raw_text[0])["bbox"] = list(_FULL_FRAME_INSET)
 
-    elements = [_mk_obj(o) for o in raw_obj] + [_mk_text(t) for t in raw_text]
-    background = (background_text or "").strip() or "a fitting background that suits the subject"
+    if subjects:
+        medium = _medium_word(prompt_text)
+        lead = "An" if medium[:1].lower() in "aeiou" else "A"
+        hld = f"{lead} {medium} of {_human_join(subjects)}."
+    else:
+        hld = (prompt_text or "A high-quality, detailed image.").rstrip(".") + "."
+
+    background = (background_text or "").strip() or prompt_text or "a fitting scene"
     cap = {
         "high_level_description": hld,
+        "style_description": _style_block(prompt_text),
         "compositional_deconstruction": {
             "background": background,
-            "elements": elements,
+            "elements": [_mk_obj(o) for o in raw_obj] + [_mk_text(t) for t in raw_text],
         },
     }
     return json.dumps(cap, separators=(",", ":"), ensure_ascii=False)
@@ -278,8 +341,8 @@ class IdeogramCaptionNode(io.ComfyNode):
         # Caption from the prompt text + $name{} region scopes only. Comments are
         # never parsed for structure — they are stripped by the compiler.
         caption = _build_caption(prompt_text, subjects, box_by_name, background_text)
-        if caption:
-            return io.NodeOutput(caption)
-        if not s:
-            return io.NodeOutput(text)
-        return io.NodeOutput(_caption(text))
+        if not caption:
+            caption = _caption(text) if s else text
+        # Ground truth for diagnosing renders: the exact JSON the model receives.
+        logger.info("[IdeogramCaption] %s", caption)
+        return io.NodeOutput(caption)

@@ -4,7 +4,7 @@ var __typeError = (msg) => {
 var __accessCheck = (obj, member, msg) => member.has(obj) || __typeError("Cannot " + msg);
 var __privateGet = (obj, member, getter) => (__accessCheck(obj, member, "read from private field"), getter ? getter.call(obj) : member.get(obj));
 var __privateAdd = (obj, member, value) => member.has(obj) ? __typeError("Cannot add the same private member more than once") : member instanceof WeakSet ? member.add(obj) : member.set(obj, value);
-var _mode, _switchIndex, _locked, _disabled, _collapsed, _connectedCount, _hasLabels, _switchLabel, _iterateCurrent, _iterateTotal, _iterateCycle, _switchOptions, _outputPanelOpen, _imagePanelVisible, _aiAssistantOpen, _posePanelVisible, _regionPanelVisible, _hasPoseStudio, _hasRegionBox, _compiledOutput, _compiledNegOutput, _imageUrl, _previewUrl, _progress, _isGenerating, _rollSelected;
+var _mode, _switchIndex, _locked, _disabled, _collapsed, _connectedCount, _hasLabels, _switchLabel, _iterateCurrent, _iterateTotal, _iterateCycle, _switchOptions, _outputPanelOpen, _imagePanelVisible, _aiAssistantOpen, _posePanelVisible, _regionPanelVisible, _hasPoseStudio, _hasRegionBox, _compiledOutput, _compiledNegOutput, _compiledRegions, _imageUrl, _previewUrl, _progress, _isGenerating, _rollSelected;
 import { p as push, o as bind_this, k as append, l as pop, A as from_html, d as delegate, a as prop, g as get, j as delegated, m as user_derived, s as state, c as proxy, u as user_effect, i as if_block, f as sibling, r as event, e as set, C as tick, n as child, D as comment, v as first_child, w as each, t as template_effect, y as set_text, h as set_class, x as set_attribute, Q as clsx, z as index, R as text, E as untrack, M as unmount, L as mount } from "./disclose-version-et9wt-4m.js";
 import { u as useApi, p as provideApi } from "./api-context-BNqvELYR.js";
 import { M as Menubar } from "./Menubar-CMm15KuK.js";
@@ -34,7 +34,13 @@ function EditorPane($$anchor, $$props) {
 var root$c = from_html(`<div class="pcr-output-panel-content pcr-scrollable svelte-qbaa69" tabindex="0"></div>`);
 function PromptOutput($$anchor, $$props) {
   push($$props, true);
-  let compiledOutput = prop($$props, "compiledOutput", 3, ""), compiledNegOutput = prop($$props, "compiledNegOutput", 3, "");
+  let compiledOutput = prop($$props, "compiledOutput", 3, ""), compiledNegOutput = prop($$props, "compiledNegOutput", 3, ""), compiledRegions = prop(
+    $$props,
+    "compiledRegions",
+    3,
+    ""
+    // JSON {global, regions:[{name,text}], negative} sent with the compile
+  );
   const _HTML_ESCAPES = {
     "&": "&amp;",
     "<": "&lt;",
@@ -45,9 +51,38 @@ function PromptOutput($$anchor, $$props) {
   function escapeHtml(text2) {
     return String(text2).replace(/[&<>"']/g, (c) => _HTML_ESCAPES[c]);
   }
+  let regional = user_derived(() => {
+    if (!compiledRegions()) return null;
+    try {
+      const o = JSON.parse(compiledRegions());
+      return o && Array.isArray(o.regions) && o.regions.length ? o : null;
+    } catch {
+      return null;
+    }
+  });
   let html$1 = user_derived(() => {
-    if (!compiledOutput() && !compiledNegOutput()) {
+    if (!compiledOutput() && !compiledNegOutput() && !get(regional)) {
       return '<span class="pcr-output-panel-placeholder">Queue workflow to see prompt output</span>';
+    }
+    if (get(regional)) {
+      const regEmpty = '<span class="pcr-output-panel-placeholder">(empty → uses global)</span>';
+      let result2 = "";
+      for (const reg of get(regional).regions) {
+        const body = (reg.text || "").trim();
+        result2 += `<span class="pcr-output-panel-label-region">$${escapeHtml(reg.name || "")}</span>
+${body ? escapeHtml(body) : regEmpty}
+
+`;
+      }
+      const g = (get(regional).global || "").trim();
+      result2 += `<span class="pcr-output-panel-label-pos">Global:</span>
+${g ? escapeHtml(g) : '<span class="pcr-output-panel-placeholder">(none)</span>'}`;
+      const neg = get(regional).negative || compiledNegOutput();
+      if (neg) result2 += `
+
+<span class="pcr-output-panel-label-neg">Negative:</span>
+${escapeHtml(neg)}`;
+      return result2;
     }
     let result = `<span class="pcr-output-panel-label-pos">Positive:</span>
 ${escapeHtml(compiledOutput())}`;
@@ -516,6 +551,9 @@ function OutputPanel($$anchor, $$props) {
         },
         get compiledNegOutput() {
           return $$props.shared.compiledNegOutput;
+        },
+        get compiledRegions() {
+          return $$props.shared.compiledRegions;
         }
       });
     };
@@ -3917,6 +3955,7 @@ class SharedState {
     __privateAdd(this, _hasRegionBox, state(false));
     __privateAdd(this, _compiledOutput, state(""));
     __privateAdd(this, _compiledNegOutput, state(""));
+    __privateAdd(this, _compiledRegions, state(""));
     __privateAdd(this, _imageUrl, state(null));
     __privateAdd(this, _previewUrl, state(null));
     __privateAdd(this, _progress, state(null));
@@ -3939,6 +3978,7 @@ class SharedState {
     this.regionPanelVisible = !!p.pcrRegionPanel;
     this.compiledOutput = p.pcrCompiledOutput || "";
     this.compiledNegOutput = p.pcrCompiledNegOutput || "";
+    this.compiledRegions = p.pcrCompiledRegions || "";
   }
   get mode() {
     return get(__privateGet(this, _mode));
@@ -4066,6 +4106,12 @@ class SharedState {
   set compiledNegOutput(value) {
     set(__privateGet(this, _compiledNegOutput), value, true);
   }
+  get compiledRegions() {
+    return get(__privateGet(this, _compiledRegions));
+  }
+  set compiledRegions(value) {
+    set(__privateGet(this, _compiledRegions), value, true);
+  }
   get imageUrl() {
     return get(__privateGet(this, _imageUrl));
   }
@@ -4118,6 +4164,7 @@ _hasPoseStudio = new WeakMap();
 _hasRegionBox = new WeakMap();
 _compiledOutput = new WeakMap();
 _compiledNegOutput = new WeakMap();
+_compiledRegions = new WeakMap();
 _imageUrl = new WeakMap();
 _previewUrl = new WeakMap();
 _progress = new WeakMap();
