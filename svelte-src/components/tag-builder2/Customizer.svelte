@@ -8,6 +8,7 @@
   let {
     item,                // chip the user is customizing: { item_tag, display_name, base_tags, base_natlang, item_group }
     initial = null,      // { color, pattern, material, condition, focus } — pre-fill when editing
+    isNaturalMode = false, // current output mode, so the preview + focus match what the parent emits
     onConfirm = () => {},
     onCancel = () => {},
   } = $props();
@@ -124,13 +125,16 @@
 
   let preview = $derived.by(() => {
     if (!data) return (item.display_name || item.item_tag).toLowerCase();
-    const parts = [];
-    if (conditionOpt?.prefix) parts.push(conditionOpt.prefix);
-    if (colorOpt?.prefix) parts.push(colorOpt.prefix);
-    if (patternOpt?.prefix) parts.push(patternOpt.prefix);
-    if (materialOpt?.prefix) parts.push(materialOpt.prefix);
-    parts.push((item.display_name || item.item_tag).toLowerCase());
-    const phrase = parts.join(" ");
+    // Mirror the parent's buildModifiedPhrase so the preview matches what is
+    // actually emitted: condition, color, pattern, material, then the item.
+    const prefixes = [conditionOpt?.prefix, colorOpt?.prefix, patternOpt?.prefix, materialOpt?.prefix].filter(Boolean);
+    if (!isNaturalMode) {
+      // Tag mode: underscore-joined prefix slugs + item_tag. The focus
+      // phrase is natural-language only and isn't part of the tag emit.
+      const slug = (s) => s.replace(/\s+/g, "_");
+      return [...prefixes.map(slug), item.item_tag || ""].filter(Boolean).join("_");
+    }
+    const phrase = [...prefixes, (item.display_name || item.item_tag).toLowerCase()].join(" ");
     return focus ? `${phrase}, presenting ${phrase} to viewer, ${phrase} focus` : phrase;
   });
 
@@ -322,11 +326,11 @@
           {/if}
         </div>
 
-        <!-- FOCUS -->
-        <label class="pcr-atb2-cust-focus">
-          <input type="checkbox" bind:checked={focus} />
+        <!-- FOCUS — natural-language only; the tag-mode emit has no focus phrase -->
+        <label class="pcr-atb2-cust-focus" class:pcr-atb2-cust-focus-disabled={!isNaturalMode}>
+          <input type="checkbox" bind:checked={focus} disabled={!isNaturalMode} />
           <span>Add focus tags</span>
-          <span class="pcr-atb2-cust-focus-hint">Camera focuses on this item</span>
+          <span class="pcr-atb2-cust-focus-hint">{isNaturalMode ? "Camera focuses on this item" : "Natural-language mode only"}</span>
         </label>
 
         <div class="pcr-atb2-cust-preview">
@@ -458,6 +462,7 @@
     cursor: pointer;
   }
   .pcr-atb2-cust-focus input { accent-color: #7c3aed; }
+  .pcr-atb2-cust-focus-disabled { opacity: 0.5; cursor: default; }
   .pcr-atb2-cust-focus-hint {
     font-size: 11px; color: #888; margin-left: auto;
   }

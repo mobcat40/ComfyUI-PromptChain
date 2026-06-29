@@ -5458,6 +5458,7 @@
     cursor: pointer;
   }
   .pcr-atb2-cust-focus.svelte-1mwxie1 input:where(.svelte-1mwxie1) { accent-color: #7c3aed; }
+  .pcr-atb2-cust-focus-disabled.svelte-1mwxie1 { opacity: 0.5; cursor: default; }
   .pcr-atb2-cust-focus-hint.svelte-1mwxie1 {
     font-size: 11px; color: #888; margin-left: auto;
   }

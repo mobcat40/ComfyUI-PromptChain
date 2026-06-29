@@ -21,7 +21,7 @@ var root_14$3 = from_html(`<button class="pcr-atb2-cust-rowclear svelte-1mwxie1"
 var root_17$2 = from_html(`<div><span class="pcr-atb2-cust-icon-bullet svelte-1mwxie1"></span> <span> </span></div>`);
 var root_16$2 = from_html(`<div class="pcr-atb2-cust-popgroup svelte-1mwxie1"> </div> <!>`, 1);
 var root_15$3 = from_html(`<div class="pcr-atb2-cust-popover svelte-1mwxie1"></div>`);
-var root_2$3 = from_html(`<div class="pcr-atb2-cust-body svelte-1mwxie1"><div><button class="pcr-atb2-cust-rowbtn svelte-1mwxie1" type="button"><span class="pcr-atb2-cust-icon pcr-atb2-cust-icon-color svelte-1mwxie1"></span> <span class="pcr-atb2-cust-rowlabel svelte-1mwxie1"> </span> <!> <span class="pcr-atb2-cust-chev svelte-1mwxie1">▾</span></button> <!></div> <div><button class="pcr-atb2-cust-rowbtn svelte-1mwxie1" type="button"><span class="pcr-atb2-cust-icon pcr-atb2-cust-icon-pattern svelte-1mwxie1" aria-hidden="true"><svg viewBox="0 0 16 16" width="16" height="16"><rect x="0" y="0" width="4" height="4" fill="currentColor"></rect><rect x="8" y="0" width="4" height="4" fill="currentColor"></rect><rect x="4" y="4" width="4" height="4" fill="currentColor"></rect><rect x="12" y="4" width="4" height="4" fill="currentColor"></rect><rect x="0" y="8" width="4" height="4" fill="currentColor"></rect><rect x="8" y="8" width="4" height="4" fill="currentColor"></rect><rect x="4" y="12" width="4" height="4" fill="currentColor"></rect><rect x="12" y="12" width="4" height="4" fill="currentColor"></rect></svg></span> <span class="pcr-atb2-cust-rowlabel svelte-1mwxie1"> </span> <!> <span class="pcr-atb2-cust-chev svelte-1mwxie1">▾</span></button> <!></div> <div><button class="pcr-atb2-cust-rowbtn svelte-1mwxie1" type="button"><span class="pcr-atb2-cust-icon pcr-atb2-cust-icon-material svelte-1mwxie1" aria-hidden="true"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 5 Q 4 2, 8 5 T 15 5"></path><path d="M1 11 Q 4 8, 8 11 T 15 11"></path></svg></span> <span class="pcr-atb2-cust-rowlabel svelte-1mwxie1"> </span> <!> <span class="pcr-atb2-cust-chev svelte-1mwxie1">▾</span></button> <!></div> <div><button class="pcr-atb2-cust-rowbtn svelte-1mwxie1" type="button"><span class="pcr-atb2-cust-icon pcr-atb2-cust-icon-condition svelte-1mwxie1" aria-hidden="true"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><polyline points="2,4 5,7 3,9 6,12 4,14"></polyline><polyline points="10,2 13,5 11,8 14,11 12,14"></polyline></svg></span> <span class="pcr-atb2-cust-rowlabel svelte-1mwxie1"> </span> <!> <span class="pcr-atb2-cust-chev svelte-1mwxie1">▾</span></button> <!></div> <label class="pcr-atb2-cust-focus svelte-1mwxie1"><input type="checkbox" class="svelte-1mwxie1"/> <span>Add focus tags</span> <span class="pcr-atb2-cust-focus-hint svelte-1mwxie1">Camera focuses on this item</span></label> <div class="pcr-atb2-cust-preview svelte-1mwxie1"><div class="pcr-atb2-cust-preview-label svelte-1mwxie1">Preview</div> <div class="pcr-atb2-cust-preview-text svelte-1mwxie1"> </div></div></div> <div class="pcr-atb2-cust-footer svelte-1mwxie1"><button class="pcr-atb2-cust-btn pcr-atb2-cust-cancel svelte-1mwxie1">Cancel</button> <button class="pcr-atb2-cust-btn pcr-atb2-cust-ok svelte-1mwxie1">Apply</button></div>`, 1);
+var root_2$3 = from_html(`<div class="pcr-atb2-cust-body svelte-1mwxie1"><div><button class="pcr-atb2-cust-rowbtn svelte-1mwxie1" type="button"><span class="pcr-atb2-cust-icon pcr-atb2-cust-icon-color svelte-1mwxie1"></span> <span class="pcr-atb2-cust-rowlabel svelte-1mwxie1"> </span> <!> <span class="pcr-atb2-cust-chev svelte-1mwxie1">▾</span></button> <!></div> <div><button class="pcr-atb2-cust-rowbtn svelte-1mwxie1" type="button"><span class="pcr-atb2-cust-icon pcr-atb2-cust-icon-pattern svelte-1mwxie1" aria-hidden="true"><svg viewBox="0 0 16 16" width="16" height="16"><rect x="0" y="0" width="4" height="4" fill="currentColor"></rect><rect x="8" y="0" width="4" height="4" fill="currentColor"></rect><rect x="4" y="4" width="4" height="4" fill="currentColor"></rect><rect x="12" y="4" width="4" height="4" fill="currentColor"></rect><rect x="0" y="8" width="4" height="4" fill="currentColor"></rect><rect x="8" y="8" width="4" height="4" fill="currentColor"></rect><rect x="4" y="12" width="4" height="4" fill="currentColor"></rect><rect x="12" y="12" width="4" height="4" fill="currentColor"></rect></svg></span> <span class="pcr-atb2-cust-rowlabel svelte-1mwxie1"> </span> <!> <span class="pcr-atb2-cust-chev svelte-1mwxie1">▾</span></button> <!></div> <div><button class="pcr-atb2-cust-rowbtn svelte-1mwxie1" type="button"><span class="pcr-atb2-cust-icon pcr-atb2-cust-icon-material svelte-1mwxie1" aria-hidden="true"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 5 Q 4 2, 8 5 T 15 5"></path><path d="M1 11 Q 4 8, 8 11 T 15 11"></path></svg></span> <span class="pcr-atb2-cust-rowlabel svelte-1mwxie1"> </span> <!> <span class="pcr-atb2-cust-chev svelte-1mwxie1">▾</span></button> <!></div> <div><button class="pcr-atb2-cust-rowbtn svelte-1mwxie1" type="button"><span class="pcr-atb2-cust-icon pcr-atb2-cust-icon-condition svelte-1mwxie1" aria-hidden="true"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><polyline points="2,4 5,7 3,9 6,12 4,14"></polyline><polyline points="10,2 13,5 11,8 14,11 12,14"></polyline></svg></span> <span class="pcr-atb2-cust-rowlabel svelte-1mwxie1"> </span> <!> <span class="pcr-atb2-cust-chev svelte-1mwxie1">▾</span></button> <!></div> <label><input type="checkbox" class="svelte-1mwxie1"/> <span>Add focus tags</span> <span class="pcr-atb2-cust-focus-hint svelte-1mwxie1"> </span></label> <div class="pcr-atb2-cust-preview svelte-1mwxie1"><div class="pcr-atb2-cust-preview-label svelte-1mwxie1">Preview</div> <div class="pcr-atb2-cust-preview-text svelte-1mwxie1"> </div></div></div> <div class="pcr-atb2-cust-footer svelte-1mwxie1"><button class="pcr-atb2-cust-btn pcr-atb2-cust-cancel svelte-1mwxie1">Cancel</button> <button class="pcr-atb2-cust-btn pcr-atb2-cust-ok svelte-1mwxie1">Apply</button></div>`, 1);
 var root$2 = from_html(`<div class="pcr-atb2-cust-overlay svelte-1mwxie1"><div class="pcr-atb2-cust-modal svelte-1mwxie1"><div class="pcr-atb2-cust-header svelte-1mwxie1"><span class="pcr-atb2-cust-title svelte-1mwxie1">Customize <strong class="svelte-1mwxie1"> </strong></span> <button class="pcr-atb2-cust-close svelte-1mwxie1" aria-label="Close">&times;</button></div> <!></div></div>`);
 function Customizer($$anchor, $$props) {
   var _a, _b, _c, _d, _e;
@@ -32,6 +32,12 @@ function Customizer($$anchor, $$props) {
     3,
     null
     // { color, pattern, material, condition, focus } — pre-fill when editing
+  ), isNaturalMode = prop(
+    $$props,
+    "isNaturalMode",
+    3,
+    false
+    // current output mode, so the preview + focus match what the parent emits
   ), onConfirm = prop($$props, "onConfirm", 3, () => {
   }), onCancel = prop($$props, "onCancel", 3, () => {
   });
@@ -157,13 +163,20 @@ function Customizer($$anchor, $$props) {
   let preview = user_derived(() => {
     var _a2, _b2, _c2, _d2;
     if (!get(data)) return ($$props.item.display_name || $$props.item.item_tag).toLowerCase();
-    const parts = [];
-    if ((_a2 = get(conditionOpt)) == null ? void 0 : _a2.prefix) parts.push(get(conditionOpt).prefix);
-    if ((_b2 = get(colorOpt)) == null ? void 0 : _b2.prefix) parts.push(get(colorOpt).prefix);
-    if ((_c2 = get(patternOpt)) == null ? void 0 : _c2.prefix) parts.push(get(patternOpt).prefix);
-    if ((_d2 = get(materialOpt)) == null ? void 0 : _d2.prefix) parts.push(get(materialOpt).prefix);
-    parts.push(($$props.item.display_name || $$props.item.item_tag).toLowerCase());
-    const phrase = parts.join(" ");
+    const prefixes = [
+      (_a2 = get(conditionOpt)) == null ? void 0 : _a2.prefix,
+      (_b2 = get(colorOpt)) == null ? void 0 : _b2.prefix,
+      (_c2 = get(patternOpt)) == null ? void 0 : _c2.prefix,
+      (_d2 = get(materialOpt)) == null ? void 0 : _d2.prefix
+    ].filter(Boolean);
+    if (!isNaturalMode()) {
+      const slug = (s) => s.replace(/\s+/g, "_");
+      return [...prefixes.map(slug), $$props.item.item_tag || ""].filter(Boolean).join("_");
+    }
+    const phrase = [
+      ...prefixes,
+      ($$props.item.display_name || $$props.item.item_tag).toLowerCase()
+    ].join(" ");
     return get(focus) ? `${phrase}, presenting ${phrase} to viewer, ${phrase} focus` : phrase;
   });
   let isCustomized = user_derived(() => !!get(color) || get(pattern) && get(pattern) !== "solid" || !!get(material) || get(condition) && get(condition) !== "default" || get(focus));
@@ -436,10 +449,13 @@ function Customizer($$anchor, $$props) {
         });
       }
       var label = sibling(div_18, 2);
+      let classes_10;
       var input = child(label);
+      var span_11 = sibling(input, 4);
+      var text_12 = child(span_11);
       var div_22 = sibling(label, 2);
       var div_23 = sibling(child(div_22), 2);
-      var text_12 = child(div_23);
+      var text_13 = child(div_23);
       var div_24 = sibling(div_4, 2);
       var button_9 = child(div_24);
       var button_10 = sibling(button_9, 2);
@@ -455,7 +471,10 @@ function Customizer($$anchor, $$props) {
           set_text(text_7, ((_c2 = get(materialOpt)) == null ? void 0 : _c2.display) || "Material");
           classes_8 = set_class(div_18, 1, "pcr-atb2-cust-row svelte-1mwxie1", null, classes_8, { open: get(openRow) === "condition" });
           set_text(text_9, ((_d2 = get(conditionOpt)) == null ? void 0 : _d2.display) || "Default");
-          set_text(text_12, get(preview));
+          classes_10 = set_class(label, 1, "pcr-atb2-cust-focus svelte-1mwxie1", null, classes_10, { "pcr-atb2-cust-focus-disabled": !isNaturalMode() });
+          input.disabled = !isNaturalMode();
+          set_text(text_12, isNaturalMode() ? "Camera focuses on this item" : "Natural-language mode only");
+          set_text(text_13, get(preview));
         },
         [() => colorSwatch(get(color))]
       );
@@ -521,6 +540,12 @@ function FurnitureCustomizer($$anchor, $$props) {
     3,
     null
     // { material, pattern, color, action } when editing
+  ), isNaturalMode = prop(
+    $$props,
+    "isNaturalMode",
+    3,
+    false
+    // current output mode — preview shows tag vs natlang form to match emit
   ), onConfirm = prop($$props, "onConfirm", 3, () => {
   }), onCancel = prop($$props, "onCancel", 3, () => {
   });
@@ -979,7 +1004,7 @@ function FurnitureCustomizer($$anchor, $$props) {
       set_text(text_12, contextSubject() && get(action2) ? "Add Interaction" : "Add to Scene");
     },
     [
-      () => get(previewNat) || get(previewTag) || ($$props.item.display_name || $$props.item.item_tag).toLowerCase()
+      () => isNaturalMode() ? get(previewNat) || get(previewTag) || ($$props.item.display_name || $$props.item.item_tag).toLowerCase() : get(previewTag) || get(previewNat) || ($$props.item.display_name || $$props.item.item_tag).toLowerCase()
     ]
   );
   delegated("click", div, handleOverlayClick);
@@ -1029,7 +1054,15 @@ function FantasyCustomizer($$anchor, $$props) {
     3,
     null
     // { shape, color, type } when re-editing
-  ), onConfirm = prop($$props, "onConfirm", 3, () => {
+  );
+  prop(
+    $$props,
+    "isNaturalMode",
+    3,
+    false
+    // current output mode (declared so the parent can pass it through)
+  );
+  let onConfirm = prop($$props, "onConfirm", 3, () => {
   }), onCancel = prop($$props, "onCancel", 3, () => {
   });
   let fetched = state(null);
@@ -3142,11 +3175,8 @@ function TagBuilder2($$anchor, $$props) {
       if (e.target.closest(".pcr-atb2-identity-trigger")) return;
       closeIdentityPicker();
     }
-    const id = setTimeout(() => document.addEventListener("click", onDocClick, true), 0);
-    return () => {
-      clearTimeout(id);
-      document.removeEventListener("click", onDocClick, true);
-    };
+    document.addEventListener("click", onDocClick, true);
+    return () => document.removeEventListener("click", onDocClick, true);
   });
   function togglePresetPicker(kind, subjId, triggerEl) {
     var _a2, _b;
@@ -3256,11 +3286,8 @@ function TagBuilder2($$anchor, $$props) {
       if (e.target.closest(".pcr-atb2-preset-trigger")) return;
       closePresetPicker();
     }
-    const id = setTimeout(() => document.addEventListener("click", onDocClick, true), 0);
-    return () => {
-      clearTimeout(id);
-      document.removeEventListener("click", onDocClick, true);
-    };
+    document.addEventListener("click", onDocClick, true);
+    return () => document.removeEventListener("click", onDocClick, true);
   });
   function removePreset(subjId, kind) {
     set(
@@ -4387,11 +4414,8 @@ function TagBuilder2($$anchor, $$props) {
       if (e.target.closest(".pcr-atb2-modifier-trigger")) return;
       closeModifierPicker();
     }
-    const id = setTimeout(() => document.addEventListener("click", onDocClick, true), 0);
-    return () => {
-      clearTimeout(id);
-      document.removeEventListener("click", onDocClick, true);
-    };
+    document.addEventListener("click", onDocClick, true);
+    return () => document.removeEventListener("click", onDocClick, true);
   });
   function identityMatchToken(option) {
     if ((option == null ? void 0 : option.kind) === "cast") {
@@ -4469,7 +4493,7 @@ function TagBuilder2($$anchor, $$props) {
         if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "center" });
           el.classList.add("pcr-atb2-flash");
-          setTimeout(() => el.classList.remove("pcr-atb2-flash"), 1100);
+          el.addEventListener("animationend", () => el.classList.remove("pcr-atb2-flash"), { once: true });
         }
       });
     });
@@ -7545,6 +7569,9 @@ ${filtered}` : filtered;
         get initial() {
           return get(customizerOpen).initial;
         },
+        get isNaturalMode() {
+          return get(isNaturalMode);
+        },
         onConfirm: commitCustomizer,
         onCancel: cancelCustomizer
       });
@@ -7584,6 +7611,9 @@ ${filtered}` : filtered;
           get initial() {
             return get(furnitureCustomizerOpen).initial;
           },
+          get isNaturalMode() {
+            return get(isNaturalMode);
+          },
           onConfirm: commitFurnitureCustomizer,
           onCancel: cancelFurnitureCustomizer
         });
@@ -7606,6 +7636,9 @@ ${filtered}` : filtered;
         },
         get initial() {
           return get(fantasyCustomizerOpen).initial;
+        },
+        get isNaturalMode() {
+          return get(isNaturalMode);
         },
         onConfirm: commitFantasyCustomizer,
         onCancel: cancelFantasyCustomizer

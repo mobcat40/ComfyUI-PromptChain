@@ -68,6 +68,14 @@ _state: dict[str, Any] = {
     "fingerprint": None,
 }
 
+# A transient DB lock made _fingerprint() return zeros, which read as
+# "table changed" and kicked off a 5–10 min CPU re-embed. Cache the last
+# good fingerprint + the DB mtime it was read at: return the cached value
+# on error (never treat a read failure as a change), and skip the recompute
+# entirely while the file is unchanged.
+_last_successful_fingerprint: tuple | None = None
+_last_db_mtime: float | None = None
+
 
 def _open_db() -> sqlite3.Connection:
     conn = sqlite3.connect(str(DB_PATH))
@@ -151,7 +159,12 @@ def _fingerprint() -> tuple:
     table state. Changes when wiki rows are added/removed/refreshed
     (body_hash sum) OR when aliases are added/removed/edited. Either
     forces a rebuild — alias changes shift the embedded body_full
-    text so cached embeddings need to be regenerated."""
+    text so cached embeddings need to be regenerated.
+
+    On a transient DB lock / read error, returns the last successful
+    fingerprint instead of zeros, so a momentary lock can't masquerade
+    as a table change and trigger a spurious rebuild."""
+    global _last_successful_fingerprint
     try:
         conn = _open_db()
         _ensure_aliases_schema(conn)
@@ -167,11 +180,15 @@ def _fingerprint() -> tuple:
             "FROM tag_aliases"
         ).fetchone()
         conn.close()
-        return (
+        result = (
             wiki_row["m"], wiki_row["c"], wiki_row["h"],
             alias_row["c"], alias_row["h"],
         )
+        _last_successful_fingerprint = result
+        return result
     except Exception:
+        if _last_successful_fingerprint is not None:
+            return _last_successful_fingerprint
         return (0, 0, 0, 0, 0)
 
 
@@ -292,7 +309,7 @@ def _load_index_from_disk() -> bool:
         logger.info("tag_search: cache model mismatch — rebuilding")
         return False
 
-    live_fp = _fingerprint()
+    live_fp = _get_fingerprint_cached()
     cached_fp = tuple(manifest.get("fingerprint") or ())
     if cached_fp != live_fp:
         logger.info(
@@ -365,10 +382,26 @@ def _rebuild_index(on_status: Callable[[str], None] | None = None) -> None:
     _persist_index_to_disk()
 
 
+def _get_fingerprint_cached() -> tuple:
+    """Gate the expensive _fingerprint() (DDL + alias seed-sync + two
+    aggregate scans) on the DB file mtime. The fingerprint only changes
+    when the file changes, so while mtime is steady — the common case for
+    a search — return the cached value and skip the query entirely."""
+    global _last_db_mtime
+    try:
+        current_mtime = DB_PATH.stat().st_mtime
+    except Exception:
+        return _fingerprint()
+    if _last_db_mtime == current_mtime and _last_successful_fingerprint is not None:
+        return _last_successful_fingerprint
+    _last_db_mtime = current_mtime
+    return _fingerprint()
+
+
 def _ensure_index_fresh(on_status: Callable[[str], None] | None = None) -> None:
     """Try disk first, then rebuild. Disk load is fast; rebuild is the
     minutes-long path."""
-    if _state["embeddings"] is not None and _state["fingerprint"] == _fingerprint():
+    if _state["embeddings"] is not None and _state["fingerprint"] == _get_fingerprint_cached():
         return
     if _load_index_from_disk():
         return
@@ -501,8 +534,17 @@ def _row_for_tag(tag: str) -> dict | None:
 def warmup() -> None:
     """Best-effort eager load on server boot. Disk-cache hit is < 1s;
     cold rebuild is ~5–10 min on CPU and is the only thing that takes
-    real time here."""
+    real time here.
+
+    Seeds the alias lookup cache up front so the literal alias_scan path
+    doesn't hit the DB on every search, and warms the fingerprint cache so
+    early searches can't trip a spurious rebuild on a transient lock."""
     import time
+    try:
+        with _lock:
+            _alias_lookup_list()
+    except Exception:
+        logger.warning("tag_search: alias cache seed failed", exc_info=True)
     for attempt in range(3):
         with _lock:
             if _embed_model.get() is not None:

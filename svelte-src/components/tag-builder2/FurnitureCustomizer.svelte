@@ -24,6 +24,7 @@
     actionOverrides = {},  // { prop_tag: [action_tag, ...] } — narrows verbs when present
     contextSubject = null, // null = scene scope; truthy = subject interaction
     initial = null,        // { material, pattern, color, action } when editing
+    isNaturalMode = false, // current output mode — preview shows tag vs natlang form to match emit
     onConfirm = () => {},
     onCancel = () => {},
   } = $props();
@@ -319,7 +320,7 @@
 
       <div class="pcr-atb2-cust-preview">
         <div class="pcr-atb2-cust-preview-label">Preview</div>
-        <div class="pcr-atb2-cust-preview-text">{previewNat || previewTag || (item.display_name || item.item_tag).toLowerCase()}</div>
+        <div class="pcr-atb2-cust-preview-text">{isNaturalMode ? (previewNat || previewTag || (item.display_name || item.item_tag).toLowerCase()) : (previewTag || previewNat || (item.display_name || item.item_tag).toLowerCase())}</div>
       </div>
 
     </div>

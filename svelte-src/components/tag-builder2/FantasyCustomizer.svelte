@@ -10,6 +10,7 @@
     item,                // { item_tag, display_name, base_tags, base_natlang, item_group }
     data = null,         // { shapes, colors, types } — when null, self-fetches
     initial = null,      // { shape, color, type } when re-editing
+    isNaturalMode = false, // current output mode (declared so the parent can pass it through)
     onConfirm = () => {},
     onCancel = () => {},
   } = $props();

@@ -1672,11 +1672,11 @@
       if (e.target.closest('.pcr-atb2-identity-trigger')) return;
       closeIdentityPicker();
     }
-    const id = setTimeout(() => document.addEventListener('click', onDocClick, true), 0);
-    return () => {
-      clearTimeout(id);
-      document.removeEventListener('click', onDocClick, true);
-    };
+    // Add directly — this $effect runs after the opening click has finished
+    // dispatching, so the capture-phase listener can't catch that same click
+    // (no setTimeout(0) deferral needed).
+    document.addEventListener('click', onDocClick, true);
+    return () => document.removeEventListener('click', onDocClick, true);
   });
 
   // ----------------------------------------------------------------------
@@ -1800,11 +1800,11 @@
       if (e.target.closest('.pcr-atb2-preset-trigger')) return;
       closePresetPicker();
     }
-    const id = setTimeout(() => document.addEventListener('click', onDocClick, true), 0);
-    return () => {
-      clearTimeout(id);
-      document.removeEventListener('click', onDocClick, true);
-    };
+    // Add directly — this $effect runs after the opening click has finished
+    // dispatching, so the capture-phase listener can't catch that same click
+    // (no setTimeout(0) deferral needed).
+    document.addEventListener('click', onDocClick, true);
+    return () => document.removeEventListener('click', onDocClick, true);
   });
 
   // Remove an active outfit or pose: subtract the snapshot's contribution
@@ -3306,11 +3306,11 @@
       if (e.target.closest('.pcr-atb2-modifier-trigger')) return;
       closeModifierPicker();
     }
-    const id = setTimeout(() => document.addEventListener('click', onDocClick, true), 0);
-    return () => {
-      clearTimeout(id);
-      document.removeEventListener('click', onDocClick, true);
-    };
+    // Add directly — this $effect runs after the opening click has finished
+    // dispatching, so the capture-phase listener can't catch that same click
+    // (no setTimeout(0) deferral needed).
+    document.addEventListener('click', onDocClick, true);
+    return () => document.removeEventListener('click', onDocClick, true);
   });
 
   // What token should partitionTokens treat as the identity assertion in
@@ -3416,7 +3416,9 @@
         if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "center" });
           el.classList.add("pcr-atb2-flash");
-          setTimeout(() => el.classList.remove("pcr-atb2-flash"), 1100);
+          // Remove on animationend (the .pcr-atb2-flash rule runs pcrAtb2Flash
+          // 1s once) so re-jumping to the same card re-triggers it — no timer.
+          el.addEventListener("animationend", () => el.classList.remove("pcr-atb2-flash"), { once: true });
         }
       });
     });
@@ -5986,6 +5988,7 @@
   <Customizer
     item={customizerOpen.item}
     initial={customizerOpen.initial}
+    isNaturalMode={isNaturalMode}
     onConfirm={commitCustomizer}
     onCancel={cancelCustomizer}
   />
@@ -6004,6 +6007,7 @@
       ? subjects.find(s => s.id === furnitureCustomizerOpen.subjId)
       : null}
     initial={furnitureCustomizerOpen.initial}
+    isNaturalMode={isNaturalMode}
     onConfirm={commitFurnitureCustomizer}
     onCancel={cancelFurnitureCustomizer}
   />
@@ -6015,6 +6019,7 @@
     item={fantasyCustomizerOpen.item}
     data={fantasyModData}
     initial={fantasyCustomizerOpen.initial}
+    isNaturalMode={isNaturalMode}
     onConfirm={commitFantasyCustomizer}
     onCancel={cancelFantasyCustomizer}
   />

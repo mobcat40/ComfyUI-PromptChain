@@ -23,6 +23,10 @@ _dbg = logging.getLogger("promptchain.ai.debug")
 
 DB_PATH = Path(__file__).parent.parent / "data" / "tag-builder" / "tag-builder.db"
 _local = threading.local()
+# True once the one-time schema/normalize/reconcile helpers have run this
+# process. Gates get_db's mtime-triggered reconnects so the expensive
+# ~11,529-row reconcile doesn't re-run on every spurious reopen.
+_schema_ready = False
 
 
 def get_db() -> sqlite3.Connection:
@@ -50,11 +54,28 @@ def get_db() -> sqlite3.Connection:
         # FK enforcement is off by default in sqlite, so CASCADE deletes were
         # inert and orphan preset rows accumulated. Per-connection pragma.
         conn.execute("PRAGMA foreign_keys=ON")
-        _ensure_generic_outfits_schema(conn)
-        _normalize_full_outfits_sort_order(conn)
-        _normalize_scene_locations_sort_order(conn)
-        _ensure_character_appearance_chip_columns(conn)
-        _reconcile_character_base_tags(conn)
+        # These schema/normalize/reconcile helpers are idempotent but
+        # expensive — the reconcile walks ~11,529 character rows. get_db
+        # reconnects on every DB-file mtime change, and sqlite's delete
+        # journal self-bumps that mtime on internal commits, so without
+        # gating they re-ran on the asyncio loop on roughly every other
+        # request while editing. Run them once per process; the request-
+        # time appearance-chip fallback covers a char added externally
+        # mid-session, and a restart re-runs them to refresh the cache.
+        global _schema_ready
+        if not _schema_ready:
+            _ensure_generic_outfits_schema(conn)
+            _normalize_full_outfits_sort_order(conn)
+            _normalize_scene_locations_sort_order(conn)
+            _ensure_character_appearance_chip_columns(conn)
+            _reconcile_character_base_tags(conn)
+            _schema_ready = True
+            # The helpers commit, bumping the watched mtime; re-read it so
+            # their own write doesn't immediately trigger another reconnect.
+            try:
+                current_mtime = DB_PATH.stat().st_mtime_ns
+            except OSError:
+                pass
         _local.conn = conn
         _local.mtime = current_mtime
     return _local.conn
@@ -3110,6 +3131,62 @@ def _assert_allowed_table(name: str) -> str:
     return name
 
 
+def _run_data_health(db: sqlite3.Connection) -> dict:
+    """Idempotent maintenance: drop orphaned preset rows (FK enforcement
+    was historically off) and de-duplicate tag_aliases. Returns per-step
+    removal counts. Each step is independent and guarded so a missing
+    table or schema drift skips that step instead of failing the run."""
+    cleaned: dict[str, int] = {}
+
+    def _exists(table: str) -> bool:
+        return db.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)
+        ).fetchone() is not None
+
+    # (child, fk_col, parent, parent_key) — parents first so a parent
+    # delete's now-stranded children are caught in the same pass.
+    orphan_rules = [
+        ("outfits", "character_tag", "characters", "tag"),
+        ("poses", "character_tag", "characters", "tag"),
+        ("character_chip_overrides", "character_tag", "characters", "tag"),
+        ("outfit_tag_slots", "outfit_id", "outfits", "id"),
+        ("outfit_chip_overrides", "outfit_id", "outfits", "id"),
+        ("pose_chip_overrides", "pose_id", "poses", "id"),
+    ]
+    for child, fk, parent, key in orphan_rules:
+        if not (_exists(child) and _exists(parent)):
+            continue
+        try:
+            cur = db.execute(
+                f"DELETE FROM {child} WHERE {fk} IS NOT NULL "
+                f"AND {fk} NOT IN (SELECT {key} FROM {parent})"
+            )
+            cleaned[f"orphan_{child}"] = cur.rowcount
+        except sqlite3.OperationalError:
+            pass
+
+    # tag_aliases has a (tag, alias) primary key so exact dupes can't exist,
+    # but keep the dedup as a cheap self-heal in case the PK was ever absent.
+    if _exists("tag_aliases"):
+        try:
+            cur = db.execute(
+                "DELETE FROM tag_aliases WHERE rowid NOT IN "
+                "(SELECT MIN(rowid) FROM tag_aliases GROUP BY tag, alias)"
+            )
+            cleaned["tag_alias_duplicates"] = cur.rowcount
+        except sqlite3.OperationalError:
+            pass
+
+    db.commit()
+    return cleaned
+
+
+@routes.post("/promptchain/tag-builder/maintenance")
+async def _api_tag_builder_maintenance(request):
+    """Run idempotent data-health maintenance and report what was removed."""
+    return web.json_response({"cleaned": _run_data_health(get_db())})
+
+
 @routes.get("/promptchain/tag-builder/buckets")
 async def _api_buckets(request):
     db = get_db()
@@ -4795,7 +4872,9 @@ def match_characters_inner(
             name_prefix_candidates.setdefault(token.lower(), original)
     if name_prefix_candidates:
         for prefix, original in name_prefix_candidates.items():
-            like_pattern = prefix + r"\_%"
+            # Escape LIKE metacharacters so a name with % or _ doesn't wildcard-match.
+            esc = prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            like_pattern = esc + r"\_%"
             prefix_rows = db.execute(
                 "SELECT tag, display, series, base_tags, base_natlang FROM characters "
                 "WHERE LOWER(tag) LIKE ? ESCAPE '\\' "
@@ -4845,7 +4924,9 @@ def match_characters_inner(
         paren_suffix_candidates.setdefault(bare_name.lower(), original)
     if paren_suffix_candidates:
         for prefix, original in paren_suffix_candidates.items():
-            like_pattern = prefix + r"\_%"
+            # Escape LIKE metacharacters so a name with % or _ doesn't wildcard-match.
+            esc = prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            like_pattern = esc + r"\_%"
             prefix_rows = db.execute(
                 "SELECT tag, display, series, base_tags, base_natlang FROM characters "
                 "WHERE LOWER(tag) = ? OR LOWER(tag) LIKE ? ESCAPE '\\' "
@@ -4889,7 +4970,9 @@ def match_characters_inner(
         first_segment_candidates.setdefault(bare_name.lower(), original)
     if first_segment_candidates:
         for prefix, original in first_segment_candidates.items():
-            like_pattern = prefix + r"\_%"
+            # Escape LIKE metacharacters so a name with % or _ doesn't wildcard-match.
+            esc = prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            like_pattern = esc + r"\_%"
             prefix_rows = db.execute(
                 "SELECT tag, display, series, base_tags, base_natlang FROM characters "
                 "WHERE LOWER(tag) = ? OR LOWER(tag) LIKE ? ESCAPE '\\' "
@@ -5374,28 +5457,34 @@ async def _api_props_assemble(request):
     tags_parts = []
     natlang_parts = []
 
-    if color:
+    if color and color.get("tag"):
         tags_parts.append(color["tag"])
         if color.get("prefix"):
             natlang_parts.append(color["prefix"])
-    if pattern and pattern["tag"] != "solid":
+    if pattern and pattern.get("tag") and pattern["tag"] != "solid":
         tags_parts.append(pattern["tag"])
         if pattern.get("prefix"):
             natlang_parts.append(pattern["prefix"])
-    if material:
+    if material and material.get("tag"):
         tags_parts.append(material["tag"])
         if material.get("prefix"):
             natlang_parts.append(material["prefix"])
 
-    tags_parts.append(prop["prop_tag"])
-    natlang_parts.append(prop.get("base_natlang") or prop["display_name"].lower())
+    if prop.get("prop_tag"):
+        tags_parts.append(prop["prop_tag"])
+    _display = prop.get("display_name")
+    _phrase = prop.get("base_natlang") or (_display.lower() if isinstance(_display, str) else None)
+    if _phrase:
+        natlang_parts.append(_phrase)
 
-    prop_tags = " ".join(tags_parts)
-    prop_natlang = " ".join(natlang_parts)
+    prop_tags = " ".join(str(p) for p in tags_parts if p)
+    prop_natlang = " ".join(str(p) for p in natlang_parts if p)
 
     if action:
-        final_tags = f"{action['action_prefix_tags']} {prop_tags}"
-        final_natlang = f"{action['action_prefix_natlang']} {prop_natlang}"
+        prefix_tags = action.get("action_prefix_tags") or ""
+        prefix_natlang = action.get("action_prefix_natlang") or ""
+        final_tags = f"{prefix_tags} {prop_tags}".strip()
+        final_natlang = f"{prefix_natlang} {prop_natlang}".strip()
     else:
         final_tags = prop_tags
         final_natlang = prop_natlang
@@ -5532,74 +5621,6 @@ async def _api_clothing_customizer_data(request):
         "conditions": conditions,
         "patterns": patterns,
     })
-
-
-@routes.post("/promptchain/clothing/assemble")
-async def _api_clothing_assemble(request):
-    """Build tag and natlang strings from selected clothing parts."""
-    data, err = await parse_json(request)
-    if err: return err
-
-    item_tag = data.get("item_tag", "")
-    color_tag = data.get("color_tag", "")
-    material_tag = data.get("material_tag", "")
-    pattern_tag = data.get("pattern_tag", "")
-    condition_tag = data.get("condition_tag", "")
-
-    db = get_db()
-
-    tag_parts = []
-    natlang_parts = []
-
-    # Color
-    if color_tag:
-        color = db.execute(
-            "SELECT * FROM clothing_colors WHERE tag = ?", (color_tag,)
-        ).fetchone()
-        if color:
-            tag_parts.append(color["prefix"])
-            natlang_parts.append(color["prefix"])
-
-    # Material
-    if material_tag:
-        material = db.execute(
-            "SELECT * FROM clothing_materials WHERE tag = ?", (material_tag,)
-        ).fetchone()
-        if material:
-            tag_parts.append(material["prefix"])
-            natlang_parts.append(material["prefix"])
-
-    # Pattern
-    if pattern_tag:
-        pattern = db.execute(
-            "SELECT * FROM clothing_patterns WHERE tag = ?", (pattern_tag,)
-        ).fetchone()
-        if pattern:
-            tag_parts.append(pattern["prefix"])
-            natlang_parts.append(pattern["prefix"])
-
-    # Condition
-    if condition_tag:
-        condition = db.execute(
-            "SELECT * FROM clothing_conditions WHERE tag = ?", (condition_tag,)
-        ).fetchone()
-        if condition:
-            tag_parts.append(condition["prefix"])
-            natlang_parts.append(condition["prefix"])
-
-    # Clothing item itself
-    if item_tag:
-        item = db.execute(
-            "SELECT * FROM clothing_items WHERE item_tag = ?", (item_tag,)
-        ).fetchone()
-        if item:
-            tag_parts.append(item["base_tags"])
-            natlang_parts.append(item["base_natlang"])
-
-    tag = ", ".join(p for p in tag_parts if p)
-    natlang = " ".join(p for p in natlang_parts if p)
-
-    return web.json_response({"tag": tag, "natlang": natlang})
 
 
 @routes.get("/promptchain/clothing/customizable-groups")
@@ -5821,61 +5842,3 @@ async def _api_furniture_all(request):
         "patterns": patterns,
         "colors": colors,
     })
-
-
-@routes.post("/promptchain/furniture/assemble")
-async def _api_furniture_assemble(request):
-    """Build tag and natlang strings from selected furniture parts."""
-    data, err = await parse_json(request)
-    if err: return err
-
-    furniture_tag = data.get("furniture_tag", "")
-    material_tag = data.get("material_tag", "")
-    pattern_tag = data.get("pattern_tag", "")
-    color_tag = data.get("color_tag", "")
-
-    db = get_db()
-
-    tag_parts = []
-    natlang_parts = []
-
-    # Color
-    if color_tag:
-        color = db.execute(
-            "SELECT * FROM furniture_colors WHERE tag = ?", (color_tag,)
-        ).fetchone()
-        if color:
-            tag_parts.append(color["prefix"])
-            natlang_parts.append(color["prefix"])
-
-    # Material
-    if material_tag:
-        material = db.execute(
-            "SELECT * FROM furniture_materials WHERE tag = ?", (material_tag,)
-        ).fetchone()
-        if material:
-            tag_parts.append(material["prefix"])
-            natlang_parts.append(material["prefix"])
-
-    # Pattern
-    if pattern_tag:
-        pattern = db.execute(
-            "SELECT * FROM furniture_patterns WHERE tag = ?", (pattern_tag,)
-        ).fetchone()
-        if pattern:
-            tag_parts.append(pattern["prefix"])
-            natlang_parts.append(pattern["prefix"])
-
-    # Furniture item itself
-    if furniture_tag:
-        item = db.execute(
-            "SELECT * FROM furniture WHERE tag = ?", (furniture_tag,)
-        ).fetchone()
-        if item:
-            tag_parts.append(item["base_tags"])
-            natlang_parts.append(item["base_natlang"])
-
-    tag = ", ".join(p for p in tag_parts if p)
-    natlang = " ".join(p for p in natlang_parts if p)
-
-    return web.json_response({"tag": tag, "natlang": natlang})
