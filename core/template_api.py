@@ -8,18 +8,36 @@ from .api_utils import error_response, ok_response
 
 from . import templates as template_storage
 from . import prompts as prompt_storage
+from . import model_settings
 
 routes = server.PromptServer.instance.routes
+
+
+def _resolve_model_scope(arch, family, name_param, model_hash):
+    """The picker sends {hash, raw checkpoint filename as `name`, architecture}
+    but no catalog model_name/family. Resolve the model config (by hash, then
+    filename) so model- and family-scoped presets/templates match on the
+    catalog's real model_name + family — not the raw .safetensors filename."""
+    cfg = None
+    if model_hash:
+        cfg = model_settings.find_config_by_hash(model_hash)
+    if cfg is None and name_param:
+        cfg = model_settings.find_config_by_filename(name_param)
+    model_name = name_param
+    if cfg:
+        model_name = cfg.get("model_name") or cfg.get("display_name") or name_param
+        arch = arch or cfg.get("architecture")
+        family = family or cfg.get("family")
+    return arch, family, model_name, model_hash
 
 
 # ── template endpoints ───────────────────────────────────────────
 
 @routes.get("/promptchain/templates/list")
 async def _api_templates_list(request):
-    arch = request.query.get("arch")
-    family = request.query.get("family")
-    model_name = request.query.get("name")
-    model_hash = request.query.get("hash")
+    arch, family, model_name, model_hash = _resolve_model_scope(
+        request.query.get("arch"), request.query.get("family"),
+        request.query.get("name"), request.query.get("hash"))
     include_hidden = request.query.get("include_hidden") == "1"
     templates = template_storage.list_templates(arch, family, model_name, model_hash, include_hidden)
     category_order = template_storage.load_category_order()
@@ -113,10 +131,9 @@ async def _api_template_delete(request):
 
 @routes.get("/promptchain/prompts/list")
 async def _api_prompts_list(request):
-    arch = request.query.get("arch")
-    family = request.query.get("family")
-    model_name = request.query.get("name")
-    model_hash = request.query.get("hash")
+    arch, family, model_name, model_hash = _resolve_model_scope(
+        request.query.get("arch"), request.query.get("family"),
+        request.query.get("name"), request.query.get("hash"))
     prompts = prompt_storage.list_prompts(arch, family, model_name, model_hash)
     return web.json_response({"prompts": prompts})
 
