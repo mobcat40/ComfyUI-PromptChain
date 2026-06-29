@@ -13,7 +13,7 @@ from pathlib import Path
 from aiohttp import web
 import server
 
-from .api_utils import parse_json
+from .api_utils import parse_json, error_response
 
 # Shares the AI debug channel so `match-characters` traces sit alongside
 # the rest of the Prompt Generator pipeline in comfyui.log.
@@ -47,6 +47,9 @@ def get_db() -> sqlite3.Connection:
         conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
         conn.row_factory = sqlite3.Row
         conn.text_factory = lambda x: x.decode("utf-8", "replace")
+        # FK enforcement is off by default in sqlite, so CASCADE deletes were
+        # inert and orphan preset rows accumulated. Per-connection pragma.
+        conn.execute("PRAGMA foreign_keys=ON")
         _ensure_generic_outfits_schema(conn)
         _normalize_full_outfits_sort_order(conn)
         _normalize_scene_locations_sort_order(conn)
@@ -3218,6 +3221,10 @@ def _safe_thumb_segment(value: str) -> bool:
         return False
     if "/" in value or "\\" in value:
         return False
+    # A ':' lets a Windows drive-letter token (e.g. "C:") reset the Path join
+    # and escape THUMBS_ROOT.
+    if ":" in value:
+        return False
     if ".." in value or value.startswith("."):
         return False
     return True
@@ -3334,6 +3341,9 @@ async def _api_characters(request):
         per_page = int(request.query.get("per_page", 50))
     except (ValueError, TypeError):
         return web.json_response({"error": "invalid page/per_page"}, status=400)
+    # Clamp so per_page=0 can't ZeroDivisionError the page-count math and a huge
+    # value can't dump the whole 11.5k-row table.
+    per_page = max(1, min(per_page, 200))
     search = request.query.get("search", "").strip()
     sort = request.query.get("sort", "display")
     status = request.query.get("status", "")
@@ -3747,7 +3757,7 @@ def _api_presets_query(request, table, name_col, tags_col, natlang_col, extra_co
     rows = db.execute(
         f"SELECT {base_cols} FROM {table} p JOIN characters c ON c.tag = p.character_tag"
         f"{where_sql} ORDER BY {order_sql} LIMIT ? OFFSET ?",
-        order_params + params + [per_page, offset],
+        params + order_params + [per_page, offset],
     ).fetchall()
 
     # Attach per-row chip overrides so the picker can pre-load them onto
@@ -3944,7 +3954,10 @@ async def _api_detect_outfit(request):
     if not input_set:
         return web.json_response({"matches": []})
     character_tag = (body.get("character_tag") or "").strip() or None
-    threshold = float(body.get("threshold", 0.8))
+    try:
+        threshold = float(body.get("threshold", 0.8))
+    except (TypeError, ValueError):
+        return error_response("threshold must be a number")
 
     db = get_db()
     where = ""
@@ -3995,7 +4008,10 @@ async def _api_detect_pose(request):
     if not input_set:
         return web.json_response({"matches": []})
     character_tag = (body.get("character_tag") or "").strip() or None
-    threshold = float(body.get("threshold", 0.8))
+    try:
+        threshold = float(body.get("threshold", 0.8))
+    except (TypeError, ValueError):
+        return error_response("threshold must be a number")
 
     db = get_db()
     where = ""

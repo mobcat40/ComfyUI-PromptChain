@@ -53,8 +53,10 @@ function findInlineWildcardRange(doc, pos) {
 }
 
 // Regional-conditioning blocks: `$name { ... }`. Grammar mirrors
-// region-highlight.js — `$[A-Za-z]\w*` then optional whitespace then `{`,
-// and since regions don't nest the closer is simply the next `}`. Returns
+// region-highlight.js — `$[A-Za-z]\w*` then optional whitespace then `{`.
+// Regions don't nest, but a `{a|b}` wildcard can sit inside the body, so the
+// closer is found by depth-tracking braces — not the first `}`, which would
+// stop short at the wildcard and corrupt the prompt on insert. Returns
 // each block's wrapper bounds, interior bounds, and the indent of its first
 // content line (so re-wrapping on insert preserves the user's layout).
 const REGION_OPEN = /\$[A-Za-z]\w*\s*\{/g;
@@ -64,7 +66,13 @@ function findRegionBlocks(doc) {
   let m;
   while ((m = REGION_OPEN.exec(doc)) !== null) {
     const openBrace = m.index + m[0].length - 1;
-    const close = doc.indexOf("}", openBrace + 1);
+    let depth = 1, i = openBrace + 1;
+    for (; i < doc.length && depth > 0; i++) {
+      const ch = doc[i];
+      if (ch === "{") depth++;
+      else if (ch === "}") depth--;
+    }
+    const close = depth === 0 ? i - 1 : -1;
     if (close === -1) continue; // unterminated block — leave it alone
     const indentMatch = doc.slice(openBrace + 1, close).match(/\n([ \t]+)\S/);
     blocks.push({
