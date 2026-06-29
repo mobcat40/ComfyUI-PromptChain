@@ -6031,11 +6031,11 @@
 
     <button
       class="pcr-atb2-nsfw-toggle"
-      class:nsfw-on={!nsfwHidden}
+      class:active={!nsfwHidden}
       title={nsfwHidden ? "NSFW hidden in the browser — click to show. (Already-added chips are unaffected.)" : "NSFW shown — click to hide"}
       aria-pressed={!nsfwHidden}
       onclick={toggleNsfw}
-    >🔞 {nsfwHidden ? "Hidden" : "Shown"}</button>
+    >🌶️ NSFW</button>
 
     <div class="pcr-atb2-footer-spacer"></div>
 
@@ -7437,10 +7437,10 @@
     transition: all 0.12s;
   }
   .pcr-atb2-nsfw-toggle:hover { color: #ccc; border-color: #555; }
-  .pcr-atb2-nsfw-toggle.nsfw-on {
-    background: #2a1818;
-    border-color: #884444;
-    color: #ff8a8a;
+  .pcr-atb2-nsfw-toggle.active {
+    background: #3a2a4a;
+    border-color: #5a4a6a;
+    color: #d4b8ff;
   }
 
   .pcr-atb2-btn {

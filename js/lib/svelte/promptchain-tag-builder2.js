@@ -1569,7 +1569,7 @@ var root_128 = from_html(`<div class="pcr-atb2-preset-dd svelte-ibd6yj"><input c
 var root_135 = from_html(`<div><span class="pcr-atb2-modifier-dd-check svelte-ibd6yj"> </span> <span class="pcr-atb2-modifier-dd-name svelte-ibd6yj"> </span></div>`);
 var root_134 = from_html(`<div class="pcr-atb2-modifier-dd svelte-ibd6yj"><div class="pcr-atb2-modifier-dd-list svelte-ibd6yj"></div></div>`);
 var root_136 = from_html(`<div class="pcr-atb2-modal-backdrop svelte-ibd6yj"><div class="pcr-atb2-modal svelte-ibd6yj"><div class="pcr-atb2-modal-title svelte-ibd6yj">Swap identity?</div> <div class="pcr-atb2-modal-body svelte-ibd6yj">Replace <strong class="svelte-ibd6yj"> </strong> with <strong class="svelte-ibd6yj"> </strong>? <div class="pcr-atb2-modal-note svelte-ibd6yj"> </div></div> <div class="pcr-atb2-modal-footer svelte-ibd6yj"><button class="pcr-atb2-btn pcr-atb2-btn-cancel svelte-ibd6yj">Cancel</button> <button class="pcr-atb2-btn pcr-atb2-btn-insert svelte-ibd6yj">Swap</button></div></div></div>`);
-var root_1 = from_html(`<div><div class="pcr-atb-header svelte-ibd6yj"><span class="pcr-atb-title svelte-ibd6yj">Tag Builder 2</span> <div class="pcr-atb-search-wrapper svelte-ibd6yj"><input class="pcr-atb-search svelte-ibd6yj" type="text"/></div> <button class="pcr-atb2-titlebar-btn svelte-ibd6yj"> </button> <button class="pcr-atb2-close svelte-ibd6yj" aria-label="Close">&times;</button></div> <div class="pcr-atb2-body svelte-ibd6yj"><aside class="pcr-atb2-rail svelte-ibd6yj"><div class="pcr-atb2-rail-heading svelte-ibd6yj">Categories</div> <!></aside> <main><div class="pcr-atb2-browser-header svelte-ibd6yj"><span class="pcr-atb2-breadcrumb svelte-ibd6yj"><span>Adding to: <strong class="svelte-ibd6yj"> </strong></span> <!></span> <div class="pcr-atb2-view-toggle svelte-ibd6yj" role="radiogroup" aria-label="View mode"><button role="radio" title="Card view">▦</button> <button role="radio" title="List view">☰</button></div></div> <!></main> <aside class="pcr-atb2-outline svelte-ibd6yj"><div class="pcr-atb2-outline-heading svelte-ibd6yj">Subjects &amp; Scene</div> <!>  <div class="pcr-atb2-add-subject svelte-ibd6yj">+ Add Subject</div> <!> <!></aside></div> <div class="pcr-atb2-footer svelte-ibd6yj"><div class="pcr-atb2-mode-toggle svelte-ibd6yj" role="radiogroup" aria-label="Output format"><div role="radio" tabindex="0">Tags</div>  <div role="radio" tabindex="0">Natural Language</div></div> <button> </button> <div class="pcr-atb2-footer-spacer svelte-ibd6yj"></div> <button class="pcr-atb2-btn pcr-atb2-btn-cancel svelte-ibd6yj">Cancel</button> <button class="pcr-atb2-btn pcr-atb2-btn-insert svelte-ibd6yj"> </button></div> <!></div> <!> <!> <!> <!> <!> <!> <!>`, 1);
+var root_1 = from_html(`<div><div class="pcr-atb-header svelte-ibd6yj"><span class="pcr-atb-title svelte-ibd6yj">Tag Builder 2</span> <div class="pcr-atb-search-wrapper svelte-ibd6yj"><input class="pcr-atb-search svelte-ibd6yj" type="text"/></div> <button class="pcr-atb2-titlebar-btn svelte-ibd6yj"> </button> <button class="pcr-atb2-close svelte-ibd6yj" aria-label="Close">&times;</button></div> <div class="pcr-atb2-body svelte-ibd6yj"><aside class="pcr-atb2-rail svelte-ibd6yj"><div class="pcr-atb2-rail-heading svelte-ibd6yj">Categories</div> <!></aside> <main><div class="pcr-atb2-browser-header svelte-ibd6yj"><span class="pcr-atb2-breadcrumb svelte-ibd6yj"><span>Adding to: <strong class="svelte-ibd6yj"> </strong></span> <!></span> <div class="pcr-atb2-view-toggle svelte-ibd6yj" role="radiogroup" aria-label="View mode"><button role="radio" title="Card view">▦</button> <button role="radio" title="List view">☰</button></div></div> <!></main> <aside class="pcr-atb2-outline svelte-ibd6yj"><div class="pcr-atb2-outline-heading svelte-ibd6yj">Subjects &amp; Scene</div> <!>  <div class="pcr-atb2-add-subject svelte-ibd6yj">+ Add Subject</div> <!> <!></aside></div> <div class="pcr-atb2-footer svelte-ibd6yj"><div class="pcr-atb2-mode-toggle svelte-ibd6yj" role="radiogroup" aria-label="Output format"><div role="radio" tabindex="0">Tags</div>  <div role="radio" tabindex="0">Natural Language</div></div> <button>🌶️ NSFW</button> <div class="pcr-atb2-footer-spacer svelte-ibd6yj"></div> <button class="pcr-atb2-btn pcr-atb2-btn-cancel svelte-ibd6yj">Cancel</button> <button class="pcr-atb2-btn pcr-atb2-btn-insert svelte-ibd6yj"> </button></div> <!></div> <!> <!> <!> <!> <!> <!> <!>`, 1);
 function TagBuilder2($$anchor, $$props) {
   var _a;
   push($$props, true);
@@ -7600,10 +7600,9 @@ ${filtered}` : filtered;
   let classes_38;
   var button_25 = sibling(div_98, 2);
   let classes_39;
-  var text_69 = child(button_25);
   var button_26 = sibling(button_25, 4);
   var button_27 = sibling(button_26, 2);
-  var text_70 = child(button_27);
+  var text_69 = child(button_27);
   var node_77 = sibling(div_97, 2);
   {
     var consequent_80 = ($$anchor2) => {
@@ -7614,14 +7613,14 @@ ${filtered}` : filtered;
       var div_101 = first_child(fragment_23);
       var div_102 = sibling(div_101, 2);
       var div_103 = child(div_102);
-      var text_71 = child(div_103);
+      var text_70 = child(div_103);
       var div_104 = sibling(div_103, 2);
       var div_105 = child(div_104);
       var div_106 = sibling(child(div_105), 2);
-      var text_72 = child(div_106);
+      var text_71 = child(div_106);
       var div_107 = sibling(div_105, 2);
       var div_108 = sibling(child(div_107), 2);
-      var text_73 = child(div_108);
+      var text_72 = child(div_108);
       var div_109 = sibling(div_104, 2);
       var button_28 = child(div_109);
       let classes_40;
@@ -7631,9 +7630,9 @@ ${filtered}` : filtered;
       let classes_42;
       template_effect(() => {
         set_style(div_102, `left:${get(chipQaMenu).x ?? ""}px;top:${get(chipQaMenu).y ?? ""}px`);
-        set_text(text_71, get(chipQaMenu).item.display_name || get(chipQaMenu).item.item_tag);
-        set_text(text_72, get(tagOutput));
-        set_text(text_73, get(natlangOutput) || "(empty)");
+        set_text(text_70, get(chipQaMenu).item.display_name || get(chipQaMenu).item.item_tag);
+        set_text(text_71, get(tagOutput));
+        set_text(text_72, get(natlangOutput) || "(empty)");
         classes_40 = set_class(button_28, 1, "pcr-atb2-qa-menu-item svelte-ibd6yj", null, classes_40, { current: get(curStatus) === "normalized" });
         classes_41 = set_class(button_29, 1, "pcr-atb2-qa-menu-item svelte-ibd6yj", null, classes_41, { current: get(curStatus) === "unprocessed" });
         classes_42 = set_class(button_30, 1, "pcr-atb2-qa-menu-item svelte-ibd6yj", null, classes_42, { current: get(curStatus) === "broken" });
@@ -7675,26 +7674,26 @@ ${filtered}` : filtered;
           each(node_80, 17, () => get(identityResults), (opt) => opt.kind + ":" + opt.tag, ($$anchor4, opt) => {
             var div_114 = root_125();
             var span_71 = child(div_114);
-            var text_74 = child(span_71);
+            var text_73 = child(span_71);
             var span_72 = sibling(span_71, 2);
             var node_81 = child(span_72);
             {
               var consequent_83 = ($$anchor5) => {
-                var text_75 = text();
-                template_effect(() => set_text(text_75, get(opt).series));
-                append($$anchor5, text_75);
+                var text_74 = text();
+                template_effect(() => set_text(text_74, get(opt).series));
+                append($$anchor5, text_74);
               };
               var alternate_11 = ($$anchor5) => {
-                var text_76 = text();
-                template_effect(() => set_text(text_76, get(opt).kindLabel));
-                append($$anchor5, text_76);
+                var text_75 = text();
+                template_effect(() => set_text(text_75, get(opt).kindLabel));
+                append($$anchor5, text_75);
               };
               if_block(node_81, ($$render) => {
                 if (get(opt).kind === "character" && get(opt).series) $$render(consequent_83);
                 else $$render(alternate_11, -1);
               });
             }
-            template_effect(() => set_text(text_74, get(opt).display));
+            template_effect(() => set_text(text_73, get(opt).display));
             delegated("click", div_114, () => pickIdentityFromDropdown(get(opt)));
             append($$anchor4, div_114);
           });
@@ -7756,13 +7755,13 @@ ${filtered}` : filtered;
               });
             }
             var span_74 = sibling(node_85, 2);
-            var text_77 = child(span_74);
+            var text_76 = child(span_74);
             var span_75 = sibling(span_74, 2);
-            var text_78 = child(span_75);
+            var text_77 = child(span_75);
             template_effect(() => {
               classes_43 = set_class(div_119, 1, "pcr-atb2-preset-dd-row svelte-ibd6yj", null, classes_43, { canonical: get(isCanonical) });
-              set_text(text_77, get(presetName));
-              set_text(text_78, `${get(row).character_display ?? ""}${get(row).character_series ? ` · ${get(row).character_series}` : ""}`);
+              set_text(text_76, get(presetName));
+              set_text(text_77, `${get(row).character_display ?? ""}${get(row).character_series ? ` · ${get(row).character_series}` : ""}`);
             });
             delegated("click", div_119, () => pickPresetFromDropdown(get(row)));
             append($$anchor4, div_119);
@@ -7801,13 +7800,13 @@ ${filtered}` : filtered;
         var div_122 = root_135();
         let classes_44;
         var span_76 = child(div_122);
-        var text_79 = child(span_76);
+        var text_78 = child(span_76);
         var span_77 = sibling(span_76, 2);
-        var text_80 = child(span_77);
+        var text_79 = child(span_77);
         template_effect(() => {
           classes_44 = set_class(div_122, 1, "pcr-atb2-modifier-dd-row svelte-ibd6yj", null, classes_44, { on: get(isOn) });
-          set_text(text_79, get(isOn) ? "✓" : "");
-          set_text(text_80, opt);
+          set_text(text_78, get(isOn) ? "✓" : "");
+          set_text(text_79, opt);
         });
         delegated("click", div_122, () => {
           toggleModifier(get(modifierPickerOpen), opt);
@@ -7830,18 +7829,18 @@ ${filtered}` : filtered;
       var div_124 = child(div_123);
       var div_125 = sibling(child(div_124), 2);
       var strong_1 = sibling(child(div_125));
-      var text_81 = child(strong_1);
+      var text_80 = child(strong_1);
       var strong_2 = sibling(strong_1, 2);
-      var text_82 = child(strong_2);
+      var text_81 = child(strong_2);
       var div_126 = sibling(strong_2, 2);
-      var text_83 = child(div_126);
+      var text_82 = child(div_126);
       var div_127 = sibling(div_125, 2);
       var button_31 = child(div_127);
       var button_32 = sibling(button_31, 2);
       template_effect(() => {
-        set_text(text_81, get(pendingIdentitySwap).current.display);
-        set_text(text_82, get(pendingIdentitySwap).next.display);
-        set_text(text_83, `Identity-derived tags from ${get(pendingIdentitySwap).current.display ?? ""} will be removed and replaced.`);
+        set_text(text_80, get(pendingIdentitySwap).current.display);
+        set_text(text_81, get(pendingIdentitySwap).next.display);
+        set_text(text_82, `Identity-derived tags from ${get(pendingIdentitySwap).current.display ?? ""} will be removed and replaced.`);
       });
       delegated("click", div_123, cancelIdentitySwap);
       delegated("click", div_124, (e) => e.stopPropagation());
@@ -7960,12 +7959,11 @@ ${filtered}` : filtered;
     set_attribute(div_99, "aria-checked", !get(isNaturalMode));
     classes_38 = set_class(div_100, 1, "pcr-atb2-mode-option svelte-ibd6yj", null, classes_38, { active: get(isNaturalMode) });
     set_attribute(div_100, "aria-checked", get(isNaturalMode));
-    classes_39 = set_class(button_25, 1, "pcr-atb2-nsfw-toggle svelte-ibd6yj", null, classes_39, { "nsfw-on": !get(nsfwHidden) });
+    classes_39 = set_class(button_25, 1, "pcr-atb2-nsfw-toggle svelte-ibd6yj", null, classes_39, { active: !get(nsfwHidden) });
     set_attribute(button_25, "title", get(nsfwHidden) ? "NSFW hidden in the browser — click to show. (Already-added chips are unaffected.)" : "NSFW shown — click to hide");
     set_attribute(button_25, "aria-pressed", !get(nsfwHidden));
-    set_text(text_69, `🔞 ${get(nsfwHidden) ? "Hidden" : "Shown"}`);
     button_27.disabled = get(totalSelectionCount) === 0;
-    set_text(text_70, `Insert${get(totalSelectionCount) > 0 ? ` (${get(totalSelectionCount)})` : ""}`);
+    set_text(text_69, `Insert${get(totalSelectionCount) > 0 ? ` (${get(totalSelectionCount)})` : ""}`);
   });
   bind_value(input, () => get(searchQuery), ($$value) => set(searchQuery, $$value));
   delegated("click", button, toggleMaximized);

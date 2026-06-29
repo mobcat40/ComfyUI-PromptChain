@@ -6756,10 +6756,10 @@
     transition: all 0.12s;
   }
   .pcr-atb2-nsfw-toggle.svelte-ibd6yj:hover { color: #ccc; border-color: #555; }
-  .pcr-atb2-nsfw-toggle.nsfw-on.svelte-ibd6yj {
-    background: #2a1818;
-    border-color: #884444;
-    color: #ff8a8a;
+  .pcr-atb2-nsfw-toggle.active.svelte-ibd6yj {
+    background: #3a2a4a;
+    border-color: #5a4a6a;
+    color: #d4b8ff;
   }
 
   .pcr-atb2-btn.svelte-ibd6yj {
