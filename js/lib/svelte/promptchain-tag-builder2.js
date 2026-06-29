@@ -1,10 +1,15 @@
-import { d as delegate, p as push, a as prop, s as state, c as proxy, u as user_effect, e as set, f as sibling, n as child, i as if_block, g as get, t as template_effect, j as delegated, k as append, l as pop, v as first_child, h as set_class, y as set_text, A as from_html, m as user_derived, w as each, z as index, H as to_array, C as tick, o as bind_this, D as comment, x as set_attribute, q as set_value, R as text, M as unmount, L as mount } from "./disclose-version-et9wt-4m.js";
-import { a as onMount } from "./index-client-6amB1qrM.js";
-import { a as action } from "./actions-zjmT0mOr.js";
-import { s as set_style } from "./style-B3hsaAru.js";
-import { a as bind_checked, b as bind_value } from "./input-B9kD0bWJ.js";
+import { d as delegate, p as push, a as prop, s as state, c as proxy, u as user_effect, e as set, f as sibling, n as child, i as if_block, g as get, t as template_effect, j as delegated, k as append, l as pop, v as first_child, h as set_class, F as set_style, y as set_text, A as from_html, m as user_derived, w as each, z as index, I as to_array, C as tick, o as bind_this, D as comment, x as set_attribute, q as set_value, S as text, N as unmount, M as mount } from "./disclose-version-CPcS7M7Y.js";
+import { a as onMount } from "./index-client-DMSJyFwf.js";
+import { a as action } from "./actions-DQdCj5pi.js";
+import { a as bind_checked, b as bind_value } from "./input-uYBeAZAB.js";
 import { b as isStructuralLine, d as isInNegativeBlock } from "./ai-patch-helpers-Bayqv0oF.js";
-import { f as formatTagsForModel } from "./tag-builder-utils-ng134QDV.js";
+function formatTagsForModel(tags, tagSourceConfig) {
+  if (!tags) return "";
+  if ((tagSourceConfig == null ? void 0 : tagSourceConfig.format) === "spaces") {
+    return tags.split(",").map((tag) => tag.trim().replace(/_/g, " ")).join(", ");
+  }
+  return tags;
+}
 var root_1$3 = from_html(`<div class="pcr-atb2-cust-loading svelte-1mwxie1">Loading…</div>`);
 var root_3$2 = from_html(`<button class="pcr-atb2-cust-rowclear svelte-1mwxie1" title="Clear">&times;</button>`);
 var root_6$3 = from_html(`<div><span class="pcr-atb2-cust-icon pcr-atb2-cust-icon-color svelte-1mwxie1"></span> <span> </span></div>`);

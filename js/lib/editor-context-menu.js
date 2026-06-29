@@ -407,10 +407,6 @@ export function showContextMenu(x, y, view, node) {
     label: "Edit Tags",
     action: () => openTagBuilder2(view, node, "edit"),
   });
-  items.push({
-    label: "Tag Builder (Legacy)",
-    action: () => openTagBuilder(view),
-  });
 
   // Prompts — async submenu populated on hover
   const modelInfo = node?._pcrGetModelInfo?.();
@@ -783,12 +779,6 @@ function clipboardAction(view, command) {
 function selectAll(view) {
   view.focus();
   view.dispatch({ selection: { anchor: 0, head: view.state.doc.length } });
-}
-
-async function openTagBuilder(view) {
-  const { showTagBuilder } = await import("./tag-builder-bridge.js");
-  const sel = view.state.selection.main;
-  showTagBuilder(view, sel.from, sel.to);
 }
 
 async function openTagBuilder2(view, node, mode = "edit") {

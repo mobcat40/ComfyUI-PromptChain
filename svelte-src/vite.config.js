@@ -12,7 +12,6 @@ export default defineConfig({
         "promptchain-gallery": resolve(__dirname, "gallery-main.js"),
         "promptchain-node": resolve(__dirname, "node-main.svelte.js"),
         "promptchain-fullscreen": resolve(__dirname, "fullscreen-main.svelte.js"),
-        "promptchain-tag-builder": resolve(__dirname, "tag-builder-main.js"),
         "promptchain-tag-builder2": resolve(__dirname, "tag-builder2-main.js"),
         "promptchain-model-settings": resolve(__dirname, "model-settings-main.js"),
         "promptchain-model-indicator": resolve(__dirname, "model-indicator-main.js"),

@@ -4045,6 +4045,40 @@ function set_class(dom, is_html, value, hash, prev_classes, next_classes) {
   }
   return next_classes;
 }
+function update_styles(dom, prev = {}, next, priority) {
+  for (var key in next) {
+    var value = next[key];
+    if (prev[key] !== value) {
+      if (next[key] == null) {
+        dom.style.removeProperty(key);
+      } else {
+        dom.style.setProperty(key, value, priority);
+      }
+    }
+  }
+}
+function set_style(dom, value, prev_styles, next_styles) {
+  var prev = dom.__style;
+  if (prev !== value) {
+    var next_style_attr = to_style(value, next_styles);
+    {
+      if (next_style_attr == null) {
+        dom.removeAttribute("style");
+      } else {
+        dom.style.cssText = next_style_attr;
+      }
+    }
+    dom.__style = value;
+  } else if (next_styles) {
+    if (Array.isArray(next_styles)) {
+      update_styles(dom, prev_styles == null ? void 0 : prev_styles[0], next_styles[0]);
+      update_styles(dom, prev_styles == null ? void 0 : prev_styles[1], next_styles[1], "important");
+    } else {
+      update_styles(dom, prev_styles, next_styles);
+    }
+  }
+  return next_styles;
+}
 const IS_CUSTOM_ELEMENT = Symbol("is custom element");
 const IS_HTML = Symbol("is html");
 const PROGRESS_TAG = IS_XHTML ? "progress" : "PROGRESS";
@@ -4280,42 +4314,42 @@ export {
   tick as C,
   comment as D,
   untrack as E,
-  update as F,
-  set_checked as G,
-  to_array as H,
-  from_svg as I,
-  autofocus as J,
-  noop as K,
-  mount as L,
-  unmount as M,
-  effect_root as N,
-  getContext as O,
-  setContext as P,
-  clsx as Q,
-  text as R,
-  active_effect as S,
-  assign_nodes as T,
-  get_first_child as U,
-  remove_effect_dom as V,
-  create_element as W,
-  NAMESPACE_SVG as X,
-  NAMESPACE_MATHML as Y,
-  EFFECT_TRANSPARENT as Z,
-  component_context as _,
+  set_style as F,
+  update as G,
+  set_checked as H,
+  to_array as I,
+  from_svg as J,
+  autofocus as K,
+  noop as L,
+  mount as M,
+  unmount as N,
+  effect_root as O,
+  getContext as P,
+  setContext as Q,
+  clsx as R,
+  text as S,
+  active_effect as T,
+  assign_nodes as U,
+  get_first_child as V,
+  remove_effect_dom as W,
+  create_element as X,
+  NAMESPACE_SVG as Y,
+  NAMESPACE_MATHML as Z,
+  EFFECT_TRANSPARENT as _,
   prop as a,
-  lifecycle_outside_component as a0,
-  set_selected as a1,
-  listen_to_event_and_reset_event as a2,
-  current_batch as a3,
-  effect as a4,
-  is_array as a5,
-  select_multiple_invalid_value as a6,
-  is as a7,
-  teardown as a8,
-  render_effect as a9,
-  deep_read_state as aa,
-  safe_not_equal as ab,
-  to_style as ac,
+  component_context as a0,
+  lifecycle_outside_component as a1,
+  set_selected as a2,
+  listen_to_event_and_reset_event as a3,
+  current_batch as a4,
+  effect as a5,
+  is_array as a6,
+  select_multiple_invalid_value as a7,
+  is as a8,
+  teardown as a9,
+  render_effect as aa,
+  deep_read_state as ab,
+  safe_not_equal as ac,
   queue_micro_task as ad,
   block as b,
   proxy as c,
@@ -4343,4 +4377,4 @@ export {
   set_text as y,
   index as z
 };
-//# sourceMappingURL=disclose-version-et9wt-4m.js.map
+//# sourceMappingURL=disclose-version-CPcS7M7Y.js.map

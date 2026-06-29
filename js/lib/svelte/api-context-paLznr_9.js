@@ -1,4 +1,4 @@
-import { P as setContext, O as getContext } from "./disclose-version-et9wt-4m.js";
+import { Q as setContext, P as getContext } from "./disclose-version-CPcS7M7Y.js";
 const API_KEY = "pcr-api";
 function provideApi(api) {
   setContext(API_KEY, api);
@@ -41,4 +41,4 @@ export {
   safeJson as s,
   useApi as u
 };
-//# sourceMappingURL=api-context-BNqvELYR.js.map
+//# sourceMappingURL=api-context-paLznr_9.js.map

@@ -1,6 +1,5 @@
-// Tag Builder v2 bridge — parallel to tag-builder-bridge.js. Lazy-loads the
-// v2 Svelte module and manages its lifecycle. Reuses the v1 CSS so the
-// scaffold inherits panel/header styling for free.
+// Tag Builder v2 bridge — lazy-loads the v2 Svelte module and manages its
+// lifecycle. Shares tag-builder.css so the scaffold inherits panel/header styling.
 // Public API: showTagBuilder2(view, from, to, options), hideTagBuilder2()
 
 import { getTagSourceConfig, setTagSourceConfig } from "./tags-dropdown.js";
