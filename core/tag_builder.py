@@ -3528,6 +3528,20 @@ async def _api_character_counts(request):
     return web.json_response({"counts": counts})
 
 
+@routes.get("/promptchain/tag-builder/nsfw-manifest")
+async def _api_nsfw_manifest(request):
+    # NSFW browse-filter manifest for TagBuilder2's hide-NSFW toggle: which
+    # groups to hide wholesale + which leaked item tags to hide elsewhere.
+    # Maintainer-edited JSON, served from disk (not the DB).
+    path = DB_PATH.parent / "nsfw-manifest.json"
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        return web.json_response({"groups": data.get("groups", []), "items": data.get("items", [])})
+    except (OSError, ValueError):
+        return web.json_response({"groups": [], "items": []})
+
+
 @routes.get("/promptchain/tag-builder/characters/identity-index")
 async def _api_character_identity_index(request):
     # Full normalized-character identity set for TagBuilder2's round-trip

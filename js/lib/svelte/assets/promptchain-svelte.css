@@ -5691,11 +5691,28 @@
     border-bottom: 1px solid #2a2a2a;
     color: #888;
     font-size: 12px;
+    display: flex;
+    align-items: center;
   }
   .pcr-atb2-breadcrumb.svelte-ibd6yj { display: inline-flex; gap: 6px; align-items: center; }
   .pcr-atb2-bc-target.svelte-ibd6yj strong:where(.svelte-ibd6yj) { color: #d4b8ff; }
   .pcr-atb2-bc-sep.svelte-ibd6yj { color: #555; }
   .pcr-atb2-bc-group.svelte-ibd6yj { color: #ccc; font-weight: 500; }
+  .pcr-atb2-view-toggle.svelte-ibd6yj { margin-left: auto; display: inline-flex; gap: 2px; flex: 0 0 auto; }
+  .pcr-atb2-view-btn.svelte-ibd6yj {
+    background: #222;
+    border: 1px solid #333;
+    color: #888;
+    width: 26px;
+    height: 22px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    padding: 0;
+  }
+  .pcr-atb2-view-btn.svelte-ibd6yj:hover { color: #ccc; border-color: #555; }
+  .pcr-atb2-view-btn.active.svelte-ibd6yj { background: #3a2a4a; color: #d4b8ff; border-color: #5a4a6a; }
 
   .pcr-atb2-grid.svelte-ibd6yj {
     display: grid;
@@ -5836,6 +5853,46 @@
     color: #ddd;
     text-align: center;
     line-height: 1.3;
+  }
+
+  /* ---- LIST VIEW ---- compact rows reusing the same card markup: tiny left
+     thumb + name (left) + series (right). Toggled via .pcr-atb2-list-mode on
+     the browser; works in every view (All / category / NSFW / search / recent). */
+  .pcr-atb2-list-mode.svelte-ibd6yj .pcr-atb2-grid:where(.svelte-ibd6yj) {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 4px 8px;
+  }
+  .pcr-atb2-list-mode.svelte-ibd6yj .pcr-atb2-card:where(.svelte-ibd6yj) {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 8px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    contain-intrinsic-size: auto 34px;
+  }
+  .pcr-atb2-list-mode.svelte-ibd6yj .pcr-atb2-card:where(.svelte-ibd6yj):hover { background: #2a2a2a; border: 0; }
+  .pcr-atb2-list-mode.svelte-ibd6yj .pcr-atb2-card.selected:where(.svelte-ibd6yj) {
+    background: #2c2540;
+    box-shadow: 0 0 0 1px #8b5cf6 inset;
+  }
+  /* Consistent 26px left gutter so names line up; transparent when no thumb. */
+  .pcr-atb2-list-mode.svelte-ibd6yj .pcr-atb2-card-thumb:where(.svelte-ibd6yj) { width: 26px; height: 26px; flex: 0 0 26px; }
+  .pcr-atb2-list-mode.svelte-ibd6yj .pcr-atb2-card-thumb:where(.svelte-ibd6yj):not(.has-image) { display: block; background: transparent; }
+  .pcr-atb2-list-mode.svelte-ibd6yj .pcr-atb2-card-name:where(.svelte-ibd6yj) {
+    text-align: left;
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pcr-atb2-list-mode.svelte-ibd6yj .pcr-atb2-card-group:where(.svelte-ibd6yj) {
+    flex: 0 0 auto;
+    margin-left: auto;
+    padding-left: 10px;
   }
   .pcr-atb2-card-group.svelte-ibd6yj {
     font-size: 10px;
@@ -6685,6 +6742,24 @@
   .pcr-atb2-mode-option.active.svelte-ibd6yj {
     background: #3a2a4a;
     color: #d4b8ff;
+  }
+
+  .pcr-atb2-nsfw-toggle.svelte-ibd6yj {
+    background: #222;
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: #888;
+    font-size: 12px;
+    padding: 6px 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.12s;
+  }
+  .pcr-atb2-nsfw-toggle.svelte-ibd6yj:hover { color: #ccc; border-color: #555; }
+  .pcr-atb2-nsfw-toggle.nsfw-on.svelte-ibd6yj {
+    background: #2a1818;
+    border-color: #884444;
+    color: #ff8a8a;
   }
 
   .pcr-atb2-btn.svelte-ibd6yj {

@@ -64,6 +64,11 @@
     { key: "pose",       label: "Pose",       icon: "🧘", scope: "subject",  bucket: "pose",       enabled: true },
     { key: "expression", label: "Expression", icon: "😊", scope: "subject",  bucket: "expression", enabled: true },
     { key: "action",     label: "Action",     icon: "⚡", scope: "subject",  bucket: "action",     enabled: true },
+    // NSFW Actions — the dedicated adult-action bucket (solo/foreplay/oral/…).
+    // Only appears in the rail when the NSFW toggle is Shown (gated via
+    // effectiveCategories) and is never mixed into the "All" view. Picks land on
+    // the active subject and emit in its body like a normal action.
+    { key: "nsfw_action", label: "NSFW Actions", icon: "🔞", scope: "subject",  bucket: "nsfw_action", enabled: true },
     // Props has a synthetic scope: an active subject routes the pick into
     // an interaction chip on the subject's `furniture` slot (with an action
     // verb); no subject routes it into `sceneSelections.<category>` as a
@@ -115,7 +120,7 @@
       label: "Person",
       icon: "👤",
       color: "#7c3aed",
-      slotCategories: ["appearance", "clothing", "pose", "expression", "action", "furniture"],
+      slotCategories: ["appearance", "clothing", "pose", "expression", "action", "nsfw_action", "furniture"],
     },
     object: {
       label: "Object",
@@ -249,6 +254,17 @@
   // Listener attaches via $effect with { passive: false } so we can call
   // preventDefault — otherwise the browser passive default lets ComfyUI's
   // canvas zoom fire instead.
+  // Card grid vs compact list view — top-right toggle in the browser header,
+  // persisted. List mode is a pure CSS restyle of the same cards into rows
+  // (tiny left thumb + name), so it works in every view for free.
+  const VIEW_MODE_KEY = "pcr-atb2-view-mode";
+  let viewMode = $state("cards");
+  try { const v = localStorage.getItem(VIEW_MODE_KEY); if (v === "list" || v === "cards") viewMode = v; } catch {}
+  function setViewMode(m) {
+    viewMode = m;
+    try { localStorage.setItem(VIEW_MODE_KEY, m); } catch {}
+  }
+
   const CARD_MIN_PX_KEY = "pcr-atb2-card-min-px";
   const CARD_MIN_PX_MIN = 60;
   const CARD_MIN_PX_MAX = 320;
@@ -302,6 +318,37 @@
   function clearRecent() {
     recentPicks = [];
     try { localStorage.setItem(RECENT_KEY, JSON.stringify(recentPicks)); } catch {}
+  }
+
+  // NSFW browse filter — hides designated NSFW groups + leaked NSFW items from
+  // the picker grid/rail/search ONLY. The right-panel build state, round-trip
+  // parsing, and emit are untouched, so an NSFW chip already in the build stays
+  // visible and still outputs; you just can't browse-add new ones when hidden.
+  const NSFW_HIDDEN_KEY = "pcr-atb2-nsfw-hidden";
+  let nsfwHidden = $state(true); // default: hidden
+  try { const v = localStorage.getItem(NSFW_HIDDEN_KEY); if (v !== null) nsfwHidden = v !== "0"; } catch {}
+  let nsfwGroups = $state(new Set()); // "<categoryKey>/<groupKey>"
+  let nsfwItems = $state(new Set());  // item_tag
+  function toggleNsfw() {
+    nsfwHidden = !nsfwHidden;
+    // Hid NSFW while on the NSFW Actions tab → its rail entry is gone, fall back to All.
+    if (nsfwHidden && activeCategory === "nsfw_action") selectCategory("all");
+    try { localStorage.setItem(NSFW_HIDDEN_KEY, nsfwHidden ? "1" : "0"); } catch {}
+  }
+  function nsfwGroupHidden(categoryKey, groupKey) {
+    return nsfwHidden && nsfwGroups.has(`${categoryKey}/${groupKey}`);
+  }
+  function nsfwItemHidden(item) {
+    return nsfwHidden && !!item && nsfwItems.has(item.item_tag);
+  }
+  // The subject card's "NSFW Actions" section shows when the toggle is Shown, or
+  // when the subject already has NSFW chips (so loaded content stays editable
+  // even while hidden). Every other category section always shows.
+  function subjNsfwSectionVisible(catKey, subj) {
+    if (catKey !== "nsfw_action") return true;
+    if (!nsfwHidden) return true;
+    const s = subj?.slots?.nsfw_action || {};
+    return Object.values(s).some(arr => arr && arr.length);
   }
 
   $effect(() => {
@@ -469,6 +516,14 @@
   // ----------------------------------------------------------------------
 
   let activeCategoryDef = $derived(CATEGORIES.find(c => c.key === activeCategory) || CATEGORIES[0]);
+
+  // Rail + onMount prefetch use this so the NSFW Actions category only appears
+  // when the NSFW toggle is Shown. `.find()` lookups elsewhere stay on
+  // CATEGORIES, so an already-active nsfw_action view still resolves its def and
+  // already-added NSFW chips still render/emit via slotCategories.
+  let effectiveCategories = $derived(
+    nsfwHidden ? CATEGORIES.filter(c => c.key !== "nsfw_action") : CATEGORIES
+  );
   let activeBucket = $derived(activeCategoryDef.bucket);
   let activeBucketData = $derived(bucketCache[activeBucket] || { groups: [], items: [], thumbs: new Set(), loading: true });
   let activeSubject = $derived(subjects.find(s => s.id === activeSubjectId) || null);
@@ -551,13 +606,15 @@
 
     for (const cat of CATEGORIES) {
       if (!cat.enabled) continue;
+      if (cat.key === "nsfw_action") continue; // explicit bucket lives only in its own tab, never in "All"
       if (cat.scope === "all" || cat.scope === "spawn" || cat.scope === "style") continue;
       if (!cat.bucket) continue;
       const data = bucketCache[cat.bucket];
       if (!data?.loaded) continue;
       const groups = data.groups || [];
       for (const g of groups) {
-        const items = (data.items || []).filter(it => it.item_group === g.group_name).filter(filterFn);
+        if (nsfwGroupHidden(cat.key, g.group_name)) continue;
+        const items = (data.items || []).filter(it => it.item_group === g.group_name).filter(filterFn).filter(it => !nsfwItemHidden(it));
         if (items.length) {
           sections.push({
             key: `${cat.key}/${g.group_name}`,
@@ -570,7 +627,7 @@
         }
       }
       if (cat.key === "appearance") {
-        const modItems = MODIFIER_ITEMS.filter(filterFn);
+        const modItems = MODIFIER_ITEMS.filter(filterFn).filter(it => !nsfwItemHidden(it));
         if (modItems.length) {
           sections.push({
             key: "appearance/__modifiers__",
@@ -605,7 +662,8 @@
     };
     const sections = [];
     for (const g of groups) {
-      const items = (data.items || []).filter(it => it.item_group === g.group_name).filter(filterFn);
+      if (nsfwGroupHidden(activeCategory, g.group_name)) continue;
+      const items = (data.items || []).filter(it => it.item_group === g.group_name).filter(filterFn).filter(it => !nsfwItemHidden(it));
       if (items.length) {
         sections.push({
           key: g.group_name,
@@ -620,6 +678,7 @@
 
   let visibleItems = $derived.by(() => {
     const q = debouncedQuery.trim().toLowerCase().replace(/[_\s]+/g, " ");
+    if (nsfwGroupHidden(activeCategory, activeGroup)) return [];
     // Appearance > Modifiers sub-item: render the synthetic modifier list.
     if (activeCategory === "appearance" && activeGroup === MODIFIER_GROUP_KEY) {
       if (!q) return MODIFIER_ITEMS;
@@ -638,7 +697,7 @@
         return d.includes(q) || t.includes(q);
       });
     }
-    const pool = activeGroup ? (itemsByGroup[activeGroup] || []) : activeBucketData.items;
+    const pool = (activeGroup ? (itemsByGroup[activeGroup] || []) : activeBucketData.items).filter(it => !nsfwItemHidden(it));
     if (!q) return pool;
     return pool.filter(it => {
       const d = (it.display_name || it.item_tag || "").toLowerCase().replace(/[_\s]+/g, " ");
@@ -812,6 +871,11 @@
     fetch(`/promptchain/tag-builder/character-counts?natlang_status=normalized`)
       .then(r => r.ok ? r.json() : { counts: {} })
       .then(d => { characterCategoryCounts = d.counts || {}; })
+      .catch(() => {});
+    // NSFW browse-filter manifest (groups hidden wholesale + leaked item tags).
+    fetch(`/promptchain/tag-builder/nsfw-manifest`)
+      .then(r => r.ok ? r.json() : { groups: [], items: [] })
+      .then(d => { nsfwGroups = new Set(d.groups || []); nsfwItems = new Set(d.items || []); })
       .catch(() => {});
     // Same for each cast group — bucket name on disk matches the group.
     for (const sub of SUBJECT_SUBITEMS) {
@@ -4997,7 +5061,7 @@
     <!-- LEFT RAIL -->
     <aside class="pcr-atb2-rail" bind:this={railEl}>
       <div class="pcr-atb2-rail-heading">Categories</div>
-      {#each CATEGORIES as cat}
+      {#each effectiveCategories as cat}
         {@const isActive = activeCategory === cat.key}
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -5139,6 +5203,7 @@
     <!-- MIDDLE: BROWSER -->
     <main
       class="pcr-atb2-browser"
+      class:pcr-atb2-list-mode={viewMode === "list"}
       style="--pcr-atb2-card-min: {cardMinPx}px"
       bind:this={browserEl}
     >
@@ -5152,6 +5217,10 @@
             <span class="pcr-atb2-bc-group">{groupDisplay(activeBucket, activeGroup)}</span>
           {/if}
         </span>
+        <div class="pcr-atb2-view-toggle" role="radiogroup" aria-label="View mode">
+          <button class="pcr-atb2-view-btn" class:active={viewMode === "cards"} role="radio" aria-checked={viewMode === "cards"} title="Card view" onclick={() => setViewMode("cards")}>▦</button>
+          <button class="pcr-atb2-view-btn" class:active={viewMode === "list"} role="radio" aria-checked={viewMode === "list"} title="List view" onclick={() => setViewMode("list")}>☰</button>
+        </div>
       </div>
 
       {#if activeCategory === "all"}
@@ -5597,7 +5666,7 @@
 
           {#each typeDef.slotCategories as catKey}
             {@const catDef = CATEGORIES.find(c => c.key === catKey)}
-            {#if catDef && catDef.enabled && bucketCache[catDef.bucket]?.groups?.length}
+            {#if catDef && catDef.enabled && bucketCache[catDef.bucket]?.groups?.length && subjNsfwSectionVisible(catKey, subj)}
               {@const catGroups = bucketCache[catDef.bucket].groups}
               {@const catSlots = subj.slots[catKey] || {}}
               {@const multiSet = MULTI_GROUPS[catDef.bucket] || new Set()}
@@ -5960,6 +6029,14 @@
       <div class="pcr-atb2-mode-option" class:active={isNaturalMode} role="radio" aria-checked={isNaturalMode} tabindex="0" onclick={() => setMode(true)}>Natural Language</div>
     </div>
 
+    <button
+      class="pcr-atb2-nsfw-toggle"
+      class:nsfw-on={!nsfwHidden}
+      title={nsfwHidden ? "NSFW hidden in the browser — click to show. (Already-added chips are unaffected.)" : "NSFW shown — click to hide"}
+      aria-pressed={!nsfwHidden}
+      onclick={toggleNsfw}
+    >🔞 {nsfwHidden ? "Hidden" : "Shown"}</button>
+
     <div class="pcr-atb2-footer-spacer"></div>
 
     <button class="pcr-atb2-btn pcr-atb2-btn-cancel" onclick={onClose}>Cancel</button>
@@ -6295,11 +6372,28 @@
     border-bottom: 1px solid #2a2a2a;
     color: #888;
     font-size: 12px;
+    display: flex;
+    align-items: center;
   }
   .pcr-atb2-breadcrumb { display: inline-flex; gap: 6px; align-items: center; }
   .pcr-atb2-bc-target strong { color: #d4b8ff; }
   .pcr-atb2-bc-sep { color: #555; }
   .pcr-atb2-bc-group { color: #ccc; font-weight: 500; }
+  .pcr-atb2-view-toggle { margin-left: auto; display: inline-flex; gap: 2px; flex: 0 0 auto; }
+  .pcr-atb2-view-btn {
+    background: #222;
+    border: 1px solid #333;
+    color: #888;
+    width: 26px;
+    height: 22px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    padding: 0;
+  }
+  .pcr-atb2-view-btn:hover { color: #ccc; border-color: #555; }
+  .pcr-atb2-view-btn.active { background: #3a2a4a; color: #d4b8ff; border-color: #5a4a6a; }
 
   .pcr-atb2-grid {
     display: grid;
@@ -6440,6 +6534,46 @@
     color: #ddd;
     text-align: center;
     line-height: 1.3;
+  }
+
+  /* ---- LIST VIEW ---- compact rows reusing the same card markup: tiny left
+     thumb + name (left) + series (right). Toggled via .pcr-atb2-list-mode on
+     the browser; works in every view (All / category / NSFW / search / recent). */
+  .pcr-atb2-list-mode .pcr-atb2-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 4px 8px;
+  }
+  .pcr-atb2-list-mode .pcr-atb2-card {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 8px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    contain-intrinsic-size: auto 34px;
+  }
+  .pcr-atb2-list-mode .pcr-atb2-card:hover { background: #2a2a2a; border: 0; }
+  .pcr-atb2-list-mode .pcr-atb2-card.selected {
+    background: #2c2540;
+    box-shadow: 0 0 0 1px #8b5cf6 inset;
+  }
+  /* Consistent 26px left gutter so names line up; transparent when no thumb. */
+  .pcr-atb2-list-mode .pcr-atb2-card-thumb { width: 26px; height: 26px; flex: 0 0 26px; }
+  .pcr-atb2-list-mode .pcr-atb2-card-thumb:not(.has-image) { display: block; background: transparent; }
+  .pcr-atb2-list-mode .pcr-atb2-card-name {
+    text-align: left;
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pcr-atb2-list-mode .pcr-atb2-card-group {
+    flex: 0 0 auto;
+    margin-left: auto;
+    padding-left: 10px;
   }
   .pcr-atb2-card-group {
     font-size: 10px;
@@ -7289,6 +7423,24 @@
   .pcr-atb2-mode-option.active {
     background: #3a2a4a;
     color: #d4b8ff;
+  }
+
+  .pcr-atb2-nsfw-toggle {
+    background: #222;
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: #888;
+    font-size: 12px;
+    padding: 6px 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.12s;
+  }
+  .pcr-atb2-nsfw-toggle:hover { color: #ccc; border-color: #555; }
+  .pcr-atb2-nsfw-toggle.nsfw-on {
+    background: #2a1818;
+    border-color: #884444;
+    color: #ff8a8a;
   }
 
   .pcr-atb2-btn {
