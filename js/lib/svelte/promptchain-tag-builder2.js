@@ -1921,7 +1921,18 @@ function TagBuilder2($$anchor, $$props) {
   let activeCategory = state("all");
   let activeGroup = state(null);
   let searchQuery = state("");
+  let debouncedQuery = state("");
   let isNaturalMode = state(tagSourceConfig().prompt_style === "natural");
+  user_effect(() => {
+    const q = get(searchQuery);
+    const h = setTimeout(
+      () => {
+        set(debouncedQuery, q, true);
+      },
+      200
+    );
+    return () => clearTimeout(h);
+  });
   let bucketCache = state(proxy({}));
   let characters = state(proxy([]));
   let charactersTotal = state(0);
@@ -2082,7 +2093,7 @@ function TagBuilder2($$anchor, $$props) {
   let allCategorySections = user_derived(() => {
     var _a2;
     if (get(activeCategory) !== "all") return [];
-    const q = get(searchQuery).trim().toLowerCase().replace(/[_\s]+/g, " ");
+    const q = get(debouncedQuery).trim().toLowerCase().replace(/[_\s]+/g, " ");
     const filterFn = (it) => {
       if (!q) return true;
       const d = (it.display_name || it.item_tag || "").toLowerCase().replace(/[_\s]+/g, " ");
@@ -2159,7 +2170,7 @@ function TagBuilder2($$anchor, $$props) {
     if (!(data == null ? void 0 : data.loaded)) return null;
     const groups = data.groups || [];
     if (groups.length <= 1) return null;
-    const q = get(searchQuery).trim().toLowerCase().replace(/[_\s]+/g, " ");
+    const q = get(debouncedQuery).trim().toLowerCase().replace(/[_\s]+/g, " ");
     const filterFn = (it) => {
       if (!q) return true;
       const d = (it.display_name || it.item_tag || "").toLowerCase().replace(/[_\s]+/g, " ");
@@ -2181,7 +2192,7 @@ function TagBuilder2($$anchor, $$props) {
     return sections;
   });
   let visibleItems = user_derived(() => {
-    const q = get(searchQuery).trim().toLowerCase().replace(/[_\s]+/g, " ");
+    const q = get(debouncedQuery).trim().toLowerCase().replace(/[_\s]+/g, " ");
     if (get(activeCategory) === "appearance" && get(activeGroup) === MODIFIER_GROUP_KEY) {
       if (!q) return MODIFIER_ITEMS;
       return MODIFIER_ITEMS.filter((it) => {
@@ -2838,7 +2849,10 @@ function TagBuilder2($$anchor, $$props) {
   function selectCategory(key) {
     const cat = CATEGORIES.find((c) => c.key === key);
     if (!cat || !cat.enabled) return;
-    if (key !== get(activeCategory)) set(searchQuery, "");
+    if (key !== get(activeCategory)) {
+      set(searchQuery, "");
+      set(debouncedQuery, "");
+    }
     set(activeCategory, key, true);
     set(activeGroup, null);
     if (key !== "subjects") set(activeSubjectSubitem, null);
@@ -2848,6 +2862,7 @@ function TagBuilder2($$anchor, $$props) {
   function selectSubjectSubitem(key) {
     set(activeSubjectSubitem, get(activeSubjectSubitem) === key ? null : key, true);
     set(searchQuery, "");
+    set(debouncedQuery, "");
     scrollBrowserTop();
   }
   function selectGroup(groupName) {
@@ -4468,6 +4483,7 @@ function TagBuilder2($$anchor, $$props) {
     set(activeGroup, group ?? null, true);
     if (category === "subjects") set(activeSubjectSubitem, null);
     set(searchQuery, query || "", true);
+    set(debouncedQuery, query || "", true);
     if (itemTag) set(scrollToItemTag, itemTag, true);
   }
   function jumpToModifier(subjId, token) {

@@ -211,7 +211,18 @@
   let activeCategory = $state("all");
   let activeGroup = $state(null);
   let searchQuery = $state("");
+  // The card-grid filter ($derived below) is expensive — it re-diffs thousands
+  // of card DOM nodes. Drive it off a debounced copy of the query so typing
+  // updates the grid ~5x/sec instead of synchronously on every keystroke (the
+  // freeze). The search input stays bound to searchQuery for instant feedback.
+  let debouncedQuery = $state("");
   let isNaturalMode = $state(tagSourceConfig.prompt_style === "natural");
+
+  $effect(() => {
+    const q = searchQuery;
+    const h = setTimeout(() => { debouncedQuery = q; }, 200);
+    return () => clearTimeout(h);
+  });
 
   // bucketCache[bucket] = { groups, items, thumbs:Set, loaded, loading }
   let bucketCache = $state({});
@@ -459,7 +470,7 @@
   // each section; sections with no matches are hidden.
   let allCategorySections = $derived.by(() => {
     if (activeCategory !== "all") return [];
-    const q = searchQuery.trim().toLowerCase().replace(/[_\s]+/g, " ");
+    const q = debouncedQuery.trim().toLowerCase().replace(/[_\s]+/g, " ");
     const filterFn = (it) => {
       if (!q) return true;
       const d = (it.display_name || it.item_tag || "").toLowerCase().replace(/[_\s]+/g, " ");
@@ -545,7 +556,7 @@
     if (!data?.loaded) return null;
     const groups = data.groups || [];
     if (groups.length <= 1) return null;
-    const q = searchQuery.trim().toLowerCase().replace(/[_\s]+/g, " ");
+    const q = debouncedQuery.trim().toLowerCase().replace(/[_\s]+/g, " ");
     const filterFn = (it) => {
       if (!q) return true;
       const d = (it.display_name || it.item_tag || "").toLowerCase().replace(/[_\s]+/g, " ");
@@ -568,7 +579,7 @@
   });
 
   let visibleItems = $derived.by(() => {
-    const q = searchQuery.trim().toLowerCase().replace(/[_\s]+/g, " ");
+    const q = debouncedQuery.trim().toLowerCase().replace(/[_\s]+/g, " ");
     // Appearance > Modifiers sub-item: render the synthetic modifier list.
     if (activeCategory === "appearance" && activeGroup === MODIFIER_GROUP_KEY) {
       if (!q) return MODIFIER_ITEMS;
@@ -1270,7 +1281,7 @@
   function selectCategory(key) {
     const cat = CATEGORIES.find(c => c.key === key);
     if (!cat || !cat.enabled) return;
-    if (key !== activeCategory) searchQuery = "";
+    if (key !== activeCategory) { searchQuery = ""; debouncedQuery = ""; }
     activeCategory = key;
     activeGroup = null;
     if (key !== "subjects") activeSubjectSubitem = null;
@@ -1281,6 +1292,7 @@
   function selectSubjectSubitem(key) {
     activeSubjectSubitem = activeSubjectSubitem === key ? null : key;
     searchQuery = "";
+    debouncedQuery = "";
     scrollBrowserTop();
   }
 
@@ -3386,7 +3398,10 @@
     if (category) activeCategory = category;
     activeGroup = group ?? null;
     if (category === "subjects") activeSubjectSubitem = null;
+    // Set the debounced copy synchronously too — the item must render this
+    // tick so the scrollToItemTag effect can find and flash it.
     searchQuery = query || "";
+    debouncedQuery = query || "";
     if (itemTag) scrollToItemTag = itemTag;
   }
 
