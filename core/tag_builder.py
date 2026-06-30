@@ -3501,9 +3501,11 @@ async def _api_characters(request):
         params + [per_page, offset],
     ).fetchall()
 
-    # Merge user edits onto this page. 2b is edit-only, so no overlay adds
-    # exist to break LIMIT/OFFSET; adds/deletes (which would) are deferred.
-    merged = tag_overlay.apply_overlay("characters", [dict(r) for r in rows])
+    # Merge user edits + tombstone-deletes onto this page. Adds are suppressed
+    # here (include_adds=False): user-added characters live in the separate
+    # "Mine" view, and injecting them into a LIMIT/OFFSET page would duplicate
+    # them across pages and skew the total count.
+    merged = tag_overlay.apply_overlay("characters", [dict(r) for r in rows], include_adds=False)
 
     return web.json_response({
         "characters": merged,
@@ -3578,7 +3580,9 @@ async def _api_character_detail(request):
     if not char:
         return web.json_response({"error": "Character not found"}, status=404)
     # Apply user edits (dict — downstream uses char["..."] / dict(char), both fine).
-    char = (tag_overlay.apply_overlay("characters", [dict(char)]) or [dict(char)])[0]
+    # include_adds=False: this row already exists in the base, and the Mine view
+    # owns added characters, so adds must never tag along on a single-row detail.
+    char = (tag_overlay.apply_overlay("characters", [dict(char)], include_adds=False) or [dict(char)])[0]
 
     outfits = db.execute(
         "SELECT * FROM outfits WHERE character_tag = ? ORDER BY sort_order, outfit_name",

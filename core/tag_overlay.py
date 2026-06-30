@@ -193,13 +193,19 @@ def _coerce_types(spec: dict, data: dict) -> None:
 
 # ── the merge ────────────────────────────────────────────────────────
 
-def apply_overlay(table: str, base_rows: list[dict], add_filter: dict | None = None) -> list[dict]:
+def apply_overlay(table: str, base_rows: list[dict], add_filter: dict | None = None,
+                  include_adds: bool = True) -> list[dict]:
     """Merge the user delta over freshly-read base rows. Unregistered tables and
     tables with no overlay pass through unchanged, so every read site can call
     this unconditionally and Phase-2 breadth is just registry lines.
 
     add_filter (e.g. {"item_group": group}) scopes user-added rows to a filtered
     query so an add in one group doesn't leak into another group's view.
+
+    include_adds=False applies only edits + deletes, never user-added rows. The
+    paginated character browser uses this: its adds live in a separate "Mine"
+    view, so injecting them here would duplicate them across every page (adds
+    aren't bounded by the SQL LIMIT/OFFSET) and skew the total count.
     """
     spec = ENTITY_REGISTRY.get(table)
     if spec is None:
@@ -240,15 +246,16 @@ def apply_overlay(table: str, base_rows: list[dict], add_filter: dict | None = N
         out.append(merged)
         seen.add(key)
 
-    for key, row in adds.items():
-        if key in deletes or key in seen:
-            continue
-        if add_filter and any(str(row.get(c, "")) != str(v) for c, v in add_filter.items()):
-            continue
-        merged = dict(row)
-        merged["_overlay"] = "add"
-        out.append(merged)
-        seen.add(key)
+    if include_adds:
+        for key, row in adds.items():
+            if key in deletes or key in seen:
+                continue
+            if add_filter and any(str(row.get(c, "")) != str(v) for c, v in add_filter.items()):
+                continue
+            merged = dict(row)
+            merged["_overlay"] = "add"
+            out.append(merged)
+            seen.add(key)
 
     # Only re-sort tables that declare a sort column (the *_items buckets).
     # Tables without one (e.g. characters, ordered server-side by post_count)

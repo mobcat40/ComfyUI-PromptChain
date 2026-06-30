@@ -823,7 +823,8 @@
       if (cat.enabled && cat.bucket) loadBucket(cat.bucket);
     }
 
-    loadOverlayCount();  // show the "Your edits" button if any deltas exist
+    loadOverlayCount();   // show the "Your edits" button if any deltas exist
+    loadMyCharacters();   // populate the Subjects → Mine tab
 
     // Preload normalized characters (tag + base_natlang etc.) so the
     // round-trip parser can recognize both tag-form ("cammy_white") and
@@ -1358,8 +1359,12 @@
     // blocks the grid/list, so the user can't click a stale (pre-edit) row
     // until fresh data is in place — otherwise a quick insert emits the old
     // value.
-    if (ed.kind === "character") await refreshCharacterRow(ed.initial?.tag);
-    else await reloadBucketItems(ed.bucket);
+    if (ed.kind === "character") {
+      // An add — or an edit of an already-added char — belongs to the Mine
+      // list; an edit of a base char is patched into the paginated list.
+      await loadMyCharacters();
+      if (ed.mode === "edit" && ed.initial?._overlay !== "add") await refreshCharacterRow(ed.initial?.tag);
+    } else await reloadBucketItems(ed.bucket);
     overlayEditorOpen = null;
     loadOverlayCount();
   }
@@ -1471,6 +1476,56 @@
     } catch (e) {
       console.error("[TagBuilder2] character refresh failed", e);
     }
+  }
+
+  // --- User-added subjects ("Mine") -------------------------------------
+  // Added characters are kept OUT of the paginated browser (the server applies
+  // them with include_adds=False) — injecting them into a LIMIT/OFFSET page
+  // would duplicate them across pages and skew the count. They live here
+  // instead, read straight from the overlay file via the per-table summary.
+  const MINE_KEY = "__mine__";
+  let myCharacters = $state([]);
+  let myCharactersLoading = $state(false);
+
+  async function loadMyCharacters() {
+    myCharactersLoading = true;
+    try {
+      const res = await fetch("/promptchain/tag-builder/overlay/characters", { cache: "no-store" });
+      const adds = res.ok ? (await res.json()).adds || {} : {};
+      myCharacters = Object.values(adds).map(row => ({ ...row, _overlay: "add" }));
+    } catch (e) {
+      console.error("[TagBuilder2] load my characters failed", e);
+      myCharacters = [];
+    }
+    myCharactersLoading = false;
+  }
+
+  function openNewCharacterEditor() {
+    overlayEditorOpen = {
+      bucket: "character", table: "characters", mode: "add",
+      fields: CHARACTER_FIELDS, initial: {}, groups: [], kind: "character",
+    };
+  }
+
+  // Hide a base character (tombstone) or drop a user-added one — both route
+  // through the same overlay DELETE. The base case is reversible from the
+  // "Your edits" view; the added case is gone for good, so confirm either way.
+  async function deleteCharacter(char) {
+    closeCharEditMenu();
+    const label = char.display || char.tag;
+    const msg = char._overlay === "add"
+      ? `Remove your added subject “${label}”?`
+      : `Hide “${label}” from the library? You can bring it back from your edits list.`;
+    if (typeof window !== "undefined" && !window.confirm(msg)) return;
+    try {
+      const res = await fetch(
+        `/promptchain/tag-builder/overlay/characters/${encodeURIComponent(char.tag)}`,
+        { method: "DELETE" });
+      if (!res.ok) { console.error(`[TagBuilder2] character delete failed: ${res.status}`); return; }
+    } catch (e) { console.error("[TagBuilder2] character delete error", e); return; }
+    characters = characters.filter(c => c.tag !== char.tag);
+    await loadMyCharacters();
+    loadOverlayCount();
   }
 
   // --- "Your edits" management view -------------------------------------
@@ -1667,6 +1722,7 @@
     activeSubjectSubitem = activeSubjectSubitem === key ? null : key;
     searchQuery = "";
     debouncedQuery = "";
+    if (key === MINE_KEY) loadMyCharacters();  // refresh in case edited elsewhere
     scrollBrowserTop();
   }
 
@@ -5380,6 +5436,18 @@
                 {/if}
               </div>
             {/each}
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div
+              class="pcr-atb2-rail-sub pcr-atb2-rail-sub-mine"
+              class:active={activeSubjectSubitem === MINE_KEY}
+              onclick={() => selectSubjectSubitem(MINE_KEY)}
+            >
+              <span class="pcr-atb2-rail-sub-label">⭐ Mine</span>
+              {#if myCharacters.length}
+                <span class="pcr-atb2-rail-count">{myCharacters.length}</span>
+              {/if}
+            </div>
           </div>
         {:else if isActive && cat.key === "styles" && styleGroups.length}
           <div class="pcr-atb2-rail-drilldown">
@@ -5624,8 +5692,38 @@
           {/each}
         {/if}
       {:else if activeCategory === "subjects"}
-        {@const sub = activeSubjectSubitem ? SUBJECT_SUBITEMS.find(s => s.key === activeSubjectSubitem) : null}
-        {#if !sub || sub.source === "characters"}
+        {@const sub = activeSubjectSubitem && activeSubjectSubitem !== MINE_KEY ? SUBJECT_SUBITEMS.find(s => s.key === activeSubjectSubitem) : null}
+        {#if activeSubjectSubitem === MINE_KEY}
+            <div class="pcr-atb2-grid">
+              <!-- svelte-ignore a11y_click_events_have_key_events -->
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <div class="pcr-atb2-card pcr-atb2-card-add" onclick={openNewCharacterEditor} title="Create a new subject">
+                <div class="pcr-atb2-card-add-plus">＋</div>
+                <div class="pcr-atb2-card-name">Add subject</div>
+              </div>
+              {#each myCharacters as char (char.tag)}
+                {@const isActiveIdentity = activeSubject?.character?.tag === char.tag}
+                <!-- svelte-ignore a11y_click_events_have_key_events -->
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <div
+                  class="pcr-atb2-card"
+                  class:selected={isActiveIdentity}
+                  onclick={() => isActiveIdentity ? unbindIdentity(activeSubject.id) : pickIdentityFromBrowser(characterToOption(char))}
+                  oncontextmenu={(e) => openCharEditMenu(e, char)}
+                  title={char.base_natlang || `${char.display || char.tag}${char.series ? " — " + char.series : ""}`}
+                >
+                  <div class="pcr-atb2-card-thumb"></div>
+                  <div class="pcr-atb2-card-name">{char.display || char.tag}</div>
+                  {#if char.series}
+                    <div class="pcr-atb2-card-group">{char.series}</div>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+            {#if !myCharacters.length}
+              <div class="pcr-atb2-empty">No added subjects yet. Click “Add subject” to create one — it survives updates.</div>
+            {/if}
+        {:else if !sub || sub.source === "characters"}
             {#if charactersLoading}
               <div class="pcr-atb2-empty">Searching characters…</div>
             {:else if characters.length === 0}
@@ -6572,6 +6670,9 @@
           ↩️ Restore default
         </button>
       {/if}
+      <button class="pcr-atb2-qa-menu-item pcr-atb2-qa-menu-danger" onclick={() => deleteCharacter(charEditMenu.char)}>
+        {charEditMenu.char._overlay === "add" ? "🗑️ Remove" : "🗑️ Delete (hide)"}
+      </button>
     </div>
   </div>
 {/if}
@@ -6878,6 +6979,25 @@
     color: #ddd;
     text-align: center;
     line-height: 1.3;
+  }
+
+  /* "Add subject" tile in Subjects → Mine. Dashed accent box that reads as an
+     action, not a content card. */
+  .pcr-atb2-card-add {
+    align-items: center;
+    justify-content: center;
+    min-height: 72px;
+    border: 1px dashed #5b4b8a;
+    background: rgba(124, 58, 237, 0.07);
+  }
+  .pcr-atb2-card-add:hover {
+    background: rgba(124, 58, 237, 0.16);
+    border-color: #8b5cf6;
+  }
+  .pcr-atb2-card-add-plus {
+    font-size: 26px;
+    line-height: 1;
+    color: #b59cff;
   }
 
   /* ---- LIST VIEW ---- compact rows reusing the same card markup: tiny left
