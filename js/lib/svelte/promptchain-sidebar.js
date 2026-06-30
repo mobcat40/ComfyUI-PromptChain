@@ -2618,7 +2618,7 @@ function buildGroups(items, mode) {
 }
 var root_2 = from_html(`<img alt="PromptChain" class="pcr-hdr-logo svelte-wtd4vk"/>`);
 var root_4 = from_html(`<button class="pcr-kebab-item svelte-wtd4vk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svelte-wtd4vk"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path></svg> Find Duplicates</button>`);
-var root_3 = from_html(`<div class="pcr-kebab-dd svelte-wtd4vk"><button class="pcr-kebab-item svelte-wtd4vk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svelte-wtd4vk"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg> New Workflow</button> <button class="pcr-kebab-item svelte-wtd4vk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svelte-wtd4vk"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg> New Folder</button> <!> <div class="pcr-kebab-sep svelte-wtd4vk"></div> <button class="pcr-kebab-item svelte-wtd4vk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svelte-wtd4vk"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg> Settings</button> <div class="pcr-kebab-sep svelte-wtd4vk"></div> <button class="pcr-kebab-item svelte-wtd4vk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svelte-wtd4vk"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> About PromptChain</button> <button class="pcr-kebab-item svelte-wtd4vk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svelte-wtd4vk"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Help</button></div>`);
+var root_3 = from_html(`<div class="pcr-kebab-dd svelte-wtd4vk"><button class="pcr-kebab-item svelte-wtd4vk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svelte-wtd4vk"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg> New Workflow</button> <button class="pcr-kebab-item svelte-wtd4vk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svelte-wtd4vk"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg> New Folder</button> <!> <div class="pcr-kebab-sep svelte-wtd4vk"></div> <button class="pcr-kebab-item svelte-wtd4vk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svelte-wtd4vk"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg> Settings</button> <div class="pcr-kebab-sep svelte-wtd4vk"></div> <button class="pcr-kebab-item svelte-wtd4vk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svelte-wtd4vk"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Update</button> <button class="pcr-kebab-item svelte-wtd4vk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svelte-wtd4vk"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> About PromptChain</button> <button class="pcr-kebab-item svelte-wtd4vk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svelte-wtd4vk"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Help</button></div>`);
 var root_6 = from_html(`<span class="pcr-bc-sep svelte-wtd4vk">/</span>`);
 var root_5 = from_html(`<!> <button> </button>`, 1);
 var root_7 = from_html(`<button class="pcr-bc-feedchip svelte-wtd4vk" title="Showing all subfolders, newest first — click to return to folder view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="svelte-wtd4vk"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15.5 14"></polyline></svg> recent</button>`);
@@ -3837,6 +3837,10 @@ function AssetBrowser($$anchor, $$props) {
     set(kebabOpen, false);
     window.dispatchEvent(new CustomEvent("promptchain:show-about"));
   }
+  function kebabUpdate() {
+    set(kebabOpen, false);
+    window.dispatchEvent(new CustomEvent("promptchain:show-about", { detail: { autoCheck: true } }));
+  }
   function kebabHelp() {
     set(kebabOpen, false);
     window.open("https://github.com/mobcat40/ComfyUI-PromptChain#readme", "_blank", "noopener");
@@ -3886,11 +3890,13 @@ function AssetBrowser($$anchor, $$props) {
       var button_5 = sibling(node_2, 4);
       var button_6 = sibling(button_5, 4);
       var button_7 = sibling(button_6, 2);
+      var button_8 = sibling(button_7, 2);
       delegated("click", button_2, kebabNewWorkflow);
       delegated("click", button_3, kebabNewFolder);
       delegated("click", button_5, kebabSettings);
-      delegated("click", button_6, kebabAbout);
-      delegated("click", button_7, kebabHelp);
+      delegated("click", button_6, kebabUpdate);
+      delegated("click", button_7, kebabAbout);
+      delegated("click", button_8, kebabHelp);
       append($$anchor2, div_4);
     };
     if_block(node_1, ($$render) => {
@@ -3916,9 +3922,9 @@ function AssetBrowser($$anchor, $$props) {
     onFavFilterToggle: toggleFavFilter
   });
   var div_5 = sibling(node_3, 2);
-  var button_8 = child(div_5);
+  var button_9 = child(div_5);
   let classes;
-  var node_4 = sibling(button_8, 2);
+  var node_4 = sibling(button_9, 2);
   each(node_4, 17, () => get(path), index, ($$anchor2, seg, i) => {
     const segPath = user_derived(() => get(path).slice(0, i + 1).join("/"));
     var fragment_1 = root_5();
@@ -3932,24 +3938,24 @@ function AssetBrowser($$anchor, $$props) {
         if (i > 0) $$render(consequent_3);
       });
     }
-    var button_9 = sibling(node_5, 2);
+    var button_10 = sibling(node_5, 2);
     let classes_1;
-    var text = child(button_9);
+    var text = child(button_10);
     template_effect(() => {
-      classes_1 = set_class(button_9, 1, "pcr-bc-seg svelte-wtd4vk", null, classes_1, { "pcr-bc-drop": get(bcDropTarget) === get(segPath) });
+      classes_1 = set_class(button_10, 1, "pcr-bc-seg svelte-wtd4vk", null, classes_1, { "pcr-bc-drop": get(bcDropTarget) === get(segPath) });
       set_text(text, get(seg));
     });
-    delegated("click", button_9, () => navigateToBreadcrumb(i));
-    event("dragover", button_9, (e) => {
+    delegated("click", button_10, () => navigateToBreadcrumb(i));
+    event("dragover", button_10, (e) => {
       if (!e.dataTransfer.types.includes("application/x-promptchain-move")) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
       set(bcDropTarget, get(segPath), true);
     });
-    event("dragleave", button_9, () => {
+    event("dragleave", button_10, () => {
       if (get(bcDropTarget) === get(segPath)) set(bcDropTarget, null);
     });
-    event("drop", button_9, (e) => {
+    event("drop", button_10, (e) => {
       set(bcDropTarget, null);
       const raw = e.dataTransfer.getData("application/x-promptchain-move");
       if (!raw) return;
@@ -3966,9 +3972,9 @@ function AssetBrowser($$anchor, $$props) {
   var node_6 = sibling(node_4, 2);
   {
     var consequent_4 = ($$anchor2) => {
-      var button_10 = root_7();
-      delegated("click", button_10, toggleFeed);
-      append($$anchor2, button_10);
+      var button_11 = root_7();
+      delegated("click", button_11, toggleFeed);
+      append($$anchor2, button_11);
     };
     if_block(node_6, ($$render) => {
       if (get(isFeed)) $$render(consequent_4);
@@ -3980,7 +3986,7 @@ function AssetBrowser($$anchor, $$props) {
       var span_1 = root_8();
       let classes_2;
       var text_1 = child(span_1);
-      var button_11 = sibling(text_1);
+      var button_12 = sibling(text_1);
       template_effect(() => {
         classes_2 = set_class(span_1, 1, "pcr-bc-info svelte-wtd4vk", null, classes_2, {
           "pcr-bc-cut": clipboard.op === "cut",
@@ -3988,7 +3994,7 @@ function AssetBrowser($$anchor, $$props) {
         });
         set_text(text_1, `${clipboard.op === "cut" ? "Cut" : "Copied"} ${clipboard.items.length ?? ""} item${clipboard.items.length === 1 ? "" : "s"} `);
       });
-      delegated("click", button_11, function(...$$args) {
+      delegated("click", button_12, function(...$$args) {
         clipClear == null ? void 0 : clipClear.apply(this, $$args);
       });
       append($$anchor2, span_1);
@@ -4030,8 +4036,8 @@ function AssetBrowser($$anchor, $$props) {
       {
         var consequent_9 = ($$anchor3) => {
           var div_9 = root_14();
-          var button_12 = sibling(child(div_9), 6);
-          delegated("click", button_12, (e) => {
+          var button_13 = sibling(child(div_9), 6);
+          delegated("click", button_13, (e) => {
             const r = e.currentTarget.getBoundingClientRect();
             set(nwmAnchor, { x: r.left, y: r.bottom + 6 }, true);
             set(nwmOpen, true);
@@ -4338,23 +4344,23 @@ function AssetBrowser($$anchor, $$props) {
       onDeleted: (paths) => dropItems(paths)
     });
   }
-  template_effect(() => classes = set_class(button_8, 1, "pcr-bc-seg svelte-wtd4vk", null, classes, { "pcr-bc-drop": get(bcDropTarget) === "" }));
+  template_effect(() => classes = set_class(button_9, 1, "pcr-bc-seg svelte-wtd4vk", null, classes, { "pcr-bc-drop": get(bcDropTarget) === "" }));
   delegated("click", button, () => {
     var _a;
     return (_a = $$props.onAddNode) == null ? void 0 : _a.call($$props);
   });
   delegated("click", button_1, toggleKebab);
-  delegated("click", button_8, navigateToRoot);
-  event("dragover", button_8, (e) => {
+  delegated("click", button_9, navigateToRoot);
+  event("dragover", button_9, (e) => {
     if (!e.dataTransfer.types.includes("application/x-promptchain-move")) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     set(bcDropTarget, "");
   });
-  event("dragleave", button_8, () => {
+  event("dragleave", button_9, () => {
     if (get(bcDropTarget) === "") set(bcDropTarget, null);
   });
-  event("drop", button_8, (e) => {
+  event("drop", button_9, (e) => {
     set(bcDropTarget, null);
     const raw = e.dataTransfer.getData("application/x-promptchain-move");
     if (!raw) return;

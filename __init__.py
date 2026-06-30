@@ -7,6 +7,15 @@ import threading as _threading
 from typing_extensions import override
 from comfy_api.latest import ComfyExtension, io
 
+# Apply any staged self-update FIRST — before our own submodules are imported
+# and before anything opens the tag-builder DB. At this point in a fresh boot
+# no sqlite handle is held, so git can replace the locked 47MB DB blob; the
+# pulled .py files are then what the imports below read. No-op when nothing is
+# staged. (Changes to update_boot.py itself take effect only on the next boot,
+# since this file is already compiled — keep it minimal and defensive.)
+from .core.update_boot import apply_pending_update
+apply_pending_update()
+
 from .nodes.promptchain import PromptChainNode
 from .nodes.pose_studio import PoseStudioNode
 from .nodes.attention_couple import AttentionCoupleNode

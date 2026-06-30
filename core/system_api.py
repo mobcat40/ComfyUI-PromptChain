@@ -255,6 +255,15 @@ async def _api_restart(request):
 _NODE_DIR = Path(__file__).resolve().parent.parent
 
 
+def _git_env():
+    """Never let git block a request on a credential / host-key prompt."""
+    env = dict(os.environ)
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    env["GCM_INTERACTIVE"] = "never"
+    env["GIT_SSH_COMMAND"] = env.get("GIT_SSH_COMMAND", "ssh -oBatchMode=yes")
+    return env
+
+
 def _git(args, timeout=15):
     """Run git in the PromptChain dir. Returns stdout (stripped), or None on any
     failure — git missing, not a repo, timeout, or non-zero exit."""
@@ -262,6 +271,7 @@ def _git(args, timeout=15):
         out = subprocess.run(
             ["git", *args], cwd=str(_NODE_DIR),
             capture_output=True, text=True, timeout=timeout,
+            stdin=subprocess.DEVNULL, env=_git_env(),
         )
         return out.stdout.strip() if out.returncode == 0 else None
     except (OSError, subprocess.SubprocessError):
@@ -278,43 +288,70 @@ def _local_version():
     }
 
 
+# Serialize `git fetch` across concurrent requests (background check + the About
+# button) — two fetches in one repo race on FETCH_HEAD.lock, and the loser falsely
+# reports offline.
+_fetch_lock = threading.Lock()
+
+
 @routes.get("/promptchain/system/version")
 async def _api_version(request):
-    """Installed build info, read locally — fast, no network."""
-    return web.json_response(_local_version())
+    """Installed build info, read locally — fast, no network. Off the event loop:
+    it still shells out to git a few times."""
+    return web.json_response(await asyncio.to_thread(_local_version))
 
 
 @routes.post("/promptchain/system/check-updates")
 async def _api_check_updates(request):
     """Fetch the tracking remote and report how many commits behind HEAD is.
-    status: current | behind | unknown (no git, offline, or no upstream)."""
+    Read-only: `git fetch` updates the object store but never the working tree,
+    so it can't touch (or lock) the tag-builder DB.
+    status: current | behind | unknown (no git, offline, or no upstream).
+    Also reports whether an update is already staged for the next restart, so
+    the UI shows 'restart to finish' instead of re-prompting."""
+    from . import update_boot
+
     def check():
         info = _local_version()
+        staged = {"staged": update_boot.is_staged(), "staged_sha": update_boot.staged_target()}
         if not info["is_git"]:
-            return {**info, "status": "unknown",
-                    "detail": "Not a git checkout — update through however you installed it."}
-        if _git(["fetch", "--quiet"], timeout=30) is None:
-            return {**info, "status": "unknown", "detail": "Couldn't reach the update server."}
+            return {**info, **staged, "status": "unknown",
+                    "detail": "Installed via the Registry / ComfyUI-Manager — update it from the Manager menu."}
+        with _fetch_lock:
+            fetched = _git(["fetch", "--quiet"], timeout=30)
+        if fetched is None:
+            return {**info, **staged, "status": "unknown", "detail": "Couldn't reach the update server."}
         behind = _git(["rev-list", "--count", "HEAD..@{upstream}"])
         if behind is None or not behind.isdigit():
-            return {**info, "status": "unknown", "detail": "No upstream branch to compare against."}
+            return {**info, **staged, "status": "unknown", "detail": "No upstream branch to compare against."}
         n = int(behind)
-        return {**info, "status": "current" if n == 0 else "behind", "behind": n}
+        return {**info, **staged, "status": "current" if n == 0 else "behind",
+                "behind": n, "target_sha": _git(["rev-parse", "@{upstream}"])}
 
     return web.json_response(await asyncio.to_thread(check))
 
 
 @routes.post("/promptchain/system/apply-update")
 async def _api_apply_update(request):
-    """Fast-forward pull from the tracking remote. The caller restarts after.
-    ff-only never creates a merge commit or hits conflicts on a user clone."""
-    def pull():
-        before = _git(["rev-parse", "HEAD"])
-        if before is None:
-            return {"ok": False, "detail": "Not a git checkout."}
-        if _git(["pull", "--ff-only"], timeout=60) is None:
-            return {"ok": False, "detail": "Update failed — couldn't fast-forward. Pull manually."}
-        after = _git(["rev-parse", "HEAD"])
-        return {"ok": True, "changed": before != after, "commit": _git(["rev-parse", "--short", "HEAD"])}
+    """STAGE the update — write a marker the next boot consumes — instead of
+    pulling on the live server. A live `git pull` would try to replace the
+    open, locally-modified 47MB tag-builder.db and fail on Windows (the file is
+    held by sqlite). The caller restarts; core/update_boot.py applies the pull
+    at the top of __init__.py before any DB handle is opened."""
+    from . import update_boot
 
-    return web.json_response(await asyncio.to_thread(pull))
+    def stage():
+        staged = update_boot.stage_pending_update()
+        if staged is None:
+            return {"ok": False, "detail": "Not a fast-forwardable git checkout — update manually."}
+        return {"ok": True, "staged": True, "target_sha": staged["target_sha"], "restart_required": True}
+
+    return web.json_response(await asyncio.to_thread(stage))
+
+
+@routes.get("/promptchain/system/update-status")
+async def _api_update_status(request):
+    """Post-boot outcome of a just-applied update (consumed once), so the UI can
+    confirm 'Updated to <sha>' or warn that deps need a manual pip install."""
+    from . import update_boot
+    return web.json_response(await asyncio.to_thread(update_boot.read_and_clear_status) or {})

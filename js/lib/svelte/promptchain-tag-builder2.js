@@ -2478,6 +2478,32 @@ function TagBuilder2($$anchor, $$props) {
     }
     return out;
   }
+  function extractStyleHeader(text2) {
+    if (!text2) return null;
+    const lines = text2.split("\n");
+    const cursorIdx = lines.findIndex((l) => l.includes("{cursor}"));
+    for (let i = cursorIdx >= 0 ? cursorIdx + 1 : 0; i < lines.length; i++) {
+      const t = lines[i].trim();
+      if (!t) continue;
+      return /^\/\//.test(t) ? t : null;
+    }
+    return null;
+  }
+  function extractStyleNegative(text2) {
+    if (!text2) return null;
+    const lines = text2.split("\n");
+    const negIdx = lines.findIndex((l) => /^Negative Prompt:\s*$/i.test(l.trim()));
+    if (negIdx < 0) return null;
+    const body = [];
+    for (let i = negIdx + 1; i < lines.length; i++) {
+      if (!lines[i].trim()) {
+        if (body.length) break;
+        else continue;
+      }
+      body.push(lines[i].trim());
+    }
+    return body.length ? body.join("\n") : null;
+  }
   function presetToStyleItem(preset) {
     const tags = extractStyleTags(preset.text || "");
     if (!tags.length) return null;
@@ -2486,6 +2512,8 @@ function TagBuilder2($$anchor, $$props) {
       display_name: preset.name || preset.id,
       item_group: preset.category || "Uncategorized",
       tags,
+      header: extractStyleHeader(preset.text || ""),
+      negative: extractStyleNegative(preset.text || ""),
       _text: preset.text || ""
     };
   }
@@ -2533,10 +2561,13 @@ function TagBuilder2($$anchor, $$props) {
         id: item.item_tag,
         name: item.display_name,
         tags: [...item.tags],
-        // First pick OR a swap from a different style -> emit a fresh header
-        // alongside the tags. Round-trip parse will overwrite this with the
-        // user's original header text (or null) when re-binding.
-        commentHeader: `// Style: ${item.display_name}`
+        // Prefer the preset's own header (e.g. `// Figurine Default`); only
+        // synthesize `// Style: <name>` when the preset carries none. Round-trip
+        // parse overwrites this with the user's actual header text when re-binding.
+        commentHeader: item.header || `// Style: ${item.display_name}`,
+        // Insert the preset's negative alongside its positives. Null when the
+        // preset has none. Round-trip moves the user's negative here instead.
+        negative: item.negative || null
       },
       true
     );
@@ -4321,11 +4352,18 @@ function TagBuilder2($$anchor, $$props) {
     if (/^Scene\b/i.test(text2)) return "scene";
     return null;
   }
+  function isKnownStyleHeader(text2) {
+    var _a2;
+    const norm = (text2 || "").trim().toLowerCase();
+    if (!norm) return false;
+    return !!((_a2 = get(stylesCache).items) == null ? void 0 : _a2.some((it) => (it.display_name || "").trim().toLowerCase() === norm || (it.header || "").replace(/^\s*\/\/\s*/, "").trim().toLowerCase() === norm));
+  }
   function isVerbatimCustomHeader(line) {
     const text2 = (line || "").replace(/^\s*\/\/\s*/, "").trim();
     if (!text2) return false;
     if (/^(Outfit|Pose|Interaction|Scene|Subject|Character)\b/i.test(text2)) return false;
     if (/^Style\b/i.test(text2) || /^Style:/i.test(text2)) return false;
+    if (isKnownStyleHeader(text2)) return false;
     return true;
   }
   async function parseInitialPrompt(text2) {
@@ -4344,15 +4382,20 @@ function TagBuilder2($$anchor, $$props) {
     let currentRegion = null;
     let currentVerbatim = false;
     let inNegative = false;
+    const negativeLineIdx = [];
+    const negativeBodyLines = [];
     for (let i = 0; i < rawLines.length; i++) {
       const line = rawLines[i];
       if (inNegative) {
         passthroughLineSet.add(i);
+        negativeLineIdx.push(i);
+        if (line.trim()) negativeBodyLines.push(line.trim());
         continue;
       }
       if (/^Negative Prompt:\s*$/i.test(line.trim())) {
         inNegative = true;
         passthroughLineSet.add(i);
+        negativeLineIdx.push(i);
         continue;
       }
       const regionOpen = line.match(/^\s*(\$[A-Za-z]\w*)\s*\{\s*$/);
@@ -4392,6 +4435,10 @@ function TagBuilder2($$anchor, $$props) {
       }
     }
     const stripIndices = detectAndBindStyle(tokenStream, rawLines, passthroughLineSet);
+    if (get(activeStyle) && negativeBodyLines.length) {
+      get(activeStyle).negative = negativeBodyLines.join("\n");
+      for (const i of negativeLineIdx) passthroughLineSet.delete(i);
+    }
     set(preservedPassthrough, rawLines.filter((_, i) => passthroughLineSet.has(i)).join("\n"), true);
     const mcChipList = buildMultiCommaChipList();
     const naturalJoinedRaw = positiveContentLines.map((line, idx) => idx > 0 && positiveContentSectionStart[idx] ? ". " + line : line).join(" ").trim();
@@ -5880,6 +5927,10 @@ ${sceneBits.join(", ")}`);
 ${get(activeStyle).tags.join(", ")}`);
       } else {
         parts.push(get(activeStyle).tags.join(", "));
+      }
+      if (get(activeStyle).negative) {
+        parts.push(`Negative Prompt:
+${get(activeStyle).negative}`);
       }
     }
     let out = parts.join("\n\n");

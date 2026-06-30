@@ -889,7 +889,9 @@
   });
 
   // ----------------------------------------------------------------------
-  //  STYLES — model-scoped prompt presets, post-cursor positive only.
+  //  STYLES — model-scoped prompt presets. A preset carries its positive
+  //  tags plus (optionally) its own `// Header` line and a Negative Prompt:
+  //  block, all of which we round-trip verbatim.
   // ----------------------------------------------------------------------
 
   function extractStyleTags(text) {
@@ -913,6 +915,38 @@
     return out;
   }
 
+  // The `// ...` header that introduces the preset's positive tags (the
+  // first comment line after `{cursor}`), e.g. `// Figurine Default`. Null
+  // when the preset has no header of its own — pick falls back to a
+  // synthetic `// Style: <name>` then.
+  function extractStyleHeader(text) {
+    if (!text) return null;
+    const lines = text.split("\n");
+    const cursorIdx = lines.findIndex(l => l.includes("{cursor}"));
+    for (let i = (cursorIdx >= 0 ? cursorIdx + 1 : 0); i < lines.length; i++) {
+      const t = lines[i].trim();
+      if (!t) continue;
+      return /^\/\//.test(t) ? t : null; // first non-blank: header, or content (no header)
+    }
+    return null;
+  }
+
+  // The preset's Negative Prompt: body (lines after the marker, up to the
+  // first trailing blank), or null. Carried on the style so picking it
+  // inserts the negative and round-trips bind it back to the style.
+  function extractStyleNegative(text) {
+    if (!text) return null;
+    const lines = text.split("\n");
+    const negIdx = lines.findIndex(l => /^Negative Prompt:\s*$/i.test(l.trim()));
+    if (negIdx < 0) return null;
+    const body = [];
+    for (let i = negIdx + 1; i < lines.length; i++) {
+      if (!lines[i].trim()) { if (body.length) break; else continue; }
+      body.push(lines[i].trim());
+    }
+    return body.length ? body.join("\n") : null;
+  }
+
   function presetToStyleItem(preset) {
     const tags = extractStyleTags(preset.text || "");
     if (!tags.length) return null;
@@ -921,6 +955,8 @@
       display_name: preset.name || preset.id,
       item_group: preset.category || "Uncategorized",
       tags,
+      header: extractStyleHeader(preset.text || ""),
+      negative: extractStyleNegative(preset.text || ""),
       _text: preset.text || "",
     };
   }
@@ -972,10 +1008,13 @@
       id: item.item_tag,
       name: item.display_name,
       tags: [...item.tags],
-      // First pick OR a swap from a different style -> emit a fresh header
-      // alongside the tags. Round-trip parse will overwrite this with the
-      // user's original header text (or null) when re-binding.
-      commentHeader: `// Style: ${item.display_name}`,
+      // Prefer the preset's own header (e.g. `// Figurine Default`); only
+      // synthesize `// Style: <name>` when the preset carries none. Round-trip
+      // parse overwrites this with the user's actual header text when re-binding.
+      commentHeader: item.header || `// Style: ${item.display_name}`,
+      // Insert the preset's negative alongside its positives. Null when the
+      // preset has none. Round-trip moves the user's negative here instead.
+      negative: item.negative || null,
     };
     if (!styleSpawned) styleSpawned = true;
   }
@@ -3073,11 +3112,25 @@
   // otherwise the tags get absorbed into the subject body and the header
   // orphans. Managed headers (Subject/Character/Outfit/Pose/Interaction/
   // Scene/Style:) are NOT verbatim — their bodies parse as before.
+  // A preset's own header (e.g. `// Figurine Default`) reads like a custom
+  // section but is really a managed Style header — its body must tokenize so
+  // detectAndBindStyle can content-match it. Matched against loaded presets by
+  // name or by their parsed header text.
+  function isKnownStyleHeader(text) {
+    const norm = (text || "").trim().toLowerCase();
+    if (!norm) return false;
+    return !!stylesCache.items?.some(it =>
+      (it.display_name || "").trim().toLowerCase() === norm ||
+      (it.header || "").replace(/^\s*\/\/\s*/, "").trim().toLowerCase() === norm,
+    );
+  }
+
   function isVerbatimCustomHeader(line) {
     const text = (line || "").replace(/^\s*\/\/\s*/, "").trim();
     if (!text) return false;
     if (/^(Outfit|Pose|Interaction|Scene|Subject|Character)\b/i.test(text)) return false;
     if (/^Style\b/i.test(text) || /^Style:/i.test(text)) return false;
+    if (isKnownStyleHeader(text)) return false;
     return true;
   }
 
@@ -3116,15 +3169,23 @@
     // whose body should be preserved verbatim, not tokenized.
     let currentVerbatim = false;
     let inNegative = false;
+    // The Negative Prompt: block's raw-line indices (marker + body) and its
+    // body text. If a style binds below, the negative moves onto it so compose
+    // emits it once from the style; otherwise it stays in passthrough.
+    const negativeLineIdx = [];
+    const negativeBodyLines = [];
     for (let i = 0; i < rawLines.length; i++) {
       const line = rawLines[i];
       if (inNegative) {
         passthroughLineSet.add(i);
+        negativeLineIdx.push(i);
+        if (line.trim()) negativeBodyLines.push(line.trim());
         continue;
       }
       if (/^Negative Prompt:\s*$/i.test(line.trim())) {
         inNegative = true;
         passthroughLineSet.add(i);
+        negativeLineIdx.push(i);
         continue;
       }
       // Regional-block markers (region-highlight.js grammar): `$name {` opens,
@@ -3178,6 +3239,14 @@
     // user's original header text is preserved (or absent if it wasn't
     // there).
     const stripIndices = detectAndBindStyle(tokenStream, rawLines, passthroughLineSet);
+
+    // A bound style owns the negative: move it off passthrough and onto the
+    // style so compose emits exactly one Negative Prompt: block (and a
+    // deselect/reselect can't leave a stale copy behind in passthrough).
+    if (activeStyle && negativeBodyLines.length) {
+      activeStyle.negative = negativeBodyLines.join("\n");
+      for (const i of negativeLineIdx) passthroughLineSet.delete(i);
+    }
 
     preservedPassthrough = rawLines
       .filter((_, i) => passthroughLineSet.has(i))
@@ -4982,6 +5051,12 @@
         parts.push(`${activeStyle.commentHeader}\n${activeStyle.tags.join(", ")}`);
       } else {
         parts.push(activeStyle.tags.join(", "));
+      }
+      // The style's negative rides as its own trailing block. It's owned by
+      // the style (pick sets it from the preset; round-trip moves it here off
+      // passthrough), so this is the single source — no duplicate elsewhere.
+      if (activeStyle.negative) {
+        parts.push(`Negative Prompt:\n${activeStyle.negative}`);
       }
     }
 

@@ -11,6 +11,7 @@ import { createModelIndicator } from "./lib/model-indicator-bridge.js";
 import { createTagsDropdown } from "./lib/tags-dropdown.js";
 import { activateTagAutocomplete } from "./lib/autocomplete.js";
 import { checkOnboarding } from "./lib/onboarding.js";
+import { runUpdateCheck, checkUpdateStatus } from "./lib/update-check.js";
 import { createDocumentDropdown } from "./lib/documents.js";
 import { setModeOnNode, handleLockCascade, handleDisableCascade, handleCollapse, updateCollapsedHeight, updateOverlay, cleanupOverlayObserver } from "./lib/menubar-utils.js";
 import { applyVueMinWidthAll } from "./lib/sizing.js";
@@ -566,6 +567,24 @@ app.registerExtension({
       type: () => renderAboutSetting(),
     },
     {
+      id: "PromptChain.UpdateNotify",
+      category: ["PromptChain", "Updates"],
+      name: "Notify me about updates",
+      type: "boolean",
+      defaultValue: true,
+      sortOrder: 1,
+      tooltip: "Check for PromptChain updates in the background (at most once a day, when the tab is open or refocused) and show a prompt when one's available. Turning this off is the same as 'Never show again'.",
+    },
+    {
+      id: "PromptChain.AutoUpdate",
+      category: ["PromptChain", "Updates"],
+      name: "Always update in background",
+      type: "boolean",
+      defaultValue: false,
+      sortOrder: 0,
+      tooltip: "When an update is found, stage it silently instead of prompting. It applies the next time you restart ComfyUI — PromptChain never restarts the server on its own.",
+    },
+    {
       id: "PromptChain.AutoSplitOutputs",
       category: ["PromptChain", "General"],
       name: "Automatic output slots",
@@ -916,6 +935,14 @@ app.registerExtension({
     setupShiftSync(); // krea2 RAW: keep the flow-shift node's w/h matched to render size
     setupImagePreviewListeners();
     checkOnboarding();
+    // Surface the outcome of any just-applied update, then run the throttled
+    // (24h) background update check. Event-driven, no timers: it fires here at
+    // load and again whenever the tab regains focus.
+    checkUpdateStatus();
+    runUpdateCheck();
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") runUpdateCheck();
+    });
     loadSvelteNode(); // preload Svelte module in background
 
     // workflow UUID dedup — intercept saves to catch Save-As duplicates

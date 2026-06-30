@@ -99,7 +99,7 @@ const PROMPTCHAIN_REPO = "https://github.com/mobcat40/ComfyUI-PromptChain";
 // plus a user-triggered update check. Opened from the sidebar kebab and the
 // PromptChain settings section. Closable by clicking the backdrop or Escape —
 // the first-boot splash deliberately can't be, but About always can.
-export function openAboutModal() {
+export function openAboutModal(opts = {}) {
   if (document.querySelector(".pcr-about-overlay")) return;
 
   const overlay = document.createElement("div");
@@ -164,14 +164,21 @@ export function openAboutModal() {
   overlay.appendChild(card);
   document.body.appendChild(overlay);
 
+  // Opened from the "Update" menu entry — run the check immediately so the user
+  // lands on the result, not a button they still have to press.
+  if (opts.autoCheck) update.click();
+
   (async () => {
     try {
       const v = await fetch("/promptchain/system/version").then((r) => r.json());
+      // Don't clobber a result the auto-check (opts.autoCheck) may already have
+      // written — only fill in build info if the line is still its placeholder.
+      if (version.textContent !== "Loading build info…") return;
       version.textContent = v.is_git
         ? `Build ${v.date || ""}${v.commit ? "  ·  " + v.commit : ""}`
         : "Installed";
     } catch {
-      version.textContent = "";
+      if (version.textContent === "Loading build info…") version.textContent = "";
     }
   })();
 }
@@ -213,9 +220,10 @@ function wireUpdateButton(btn, version) {
       }
       return;
     }
-    // mode === "apply"
+    // mode === "apply" — stages the update (a live pull would fail on the
+    // open, locked tag-builder DB); it's applied at the next restart.
     btn.disabled = true;
-    btn.textContent = "Updating…";
+    btn.textContent = "Staging…";
     let res;
     try {
       res = await fetch("/promptchain/system/apply-update", { method: "POST" }).then((r) => r.json());
@@ -224,7 +232,7 @@ function wireUpdateButton(btn, version) {
     }
     btn.disabled = false;
     if (res.ok) {
-      version.textContent = "Updated. Restart ComfyUI to load the new version.";
+      version.textContent = "Update staged. Restart ComfyUI to apply it.";
       btn.textContent = "Restart ComfyUI";
       mode = "restart";
     } else {
@@ -236,7 +244,7 @@ function wireUpdateButton(btn, version) {
 
 if (!window.__pcrAboutListener) {
   window.__pcrAboutListener = true;
-  window.addEventListener("promptchain:show-about", openAboutModal);
+  window.addEventListener("promptchain:show-about", (e) => openAboutModal(e?.detail || {}));
 }
 
 function getCurrentPreviewMethod() {

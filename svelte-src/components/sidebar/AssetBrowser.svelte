@@ -1307,6 +1307,13 @@
     window.dispatchEvent(new CustomEvent("promptchain:show-about"));
   }
 
+  // Same modal, but auto-runs its update check on open — a shortcut to the one
+  // thing most users open About for.
+  function kebabUpdate() {
+    kebabOpen = false;
+    window.dispatchEvent(new CustomEvent("promptchain:show-about", { detail: { autoCheck: true } }));
+  }
+
   function kebabHelp() {
     kebabOpen = false;
     window.open("https://github.com/mobcat40/ComfyUI-PromptChain#readme", "_blank", "noopener");
@@ -1376,6 +1383,14 @@
               Settings
             </button>
             <div class="pcr-kebab-sep"></div>
+            <button class="pcr-kebab-item" onclick={kebabUpdate}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"/>
+                <polyline points="1 20 1 14 7 14"/>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+              </svg>
+              Update
+            </button>
             <button class="pcr-kebab-item" onclick={kebabAbout}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"/>
